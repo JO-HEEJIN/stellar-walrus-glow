@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Hub } from 'aws-amplify/utils'; // Corrected Hub import to aws-amplify/utils
-import { signIn, signUp, signOut, currentAuthenticatedUser, User } from 'aws-amplify/auth';
+import { Hub } from 'aws-amplify/utils';
+import * as Auth from 'aws-amplify/auth'; // Changed import to namespace
+import { User } from 'aws-amplify/auth'; // User type can still be imported directly
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AuthContextType {
@@ -21,7 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkCurrentUser = async () => {
       try {
-        const currentUser = await currentAuthenticatedUser();
+        const currentUser = await Auth.currentAuthenticatedUser(); // Using Auth.currentAuthenticatedUser
         setUser(currentUser);
       } catch (error) {
         setUser(null);
@@ -56,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInUser = async (username: string, password: string) => {
     setLoading(true);
     try {
-      await signIn({ username, password });
+      await Auth.signIn({ username, password }); // Using Auth.signIn
     } catch (error: any) {
       showError(error.message || '로그인에 실패했습니다.');
       throw error;
@@ -68,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpUser = async (username: string, password: string, attributes?: Record<string, string>) => {
     setLoading(true);
     try {
-      await signUp({ username, password, attributes });
+      await Auth.signUp({ username, password, attributes }); // Using Auth.signUp
       showSuccess('회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.');
     } catch (error: any) {
       showError(error.message || '회원가입에 실패했습니다.');
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOutUser = async () => {
     setLoading(true);
     try {
-      await signOut();
+      await Auth.signOut(); // Using Auth.signOut
     } catch (error: any) {
       showError(error.message || '로그아웃에 실패했습니다.');
       throw error;
