@@ -16,5 +16,6 @@ export default defineConfig(() => ({
   },
   optimizeDeps: {
     exclude: ['aws-amplify', '@aws-amplify/auth', '@aws-amplify/utils'],
+    include: ['crc-32'], // Explicitly include crc-32 for pre-bundling
   },
 }));
