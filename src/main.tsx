@@ -9,7 +9,7 @@ Amplify.configure({
     Cognito: {
       userPoolId: import.meta.env.VITE_AWS_USER_POOL_ID,
       userPoolClientId: import.meta.env.VITE_AWS_USER_POOL_WEB_CLIENT_ID,
-      region: import.meta.env.VITE_AWS_REGION,
+      region: import.meta.env.VITE_AWS_REGION, // Moved region inside Cognito
     },
   },
 });

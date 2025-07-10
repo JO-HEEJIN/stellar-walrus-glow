@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Hub } from 'aws-amplify/utils';
-import { currentAuthenticatedUser, signIn, signUp, signOut, User } from 'aws-amplify/auth'; // Reverted to direct named imports
+import { getCurrentUser, signIn, signUp, signOut, AuthUser } from 'aws-amplify/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
   signIn: (username: string, password: string) => Promise<void>;
@@ -15,13 +15,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
       try {
-        const currentUser = await currentAuthenticatedUser(); // Using direct named import
+        const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         setUser(null);
@@ -47,16 +47,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    Hub.listen('auth', listener);
+    const removeListener = Hub.listen('auth', listener);
     checkCurrentUser();
 
-    return () => Hub.remove('auth', listener);
+    return () => removeListener();
   }, []);
 
   const signInUser = async (username: string, password: string) => {
     setLoading(true);
     try {
-      await signIn({ username, password }); // Using direct named import
+      await signIn({ username, password });
     } catch (error: any) {
       showError(error.message || '로그인에 실패했습니다.');
       throw error;
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpUser = async (username: string, password: string, attributes?: Record<string, string>) => {
     setLoading(true);
     try {
-      await signUp({ username, password, attributes }); // Using direct named import
+      await signUp({ username, password, options: { userAttributes: attributes } }); // Corrected: userAttributes inside options
       showSuccess('회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.');
     } catch (error: any) {
       showError(error.message || '회원가입에 실패했습니다.');
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOutUser = async () => {
     setLoading(true);
     try {
-      await signOut(); // Using direct named import
+      await signOut();
     } catch (error: any) {
       showError(error.message || '로그아웃에 실패했습니다.');
       throw error;
