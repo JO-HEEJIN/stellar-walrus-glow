@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Hub } from 'aws-amplify';
-import { Auth } from 'aws-amplify/auth'; // Corrected import path for Auth
-import { User } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, currentAuthenticatedUser, User } from 'aws-amplify/auth'; // Corrected imports
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AuthContextType {
@@ -22,7 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkCurrentUser = async () => {
       try {
-        const currentUser = await Auth.currentAuthenticatedUser();
+        const currentUser = await currentAuthenticatedUser(); // Changed from Auth.currentAuthenticatedUser()
         setUser(currentUser);
       } catch (error) {
         setUser(null);
@@ -54,10 +53,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => Hub.remove('auth', listener);
   }, []);
 
-  const signIn = async (username: string, password: string) => {
+  const signInUser = async (username: string, password: string) => { // Renamed to avoid conflict with imported signIn
     setLoading(true);
     try {
-      await Auth.signIn({ username, password });
+      await signIn({ username, password }); // Changed from Auth.signIn()
     } catch (error: any) {
       showError(error.message || '로그인에 실패했습니다.');
       throw error;
@@ -66,10 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signUp = async (username: string, password: string, attributes?: Record<string, string>) => {
+  const signUpUser = async (username: string, password: string, attributes?: Record<string, string>) => { // Renamed to avoid conflict with imported signUp
     setLoading(true);
     try {
-      await Auth.signUp({ username, password, attributes });
+      await signUp({ username, password, attributes }); // Changed from Auth.signUp()
       showSuccess('회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.');
     } catch (error: any) {
       showError(error.message || '회원가입에 실패했습니다.');
@@ -79,10 +78,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = async () => {
+  const signOutUser = async () => { // Renamed to avoid conflict with imported signOut
     setLoading(true);
     try {
-      await Auth.signOut();
+      await signOut(); // Changed from Auth.signOut()
     } catch (error: any) {
       showError(error.message || '로그아웃에 실패했습니다.');
       throw error;
@@ -92,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signIn: signInUser, signUp: signUpUser, signOut: signOutUser }}>
       {children}
     </AuthContext.Provider>
   );
