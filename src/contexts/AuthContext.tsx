@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Hub } from 'aws-amplify/utils';
-import * as Auth from 'aws-amplify/auth'; // Changed import to namespace
-import { User } from 'aws-amplify/auth'; // User type can still be imported directly
+import { currentAuthenticatedUser, signIn, signUp, signOut, User } from 'aws-amplify/auth'; // Reverted to direct named imports
 import { showSuccess, showError } from '@/utils/toast';
 
 interface AuthContextType {
@@ -22,7 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkCurrentUser = async () => {
       try {
-        const currentUser = await Auth.currentAuthenticatedUser(); // Using Auth.currentAuthenticatedUser
+        const currentUser = await currentAuthenticatedUser(); // Using direct named import
         setUser(currentUser);
       } catch (error) {
         setUser(null);
@@ -57,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInUser = async (username: string, password: string) => {
     setLoading(true);
     try {
-      await Auth.signIn({ username, password }); // Using Auth.signIn
+      await signIn({ username, password }); // Using direct named import
     } catch (error: any) {
       showError(error.message || '로그인에 실패했습니다.');
       throw error;
@@ -69,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpUser = async (username: string, password: string, attributes?: Record<string, string>) => {
     setLoading(true);
     try {
-      await Auth.signUp({ username, password, attributes }); // Using Auth.signUp
+      await signUp({ username, password, attributes }); // Using direct named import
       showSuccess('회원가입이 완료되었습니다. 이메일 인증을 완료해주세요.');
     } catch (error: any) {
       showError(error.message || '회원가입에 실패했습니다.');
@@ -82,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOutUser = async () => {
     setLoading(true);
     try {
-      await Auth.signOut(); // Using Auth.signOut
+      await signOut(); // Using direct named import
     } catch (error: any) {
       showError(error.message || '로그아웃에 실패했습니다.');
       throw error;
