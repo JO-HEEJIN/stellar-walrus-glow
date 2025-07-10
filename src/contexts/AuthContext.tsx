@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Hub } from 'aws-amplify'; // Reverted Hub import to main aws-amplify package
+import { Hub } from 'aws-amplify/utils'; // Corrected Hub import to aws-amplify/utils
 import { signIn, signUp, signOut, currentAuthenticatedUser, User } from 'aws-amplify/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
