@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Auth, Hub } from 'aws-amplify';
+import { Hub } from 'aws-amplify';
+import { Auth } from 'aws-amplify/auth'; // Corrected import path for Auth
 import { User } from 'aws-amplify/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
