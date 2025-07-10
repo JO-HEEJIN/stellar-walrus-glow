@@ -1,21 +1,21 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./globals.css";
-import { Amplify } from "aws-amplify";
-// Removed: import { AuthConfig } from "aws-amplify/auth";
+import { AuthProvider } from "react-oidc-context";
+import React from "react";
 
-// Configure AWS Amplify with your Cognito details
-// Removed: AuthConfig type annotation
-const authConfig = {
-  Cognito: {
-    userPoolId: import.meta.env.VITE_AWS_USER_POOL_ID,
-    userPoolClientId: import.meta.env.VITE_AWS_USER_POOL_WEB_CLIENT_ID,
-    region: import.meta.env.VITE_AWS_REGION, // This placement is correct for v6
-  },
+const oidcConfig = {
+  authority: "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_xV5GZRniK",
+  client_id: "16bdq2fib11bcss6po40koivdi",
+  redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
+  response_type: "code",
+  scope: "email openid phone",
 };
 
-Amplify.configure({
-  Auth: authConfig,
-});
-
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <AuthProvider {...oidcConfig}>
+      <App />
+    </AuthProvider>
+  </React.StrictMode>
+);
