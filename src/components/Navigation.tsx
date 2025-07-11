@@ -20,9 +20,9 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
   const auth = useAuth();
 
   const signOutRedirect = () => {
-    const clientId = "16bdq2fib11bcss6po40koivdi";
-    const logoutUri = "https://d84l1y8p4kdic.cloudfront.net";
-    const cognitoDomain = "https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com";
+    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID || "16bdq2fib11bcss6po40koivdi";
+    const logoutUri = import.meta.env.VITE_REDIRECT_URI || "https://d84l1y8p4kdic.cloudfront.net";
+    const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN || "https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com";
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
   };
 
