@@ -4,12 +4,15 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "installCommand": "pnpm install --no-frozen-lockfile && pnpm add @rollup/rollup-linux-x64-gnu"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/(.*)", 
       "dest": "/"
     }
   ]
