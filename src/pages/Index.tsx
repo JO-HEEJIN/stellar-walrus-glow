@@ -11,6 +11,17 @@ import React, { useState } from "react";
 const Index = () => {
   const auth = useAuth();
   const [showDemo, setShowDemo] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    try {
+      setAuthError(null);
+      await auth.signinRedirect();
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setAuthError(error.message || '로그인 중 오류가 발생했습니다.');
+    }
+  };
 
   if (auth.isLoading) {
     return (
@@ -23,16 +34,19 @@ const Index = () => {
     );
   }
 
-  if (auth.error) {
+  if (auth.error || authError) {
+    const errorMessage = auth.error?.message || authError;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-red-600 mb-4">인증 오류가 발생했습니다</h1>
           <p className="text-gray-600 mb-4">
-            {auth.error.message === "Failed to fetch" 
+            {errorMessage === "Failed to fetch" 
               ? "인증 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요."
-              : auth.error.message
+              : errorMessage?.includes("redirect_mismatch")
+              ? "리디렉션 URI 설정에 문제가 있습니다. 관리자에게 문의해주세요."
+              : errorMessage
             }
           </p>
           <div className="space-y-2">
@@ -47,6 +61,10 @@ const Index = () => {
               데모 버전으로 계속하기
             </Button>
           </div>
+          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
+            <p>현재 URL: {window.location.origin}</p>
+            <p>Client ID: {import.meta.env.VITE_COGNITO_CLIENT_ID || "16bdq2fib11bcss6po40koivdi"}</p>
+          </div>
         </div>
       </div>
     );
@@ -56,7 +74,7 @@ const Index = () => {
     return <AuthenticatedDashboard user={auth.user} isDemo={showDemo} />;
   }
 
-  return <PublicHomePage onLogin={() => auth.signinRedirect()} onDemo={() => setShowDemo(true)} />;
+  return <PublicHomePage onLogin={handleLogin} onDemo={() => setShowDemo(true)} />;
 };
 
 const PublicHomePage = ({ onLogin, onDemo }: { onLogin: () => void; onDemo: () => void }) => {

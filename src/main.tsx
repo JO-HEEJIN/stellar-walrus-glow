@@ -11,9 +11,19 @@ const oidcConfig = {
   post_logout_redirect_uri: window.location.origin,
   response_type: "code",
   scope: "email openid phone",
-  automaticSilentRenew: true,
+  automaticSilentRenew: false,
   loadUserInfo: true,
+  // Add these for better error handling
+  monitorSession: false,
+  checkSessionInterval: 10000,
 };
+
+console.log('OIDC Config:', {
+  authority: oidcConfig.authority,
+  client_id: oidcConfig.client_id,
+  redirect_uri: oidcConfig.redirect_uri,
+  current_origin: window.location.origin
+});
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
