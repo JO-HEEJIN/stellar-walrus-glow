@@ -1,6 +1,5 @@
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import Navigation from "@/components/Navigation";
-import { useAuth } from "react-oidc-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,72 +8,10 @@ import { Link } from "react-router-dom";
 import React, { useState } from "react";
 
 const Index = () => {
-  const auth = useAuth();
-  const [showDemo, setShowDemo] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [showDemo, setShowDemo] = useState(true); // Start in demo mode by default
 
-  const handleLogin = async () => {
-    try {
-      setAuthError(null);
-      await auth.signinRedirect();
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setAuthError(error.message || '로그인 중 오류가 발생했습니다.');
-    }
-  };
-
-  if (auth.isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h1 className="text-xl font-semibold text-gray-700">로딩 중...</h1>
-        </div>
-      </div>
-    );
-  }
-
-  if (auth.error || authError) {
-    const errorMessage = auth.error?.message || authError;
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto p-6">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-600 mb-4">인증 오류가 발생했습니다</h1>
-          <p className="text-gray-600 mb-4">
-            {errorMessage === "Failed to fetch" 
-              ? "인증 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요."
-              : errorMessage?.includes("redirect_mismatch")
-              ? "리디렉션 URI 설정에 문제가 있습니다. 관리자에게 문의해주세요."
-              : errorMessage
-            }
-          </p>
-          <div className="space-y-2">
-            <Button onClick={() => window.location.reload()} className="w-full">
-              다시 시도
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowDemo(true)}
-              className="w-full"
-            >
-              데모 버전으로 계속하기
-            </Button>
-          </div>
-          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
-            <p>현재 URL: {window.location.origin}</p>
-            <p>Client ID: {import.meta.env.VITE_COGNITO_CLIENT_ID || "16bdq2fib11bcss6po40koivdi"}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (auth.isAuthenticated || showDemo) {
-    return <AuthenticatedDashboard user={auth.user} isDemo={showDemo} />;
-  }
-
-  return <PublicHomePage onLogin={handleLogin} onDemo={() => setShowDemo(true)} />;
+  // Skip authentication entirely and go straight to demo
+  return <AuthenticatedDashboard user={null} isDemo={true} />;
 };
 
 const PublicHomePage = ({ onLogin, onDemo }: { onLogin: () => void; onDemo: () => void }) => {
@@ -320,18 +257,16 @@ const AuthenticatedDashboard = ({ user, isDemo }: { user: any; isDemo?: boolean 
       <Navigation currentPath="/" />
 
       {/* Demo Banner */}
-      {isDemo && (
-        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-center">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-              <span className="text-yellow-800 font-medium">
-                데모 모드로 실행 중입니다. 실제 데이터가 아닙니다.
-              </span>
-            </div>
+      <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center">
+            <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
+            <span className="text-blue-800 font-medium">
+              K-Fashion 플랫폼 데모 버전입니다. 모든 기능을 자유롭게 체험해보세요!
+            </span>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -500,28 +435,6 @@ const AuthenticatedDashboard = ({ user, isDemo }: { user: any; isDemo?: boolean 
             </CardContent>
           </Card>
         </div>
-
-        {/* User Info */}
-        {!isDemo && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>계정 정보</CardTitle>
-              <CardDescription>현재 로그인된 사용자 정보</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">이메일</label>
-                  <p className="text-sm bg-gray-50 p-2 rounded mt-1">{user?.profile?.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">사용자 ID</label>
-                  <p className="text-sm bg-gray-50 p-2 rounded mt-1 font-mono">{user?.profile?.sub}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
 
       <MadeWithDyad />
