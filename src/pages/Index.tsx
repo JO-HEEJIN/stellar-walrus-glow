@@ -4,12 +4,13 @@ import { useAuth } from "react-oidc-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, Users, Globe, Shield, TrendingUp, Star, Package, DollarSign } from "lucide-react";
+import { ShoppingBag, Users, Globe, Shield, TrendingUp, Star, Package, DollarSign, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import React from "react";
+import React, { useState } from "react";
 
 const Index = () => {
   const auth = useAuth();
+  const [showDemo, setShowDemo] = useState(false);
 
   if (auth.isLoading) {
     return (
@@ -25,25 +26,40 @@ const Index = () => {
   if (auth.error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">오류가 발생했습니다</h1>
-          <p className="text-gray-600">{auth.error.message}</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
-            다시 시도
-          </Button>
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-red-600 mb-4">인증 오류가 발생했습니다</h1>
+          <p className="text-gray-600 mb-4">
+            {auth.error.message === "Failed to fetch" 
+              ? "인증 서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요."
+              : auth.error.message
+            }
+          </p>
+          <div className="space-y-2">
+            <Button onClick={() => window.location.reload()} className="w-full">
+              다시 시도
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDemo(true)}
+              className="w-full"
+            >
+              데모 버전으로 계속하기
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (auth.isAuthenticated) {
-    return <AuthenticatedDashboard user={auth.user} />;
+  if (auth.isAuthenticated || showDemo) {
+    return <AuthenticatedDashboard user={auth.user} isDemo={showDemo} />;
   }
 
-  return <PublicHomePage onLogin={() => auth.signinRedirect()} />;
+  return <PublicHomePage onLogin={() => auth.signinRedirect()} onDemo={() => setShowDemo(true)} />;
 };
 
-const PublicHomePage = ({ onLogin }: { onLogin: () => void }) => {
+const PublicHomePage = ({ onLogin, onDemo }: { onLogin: () => void; onDemo: () => void }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -55,11 +71,11 @@ const PublicHomePage = ({ onLogin }: { onLogin: () => void }) => {
               <Badge variant="secondary" className="ml-2">Platform</Badge>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={onLogin}>
-                로그인
+              <Button variant="outline" onClick={onDemo}>
+                데모 체험
               </Button>
               <Button onClick={onLogin}>
-                브랜드 입점 신청
+                로그인
               </Button>
             </div>
           </div>
@@ -80,8 +96,8 @@ const PublicHomePage = ({ onLogin }: { onLogin: () => void }) => {
             <Button size="lg" onClick={onLogin} className="text-lg px-8 py-3">
               브랜드 입점하기
             </Button>
-            <Button size="lg" variant="outline" onClick={onLogin} className="text-lg px-8 py-3">
-              구매자로 시작하기
+            <Button size="lg" variant="outline" onClick={onDemo} className="text-lg px-8 py-3">
+              데모 체험하기
             </Button>
           </div>
         </div>
@@ -220,9 +236,14 @@ const PublicHomePage = ({ onLogin }: { onLogin: () => void }) => {
           <p className="text-xl text-blue-100 mb-8">
             K-Fashion 플랫폼과 함께 글로벌 패션 비즈니스의 새로운 기회를 발견하세요
           </p>
-          <Button size="lg" variant="secondary" onClick={onLogin} className="text-lg px-8 py-3">
-            무료로 시작하기
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" variant="secondary" onClick={onLogin} className="text-lg px-8 py-3">
+              무료로 시작하기
+            </Button>
+            <Button size="lg" variant="outline" onClick={onDemo} className="text-lg px-8 py-3 bg-transparent border-white text-white hover:bg-white hover:text-blue-600">
+              데모 체험하기
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -275,10 +296,24 @@ const PublicHomePage = ({ onLogin }: { onLogin: () => void }) => {
   );
 };
 
-const AuthenticatedDashboard = ({ user }: { user: any }) => {
+const AuthenticatedDashboard = ({ user, isDemo }: { user: any; isDemo?: boolean }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation currentPath="/" />
+
+      {/* Demo Banner */}
+      {isDemo && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
+              <span className="text-yellow-800 font-medium">
+                데모 모드로 실행 중입니다. 실제 데이터가 아닙니다.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -449,24 +484,26 @@ const AuthenticatedDashboard = ({ user }: { user: any }) => {
         </div>
 
         {/* User Info */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>계정 정보</CardTitle>
-            <CardDescription>현재 로그인된 사용자 정보</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">이메일</label>
-                <p className="text-sm bg-gray-50 p-2 rounded mt-1">{user?.profile?.email}</p>
+        {!isDemo && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>계정 정보</CardTitle>
+              <CardDescription>현재 로그인된 사용자 정보</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">이메일</label>
+                  <p className="text-sm bg-gray-50 p-2 rounded mt-1">{user?.profile?.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">사용자 ID</label>
+                  <p className="text-sm bg-gray-50 p-2 rounded mt-1 font-mono">{user?.profile?.sub}</p>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">사용자 ID</label>
-                <p className="text-sm bg-gray-50 p-2 rounded mt-1 font-mono">{user?.profile?.sub}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <MadeWithDyad />

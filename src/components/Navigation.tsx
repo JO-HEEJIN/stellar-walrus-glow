@@ -21,9 +21,18 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
 
   const signOutRedirect = () => {
     const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID || "16bdq2fib11bcss6po40koivdi";
-    const logoutUri = import.meta.env.VITE_REDIRECT_URI || "https://d84l1y8p4kdic.cloudfront.net";
+    const logoutUri = window.location.origin;
     const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN || "https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com";
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+  };
+
+  const handleLogout = () => {
+    if (auth.isAuthenticated) {
+      auth.removeUser();
+    } else {
+      // Demo mode - just reload the page
+      window.location.reload();
+    }
   };
 
   const navigationItems = [
@@ -52,10 +61,6 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
       active: currentPath.startsWith("/orders")
     }
   ];
-
-  if (!auth.isAuthenticated) {
-    return null;
-  }
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
@@ -88,7 +93,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <span className="hidden sm:block text-sm text-gray-600">
-              {auth.user?.profile?.email}
+              {auth.user?.profile?.email || "데모 사용자"}
             </span>
             
             <DropdownMenu>
@@ -108,14 +113,16 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
                   <span>설정</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => auth.removeUser()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>로그아웃 (OIDC)</span>
+                  <span>로그아웃</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOutRedirect}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>로그아웃 (Cognito)</span>
-                </DropdownMenuItem>
+                {auth.isAuthenticated && (
+                  <DropdownMenuItem onClick={signOutRedirect}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>완전 로그아웃</span>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
