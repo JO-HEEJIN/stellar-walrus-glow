@@ -10,15 +10,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Building2, Package, ShoppingCart, BarChart3, Settings, User, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "react-oidc-context";
 
 interface NavigationProps {
   currentPath?: string;
 }
 
 const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
+  const auth = useAuth();
+
+  const signOutRedirect = () => {
+    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID || "16bdq2fib11bcss6po40koivdi";
+    const logoutUri = window.location.origin;
+    const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN || "https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com";
+    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+  };
+
   const handleLogout = () => {
-    // Demo mode - just reload the page
-    window.location.reload();
+    if (auth.isAuthenticated) {
+      auth.removeUser();
+    } else {
+      // Demo mode - just reload the page
+      window.location.reload();
+    }
   };
 
   const navigationItems = [
@@ -79,7 +93,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <span className="hidden sm:block text-sm text-gray-600">
-              데모 사용자
+              {auth.user?.profile?.email || "데모 사용자"}
             </span>
             
             <DropdownMenu>
@@ -103,6 +117,12 @@ const Navigation: React.FC<NavigationProps> = ({ currentPath = "/" }) => {
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>로그아웃</span>
                 </DropdownMenuItem>
+                {auth.isAuthenticated && (
+                  <DropdownMenuItem onClick={signOutRedirect}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>완전 로그아웃</span>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
