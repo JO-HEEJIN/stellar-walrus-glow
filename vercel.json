@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "stellar-walrus-glow",
   "builds": [
     {
       "src": "src/main.tsx",
