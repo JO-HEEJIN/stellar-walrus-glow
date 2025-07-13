@@ -7,10 +7,18 @@ import { ShoppingCart } from 'lucide-react'
 
 interface Product {
   id: string
-  name: string
-  description: string
-  price: number
+  sku: string
+  nameKo: string
+  nameCn?: string
+  descriptionKo?: string
+  descriptionCn?: string
+  basePrice: number
   brandId: string
+  brand?: {
+    id: string
+    nameKo: string
+    nameCn?: string
+  }
   createdAt: string
 }
 
@@ -37,8 +45,8 @@ export default function ProductList({ userRole }: ProductListProps) {
         }
 
         const data = await response.json()
-        setProducts(data.products)
-        setTotalPages(data.pagination.totalPages)
+        setProducts(data.data || [])
+        setTotalPages(data.meta?.totalPages || 1)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -124,13 +132,13 @@ export default function ProductList({ userRole }: ProductListProps) {
               products.map((product) => (
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {product.name}
+                    {product.nameKo}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {product.description}
+                    {product.descriptionKo || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatPrice(product.price)}
+                    {formatPrice(Number(product.basePrice))}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(product.createdAt).toLocaleDateString('ko-KR')}
@@ -150,8 +158,8 @@ export default function ProductList({ userRole }: ProductListProps) {
                       <button
                         onClick={() => addItem({
                           productId: product.id,
-                          productName: product.name,
-                          price: product.price
+                          productName: product.nameKo,
+                          price: Number(product.basePrice)
                         })}
                         className="inline-flex items-center text-primary hover:text-primary/90"
                       >

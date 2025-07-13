@@ -1,13 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
 interface ProductFormData {
-  name: string
-  description: string
-  price: number
-  categoryId: string
+  brandId: string
+  sku: string
+  nameKo: string
+  nameCn?: string
+  descriptionKo?: string
+  descriptionCn?: string
+  categoryId?: string
+  basePrice: number
+  inventory: number
 }
 
 interface ProductFormProps {
@@ -16,14 +22,49 @@ interface ProductFormProps {
 
 export default function ProductForm({ onSuccess }: ProductFormProps) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [brands, setBrands] = useState<Array<{ id: string; nameKo: string }>>([])
   const [formData, setFormData] = useState<ProductFormData>({
-    name: '',
-    description: '',
-    price: 0,
-    categoryId: 'fashion', // Default category
+    brandId: '',
+    sku: '',
+    nameKo: '',
+    nameCn: '',
+    descriptionKo: '',
+    descriptionCn: '',
+    categoryId: '',
+    basePrice: 0,
+    inventory: 0,
   })
+
+  // Set brand ID based on user's role
+  useEffect(() => {
+    if (session?.user) {
+      if (session.user.role === 'BRAND_ADMIN' && session.user.brandId) {
+        setFormData(prev => ({ ...prev, brandId: session.user.brandId || '' }))
+      } else if (session.user.role === 'MASTER_ADMIN') {
+        // For master admin, we should fetch available brands
+        fetchBrands()
+      }
+    }
+  }, [session])
+
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch('/api/brands')
+      if (response.ok) {
+        const data = await response.json()
+        setBrands(data.data || [])
+        // Set the first brand as default if available
+        if (data.data && data.data.length > 0) {
+          setFormData(prev => ({ ...prev, brandId: data.data[0].id }))
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch brands:', err)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,68 +107,160 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
         </div>
       )}
 
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-          상품명 *
-        </label>
-        <input
-          type="text"
-          id="name"
-          required
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          placeholder="예: 프리미엄 K-Fashion 자켓"
-        />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label htmlFor="brandId" className="block text-sm font-medium text-gray-700">
+            브랜드 *
+          </label>
+          {session?.user?.role === 'BRAND_ADMIN' ? (
+            <input
+              type="text"
+              id="brandId"
+              required
+              value={formData.brandId}
+              disabled
+              className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm sm:text-sm"
+              placeholder="브랜드 ID"
+            />
+          ) : (
+            <select
+              id="brandId"
+              required
+              value={formData.brandId}
+              onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            >
+              <option value="">브랜드를 선택하세요</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.nameKo}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
+            SKU *
+          </label>
+          <input
+            type="text"
+            id="sku"
+            required
+            value={formData.sku}
+            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="예: PROD-001"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label htmlFor="nameKo" className="block text-sm font-medium text-gray-700">
+            상품명 (한국어) *
+          </label>
+          <input
+            type="text"
+            id="nameKo"
+            required
+            value={formData.nameKo}
+            onChange={(e) => setFormData({ ...formData, nameKo: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="예: 프리미엄 셔츠"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="nameCn" className="block text-sm font-medium text-gray-700">
+            상품명 (중국어)
+          </label>
+          <input
+            type="text"
+            id="nameCn"
+            value={formData.nameCn}
+            onChange={(e) => setFormData({ ...formData, nameCn: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="예: 高级衬衫"
+          />
+        </div>
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          상품 설명
+        <label htmlFor="descriptionKo" className="block text-sm font-medium text-gray-700">
+          상품 설명 (한국어)
         </label>
         <textarea
-          id="description"
+          id="descriptionKo"
           rows={3}
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          value={formData.descriptionKo}
+          onChange={(e) => setFormData({ ...formData, descriptionKo: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
           placeholder="상품에 대한 자세한 설명을 입력하세요"
         />
       </div>
 
       <div>
-        <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-          가격 (원) *
+        <label htmlFor="descriptionCn" className="block text-sm font-medium text-gray-700">
+          상품 설명 (중국어)
         </label>
-        <input
-          type="number"
-          id="price"
-          required
-          min="0"
-          value={formData.price}
-          onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
+        <textarea
+          id="descriptionCn"
+          rows={3}
+          value={formData.descriptionCn}
+          onChange={(e) => setFormData({ ...formData, descriptionCn: e.target.value })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-          placeholder="89000"
+          placeholder="产品详细说明"
         />
       </div>
 
-      <div>
-        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
-          카테고리 *
-        </label>
-        <select
-          id="categoryId"
-          required
-          value={formData.categoryId}
-          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-        >
-          <option value="fashion">패션</option>
-          <option value="accessories">액세서리</option>
-          <option value="bags">가방</option>
-          <option value="shoes">신발</option>
-          <option value="cosmetics">화장품</option>
-        </select>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div>
+          <label htmlFor="basePrice" className="block text-sm font-medium text-gray-700">
+            가격 (원) *
+          </label>
+          <input
+            type="number"
+            id="basePrice"
+            required
+            min="0"
+            value={formData.basePrice}
+            onChange={(e) => setFormData({ ...formData, basePrice: parseInt(e.target.value) || 0 })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="89000"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="inventory" className="block text-sm font-medium text-gray-700">
+            재고 수량 *
+          </label>
+          <input
+            type="number"
+            id="inventory"
+            required
+            min="0"
+            value={formData.inventory}
+            onChange={(e) => setFormData({ ...formData, inventory: parseInt(e.target.value) || 0 })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="100"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
+            카테고리 ID
+          </label>
+          <input
+            type="text"
+            id="categoryId"
+            value={formData.categoryId}
+            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            placeholder="카테고리 ID (선택사항)"
+          />
+        </div>
       </div>
 
       <div className="flex items-center justify-end space-x-3">

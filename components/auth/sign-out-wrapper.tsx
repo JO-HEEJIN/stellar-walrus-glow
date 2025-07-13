@@ -1,10 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function SignOutWrapper({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
 
   useEffect(() => {
     // Listen for sign out events

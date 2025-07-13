@@ -6,6 +6,24 @@ AI 기반 보안 중심 한중 통합 도소매 플랫폼
 
 K-Fashion 플랫폼은 한국과 중국의 패션 브랜드와 도소매업자를 안전하고 효율적으로 연결하는 B2B 플랫폼입니다.
 
+## 최신 업데이트 (2025-07-13)
+
+✅ **완료된 기능**:
+- AWS Cognito 인증 시스템 구현
+- 역할 기반 접근 제어 (RBAC)
+- 상품 관리 (등록, 목록, 삭제)
+- 주문 관리 시스템 (상태 관리, 이력 추적)
+- 장바구니 기능
+- Rate Limiting 구현
+- 다국어 지원 (한국어/중국어)
+- 감사 로그 시스템
+
+🔧 **최근 수정사항**:
+- 상품 목록 API 응답 구조 수정
+- 상품 등록 폼 필드 업데이트
+- 상품 삭제 API 엔드포인트 추가
+- SessionProvider 설정
+
 ### 주요 기능
 
 - 🏢 **브랜드 관리**: 패션 브랜드 등록 및 관리
@@ -68,8 +86,11 @@ UPSTASH_REDIS_REST_TOKEN=your-redis-token
 # Prisma 클라이언트 생성
 npm run prisma:generate
 
-# 데이터베이스 마이그레이션 (Aurora MySQL 연결 후)
-npm run prisma:migrate
+# 데이터베이스 테이블 생성
+npx prisma db push
+
+# 테스트 데이터 생성
+npm run prisma:seed
 ```
 
 ### 4. AWS Cognito 설정
@@ -132,6 +153,33 @@ npm run prisma:studio # Prisma Studio 실행
 ## 라이선스
 
 MIT License
+
+## API 엔드포인트
+
+### 인증
+- `GET /api/auth/signin` - 로그인
+- `POST /api/auth/signout` - 로그아웃
+- `GET /api/auth/session` - 세션 확인
+
+### 상품
+- `GET /api/products` - 상품 목록 조회
+- `POST /api/products` - 상품 등록 (BRAND_ADMIN, MASTER_ADMIN)
+- `GET /api/products/[id]` - 상품 상세 조회
+- `DELETE /api/products/[id]` - 상품 삭제 (BRAND_ADMIN, MASTER_ADMIN)
+- `PATCH /api/products/[id]/inventory` - 재고 관리
+
+### 주문
+- `GET /api/orders` - 주문 목록 조회
+- `POST /api/orders` - 주문 생성
+- `GET /api/orders/[id]` - 주문 상세 조회
+- `PATCH /api/orders/[id]/status` - 주문 상태 변경
+
+### 브랜드
+- `GET /api/brands` - 브랜드 목록 조회
+
+### 사용자
+- `GET /api/users` - 사용자 목록 (MASTER_ADMIN)
+- `PATCH /api/users` - 사용자 정보 수정 (MASTER_ADMIN)
 
 ## 개발자
 

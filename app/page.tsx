@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 export default async function HomePage() {
   // Clear any stale auth cookies when landing on home page
   const cookieStore = cookies()
-  const authCookies = cookieStore.getAll().filter(cookie => 
+  cookieStore.getAll().filter(cookie => 
     cookie.name.startsWith('authjs.') || 
     cookie.name.startsWith('next-auth.')
   )

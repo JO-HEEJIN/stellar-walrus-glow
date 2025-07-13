@@ -59,10 +59,11 @@ export const authConfig: NextAuthConfig = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { email: user.email! },
-            select: { role: true, brandId: true, status: true }
+            select: { id: true, role: true, brandId: true, status: true }
           })
           
           if (dbUser) {
+            token.id = dbUser.id // Use database user ID for consistency
             token.role = dbUser.role
             token.brandId = dbUser.brandId || undefined
             token.status = dbUser.status
@@ -119,10 +120,34 @@ export const authConfig: NextAuthConfig = {
       return session
     },
 
-    // Sign in callback - simplified without database
+    // Sign in callback - create or update user in database
     async signIn({ user, account, profile }) {
-      // For now, allow all sign ins
       console.log('Sign in attempt:', { email: user.email, provider: account?.provider })
+      
+      if (user.email) {
+        try {
+          // Create or update user in database
+          await prisma.user.upsert({
+            where: { email: user.email },
+            update: {
+              name: user.name || user.email.split('@')[0],
+            },
+            create: {
+              id: user.id,
+              email: user.email,
+              name: user.name || user.email.split('@')[0],
+              role: user.email === 'master@kfashion.com' ? 'MASTER_ADMIN' : 
+                    user.email === 'brand@kfashion.com' ? 'BRAND_ADMIN' : 
+                    'BUYER',
+              status: 'ACTIVE',
+            },
+          })
+        } catch (error) {
+          console.error('Failed to create/update user:', error)
+          // Continue with sign in even if database operation fails
+        }
+      }
+      
       return true
     },
   },

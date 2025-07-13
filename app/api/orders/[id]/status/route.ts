@@ -1,0 +1,255 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
+import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
+import { Order } from '@/lib/domain/models'
+import { OrderStatus, Role } from '@/types'
+
+// Status update schema
+const statusUpdateSchema = z.object({
+  status: z.enum(['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
+  reason: z.string().max(500).optional(),
+  trackingNumber: z.string().max(100).optional(),
+})
+
+// PATCH: Update order status
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Rate limiting
+    const identifier = getIdentifier(request)
+    const { success } = await rateLimiters.api.limit(identifier)
+    
+    if (!success) {
+      throw new BusinessError(
+        ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED,
+        HttpStatus.TOO_MANY_REQUESTS
+      )
+    }
+
+    // Check authentication
+    const session = await auth()
+    if (!session) {
+      throw new BusinessError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Check role permissions - only BRAND_ADMIN and MASTER_ADMIN can update order status
+    if (!['BRAND_ADMIN', 'MASTER_ADMIN'].includes(session.user.role)) {
+      throw new BusinessError(
+        ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+        HttpStatus.FORBIDDEN
+      )
+    }
+
+    // Parse and validate request body
+    const body = await request.json()
+    const data = statusUpdateSchema.parse(body)
+
+    // Validate tracking number is provided when status is SHIPPED
+    if (data.status === OrderStatus.SHIPPED && !data.trackingNumber) {
+      throw new BusinessError(
+        ErrorCodes.ORDER_INVALID_STATUS,
+        HttpStatus.BAD_REQUEST,
+        { message: 'Tracking number is required for SHIPPED status' }
+      )
+    }
+
+    // Process status update in transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Get order with lock
+      const order = await tx.order.findUnique({
+        where: { id: params.id },
+        include: {
+          user: true,
+          items: {
+            include: {
+              product: {
+                include: { brand: true }
+              }
+            }
+          }
+        }
+      })
+
+      if (!order) {
+        throw new BusinessError(
+          ErrorCodes.ORDER_NOT_FOUND,
+          HttpStatus.NOT_FOUND
+        )
+      }
+
+      // Check brand permission for BRAND_ADMIN
+      if (session.user.role === Role.BRAND_ADMIN) {
+        // Brand admin can only update orders containing their products
+        const hasBrandProducts = order.items.some(
+          item => item.product.brandId === session.user.brandId
+        )
+        
+        if (!hasBrandProducts) {
+          throw new BusinessError(
+            ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+            HttpStatus.FORBIDDEN,
+            { message: 'You can only update orders containing your brand products' }
+          )
+        }
+      }
+
+      // Create domain model to check state transition
+      const orderModel = new Order({
+        id: order.id,
+        userId: order.userId,
+        status: order.status as OrderStatus,
+        items: order.items.map(item => ({
+          id: item.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: Number(item.price),
+        })),
+        totalAmount: Number(order.totalAmount),
+        shippingAddress: order.shippingAddress as any,
+      })
+
+      // Validate state transition
+      if (!orderModel.canTransitionTo(data.status as OrderStatus)) {
+        throw new BusinessError(
+          ErrorCodes.ORDER_INVALID_TRANSITION,
+          HttpStatus.CONFLICT,
+          {
+            currentStatus: order.status,
+            requestedStatus: data.status,
+            allowedTransitions: getValidTransitions(order.status as OrderStatus)
+          }
+        )
+      }
+
+      // Handle special cases for CANCELLED status
+      if (data.status === OrderStatus.CANCELLED) {
+        // Restore inventory for cancelled orders
+        for (const item of order.items) {
+          const product = await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              inventory: {
+                increment: item.quantity
+              }
+            }
+          })
+
+          // Update product status if it was out of stock
+          if (product.status === 'OUT_OF_STOCK' && product.inventory > 0) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { status: 'ACTIVE' }
+            })
+          }
+
+          // Audit log for inventory restoration
+          await tx.auditLog.create({
+            data: {
+              userId: session.user.id,
+              action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
+              entityType: 'Product',
+              entityId: item.productId,
+              metadata: {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                restoredQuantity: item.quantity,
+                newInventory: product.inventory,
+              }
+            }
+          })
+        }
+      }
+
+      // Update order status
+      const updatedOrder = await tx.order.update({
+        where: { id: params.id },
+        data: {
+          status: data.status,
+          // Store tracking number in paymentInfo for SHIPPED status
+          paymentInfo: data.status === OrderStatus.SHIPPED && data.trackingNumber
+            ? {
+                ...(order.paymentInfo as any || {}),
+                trackingNumber: data.trackingNumber,
+                shippedAt: new Date().toISOString()
+              }
+            : order.paymentInfo
+        },
+        include: {
+          user: true,
+          items: {
+            include: {
+              product: {
+                include: { brand: true }
+              }
+            }
+          }
+        }
+      })
+
+      // Create audit log for status change
+      await tx.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: 'ORDER_STATUS_UPDATE',
+          entityType: 'Order',
+          entityId: order.id,
+          metadata: {
+            orderNumber: order.orderNumber,
+            previousStatus: order.status,
+            newStatus: data.status,
+            reason: data.reason,
+            trackingNumber: data.trackingNumber,
+            requiresRefund: orderModel.requiresRefund() && data.status === OrderStatus.CANCELLED,
+          },
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        }
+      })
+
+      return {
+        order: updatedOrder,
+        previousStatus: order.status,
+        notification: {
+          sent: true, // In real implementation, this would be actual notification result
+          type: 'email' as const,
+          recipient: order.user.email,
+        }
+      }
+    })
+
+    // TODO: Send actual notifications (email/SMS)
+    // For now, we're just returning a mock notification status
+    if (result.order.status === OrderStatus.SHIPPED) {
+      console.log(`Would send shipping notification to ${result.order.user.email} with tracking: ${data.trackingNumber}`)
+    } else if (result.order.status === OrderStatus.CANCELLED) {
+      console.log(`Would send cancellation notification to ${result.order.user.email}`)
+    }
+
+    return NextResponse.json({
+      data: result
+    })
+  } catch (error) {
+    return createErrorResponse(error as Error, request.url)
+  }
+}
+
+// Helper function to get valid transitions
+function getValidTransitions(currentStatus: OrderStatus): OrderStatus[] {
+  const transitions: Record<OrderStatus, OrderStatus[]> = {
+    [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
+    [OrderStatus.PAID]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+    [OrderStatus.PREPARING]: [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
+    [OrderStatus.SHIPPED]: [OrderStatus.DELIVERED],
+    [OrderStatus.DELIVERED]: [],
+    [OrderStatus.CANCELLED]: []
+  }
+  return transitions[currentStatus] || []
+}
