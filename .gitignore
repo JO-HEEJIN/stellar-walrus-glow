@@ -33,6 +33,8 @@ dist-ssr
 # Build outputs
 build/
 out/
+.next/
+.vercel/
 
 # Dependencies
 node_modules/

@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Authentication info is managed by Cognito
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(BUYER)
+  status        Status    @default(ACTIVE)
+  brandId       String?
+  brand         Brand?    @relation(fields: [brandId], references: [id])
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  auditLogs     AuditLog[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Brand model
+model Brand {
+  id          String    @id @default(cuid())
+  nameKo      String
+  nameCn      String?
+  slug        String    @unique
+  description String?   @db.Text
+  logoUrl     String?
+  isActive    Boolean   @default(true)
+
+  // Relations
+  users       User[]
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// Product model
+model Product {
+  id          String        @id @default(cuid())
+  brandId     String
+  brand       Brand         @relation(fields: [brandId], references: [id])
+  sku         String        @unique
+  nameKo      String
+  nameCn      String?
+  descriptionKo String?     @db.Text
+  descriptionCn String?     @db.Text
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id])
+  status      ProductStatus @default(ACTIVE)
+  basePrice   Decimal       @db.Decimal(10, 2)
+  inventory   Int           @default(0)
+  images      Json?         // ["url1", "url2", ...]
+  options     Json?         // {"colors": [...], "sizes": [...]}
+
+  // Relations
+  orderItems  OrderItem[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([brandId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([sku])
+}
+
+// Category model
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  parentId    String?
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+
+  // Relations
+  products    Product[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+// Order model
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  shippingAddress Json        // {name, phone, address, zipCode}
+  paymentMethod   String?
+  paymentInfo     Json?       // {transactionId, paidAt, ...}
+  memo            String?     @db.Text
+
+  // Relations
+  items           OrderItem[]
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNumber])
+}
+
+// Order Item model
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  options   Json?    // {color: "red", size: "L"}
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// Audit Log model
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// Enums
+enum Role {
+  MASTER_ADMIN
+  BRAND_ADMIN
+  BUYER
+}
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
