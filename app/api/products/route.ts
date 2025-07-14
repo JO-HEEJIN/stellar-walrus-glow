@@ -87,15 +87,15 @@ export async function GET(request: NextRequest) {
   try {
     // Rate limiting
     const identifier = getIdentifier(request)
-    const { success, limit, reset, remaining } = await rateLimiters.api.limit(identifier)
+    const { success } = await rateLimiters.api.limit(identifier)
     
     if (!success) {
       return new Response('Too Many Requests', {
         status: 429,
         headers: {
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': new Date(reset).toISOString(),
+          'X-RateLimit-Limit': '10',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': new Date().toISOString(),
         },
       })
     }
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const identifier = getIdentifier(request)
-    const { success, limit, reset, remaining } = await rateLimiters.productCreate.limit(identifier)
+    const { success } = await rateLimiters.productCreate.limit(identifier)
     
     if (!success) {
       throw new BusinessError(

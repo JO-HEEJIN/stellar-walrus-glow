@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
-import { ProductStatus, Role } from '@/types'
+import { Role } from '@/types'
 
 // Inventory update schema
 const inventoryUpdateSchema = z.object({

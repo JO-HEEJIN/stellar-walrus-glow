@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@/auth'
-import { prisma } from '@/lib/prisma'
 
 // Mock data for development
-const getMockStats = (brandId: string) => {
+const getMockStats = (_brandId: string) => {
   return {
     totalProducts: 12,
     activeProducts: 10,
