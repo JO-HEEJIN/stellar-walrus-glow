@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
-import { Role } from '@/types'
+import { Role, ProductStatus } from '@/types'
 
 // Inventory update schema
 const inventoryUpdateSchema = z.object({
@@ -116,7 +116,7 @@ export async function PATCH(
         brandId: product.brandId,
         sku: product.sku,
         inventory: newInventory,
-        status: product.status,
+        status: product.status as ProductStatus,
         basePrice: Number(product.basePrice),
       })
 

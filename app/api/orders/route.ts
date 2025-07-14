@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
           brandId: product.brandId,
           sku: product.sku,
           inventory: product.inventory,
-          status: product.status,
+          status: product.status as ProductStatus,
           basePrice: Number(product.basePrice),
         })
 
