@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { auth } from '@/auth'
 
 // Mock data for development
-const getMockStats = (_brandId: string) => {
+const getMockStats = () => {
   return {
     totalProducts: 12,
     activeProducts: 10,
@@ -84,7 +84,7 @@ export async function GET(
 
     // For now, return mock data
     // In production, this would aggregate data from orders, products, etc.
-    const stats = getMockStats(brandId)
+    const stats = getMockStats()
 
     return Response.json(stats)
   } catch (error) {

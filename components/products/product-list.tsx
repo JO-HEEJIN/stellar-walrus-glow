@@ -133,7 +133,7 @@ export default function ProductList({ userRole }: ProductListProps) {
   return (
     <div>
       {/* Search and Filters */}
-      <ProductFilters onFiltersChange={handleFiltersChange} userRole={userRole} />
+      <ProductFilters onFiltersChange={handleFiltersChange} />
       
       {/* Results Summary */}
       {!loading && totalItems > 0 && (

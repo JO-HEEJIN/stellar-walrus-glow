@@ -6,7 +6,6 @@ import { debounce } from '@/lib/utils'
 
 interface ProductFiltersProps {
   onFiltersChange: (filters: FilterValues) => void
-  userRole?: string
 }
 
 export interface FilterValues {
@@ -20,7 +19,7 @@ export interface FilterValues {
   order?: string
 }
 
-export default function ProductFilters({ onFiltersChange, userRole }: ProductFiltersProps) {
+export default function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
   const [search, setSearch] = useState('')
   const [brandId, setBrandId] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -31,7 +30,6 @@ export default function ProductFilters({ onFiltersChange, userRole }: ProductFil
   const [order, setOrder] = useState('desc')
   const [showFilters, setShowFilters] = useState(false)
   const [brands, setBrands] = useState<Array<{ id: string; nameKo: string }>>([])
-  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
 
   // Fetch brands
   useEffect(() => {
@@ -46,7 +44,7 @@ export default function ProductFilters({ onFiltersChange, userRole }: ProductFil
     debounce((value: string) => {
       updateFilters({ search: value })
     }, 500),
-    []
+    [search, brandId, categoryId, status, minPrice, maxPrice, sortBy, order]
   )
 
   const updateFilters = (updates: Partial<FilterValues>) => {

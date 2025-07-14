@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, ShoppingCart, Package, Users, DollarSign, BarChart3 } from 'lucide-react'
+import { ShoppingCart, Package, Users, DollarSign } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 
 interface BrandStatsData {

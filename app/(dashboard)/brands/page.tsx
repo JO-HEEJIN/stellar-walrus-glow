@@ -16,7 +16,7 @@ export default async function BrandsPage() {
       </div>
 
       <div className="mt-8">
-        <BrandList userRole={user.role} userBrandId={user.brandId} />
+        <BrandList userBrandId={user.brandId} />
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Building2, Package, TrendingUp, Users } from 'lucide-react'
+import { Building2, Package } from 'lucide-react'
 
 interface Brand {
   id: string
@@ -18,11 +18,10 @@ interface Brand {
 }
 
 interface BrandListProps {
-  userRole: string
   userBrandId?: string
 }
 
-export default function BrandList({ userRole, userBrandId }: BrandListProps) {
+export default function BrandList({ userBrandId }: BrandListProps) {
   const [brands, setBrands] = useState<Brand[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
