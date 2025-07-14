@@ -22,7 +22,7 @@ interface ProductFormProps {
 
 export default function ProductForm({ onSuccess }: ProductFormProps) {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [brands, setBrands] = useState<Array<{ id: string; nameKo: string }>>([])
@@ -41,8 +41,10 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
   // Set brand ID based on user's role
   useEffect(() => {
     if (session?.user) {
-      if (session.user.role === 'BRAND_ADMIN' && session.user.brandId) {
-        setFormData(prev => ({ ...prev, brandId: session.user.brandId || '' }))
+      if (session.user.role === 'BRAND_ADMIN') {
+        // For testing, use the test brand ID if brandId is not set
+        const brandId = session.user.brandId || 'cmd1c568s000113ja11hjgk9a'
+        setFormData(prev => ({ ...prev, brandId }))
       } else if (session.user.role === 'MASTER_ADMIN') {
         // For master admin, we should fetch available brands
         fetchBrands()
@@ -52,7 +54,9 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
   const fetchBrands = async () => {
     try {
-      const response = await fetch('/api/brands')
+      const response = await fetch('/api/brands', {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
         setBrands(data.data || [])
@@ -71,18 +75,32 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     setError(null)
     setLoading(true)
 
+    console.log('Session status:', status)
+    console.log('Session data:', session)
+    console.log('Form data:', formData)
+
     try {
+      // Clean up form data before sending
+      const cleanedData = {
+        ...formData,
+        categoryId: formData.categoryId || null, // Use null instead of undefined for JSON
+      }
+      
+      console.log('Cleaned data being sent:', cleanedData)
+      
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        credentials: 'include',
+        body: JSON.stringify(cleanedData),
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to create product')
+        console.error('Product creation failed:', data)
+        throw new Error(data.error?.message || data.error || 'Failed to create product')
       }
 
       // Success - redirect or callback
@@ -99,6 +117,18 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     }
   }
 
+  if (status === 'loading') {
+    return <div className="text-center py-4">로딩 중...</div>
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="rounded-md bg-yellow-50 p-4">
+        <p className="text-sm text-yellow-800">로그인이 필요합니다.</p>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
@@ -106,6 +136,14 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
+
+      {/* Debug info - remove in production */}
+      <div className="rounded-md bg-gray-100 p-4 text-xs">
+        <p>Session Status: {status}</p>
+        <p>User Role: {session?.user?.role || 'N/A'}</p>
+        <p>Brand ID: {session?.user?.brandId || 'N/A'}</p>
+        <p>Form Brand ID: {formData.brandId || 'N/A'}</p>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>

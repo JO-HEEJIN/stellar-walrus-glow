@@ -16,7 +16,40 @@ const orderSearchSchema = z.object({
   endDate: z.string().optional(),
 })
 
-// GET: List orders
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get order list
+ *     description: Retrieve orders based on user role (filtered by brand/user)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, PAID, PREPARING, SHIPPED, DELIVERED, CANCELLED]
+ *     responses:
+ *       200:
+ *         description: Order list retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting

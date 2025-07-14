@@ -21,9 +21,6 @@ Please explain the functionality and code you just built out in detail. Walk me 
 
 
 
-## Project Overview
-This is a React application deployed on Vercel.
-
 ## Commands
 ### Development
 ```bash

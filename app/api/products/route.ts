@@ -14,11 +14,75 @@ const searchSchema = z.object({
   brandId: z.string().optional(),
   categoryId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'OUT_OF_STOCK']).optional(),
-  sortBy: z.enum(['createdAt', 'price', 'name']).default('createdAt'),
+  sortBy: z.enum(['createdAt', 'basePrice', 'nameKo']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
 
-// GET: Product list with search/filter
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Get product list
+ *     description: Retrieve a paginated list of products with optional filters
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by name or SKU
+ *       - in: query
+ *         name: brandId
+ *         schema:
+ *           type: string
+ *         description: Filter by brand ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE, OUT_OF_STOCK]
+ *         description: Filter by product status
+ *     responses:
+ *       200:
+ *         description: Product list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Product'
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalItems:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *       429:
+ *         description: Too many requests
+ */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
@@ -96,14 +160,95 @@ const createProductSchema = z.object({
   nameCn: z.string().max(200).optional(),
   descriptionKo: z.string().max(5000).optional(),
   descriptionCn: z.string().max(5000).optional(),
-  categoryId: z.string().optional(),
+  categoryId: z.string().nullable().optional(),
   basePrice: z.number().positive(),
   inventory: z.number().int().min(0),
   images: z.array(z.string().url()).max(10).optional(),
   options: z.record(z.array(z.string())).optional(),
 })
 
-// POST: Create new product
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Create a new product
+ *     description: Create a new product (requires BRAND_ADMIN or MASTER_ADMIN role)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - brandId
+ *               - sku
+ *               - nameKo
+ *               - basePrice
+ *               - inventory
+ *             properties:
+ *               brandId:
+ *                 type: string
+ *                 description: Brand ID
+ *               sku:
+ *                 type: string
+ *                 description: Stock Keeping Unit - unique identifier
+ *                 maxLength: 50
+ *               nameKo:
+ *                 type: string
+ *                 description: Product name in Korean
+ *                 maxLength: 200
+ *               nameCn:
+ *                 type: string
+ *                 description: Product name in Chinese
+ *                 maxLength: 200
+ *               descriptionKo:
+ *                 type: string
+ *                 description: Product description in Korean
+ *                 maxLength: 5000
+ *               basePrice:
+ *                 type: number
+ *                 description: Base price in KRW
+ *                 minimum: 0
+ *               inventory:
+ *                 type: integer
+ *                 description: Initial inventory quantity
+ *                 minimum: 0
+ *               categoryId:
+ *                 type: string
+ *                 description: Category ID (optional)
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uri
+ *                 maxItems: 10
+ *                 description: Product image URLs
+ *     responses:
+ *       201:
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Invalid request data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Insufficient permissions
+ *       409:
+ *         description: SKU already exists
+ */
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -175,6 +320,7 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         ...data,
+        categoryId: data.categoryId || null, // Convert empty string to null
         status: data.inventory > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK,
       },
       include: {
@@ -202,6 +348,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: product }, { status: 201 })
   } catch (error) {
+    console.error('POST /api/products error:', error)
     return createErrorResponse(error as Error, request.url)
   }
 }

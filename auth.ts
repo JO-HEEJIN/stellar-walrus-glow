@@ -54,6 +54,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id
         token.email = user.email
+        token.sub = user.id // Ensure sub is set
         
         // Try to get user from database, but don't fail if DB is not available
         try {
@@ -96,6 +97,19 @@ export const authConfig: NextAuthConfig = {
           token.role = Role.MASTER_ADMIN
         } else if (user.email === 'brand@kfashion.com') {
           token.role = Role.BRAND_ADMIN
+          // Get the test brand ID for brand admin
+          if (!token.brandId) {
+            try {
+              const testBrand = await prisma.brand.findFirst({
+                where: { slug: 'test-brand' }
+              })
+              if (testBrand) {
+                token.brandId = testBrand.id
+              }
+            } catch (e) {
+              console.log('Could not fetch test brand')
+            }
+          }
         } else if (!token.role) {
           // Only set BUYER if no role was assigned yet
           token.role = Role.BUYER
@@ -113,7 +127,8 @@ export const authConfig: NextAuthConfig = {
     // Session callback - runs whenever session is checked
     async session({ session, token }) {
       if (session?.user) {
-        session.user.id = token.id as string
+        // Ensure we have a user ID
+        session.user.id = token.id as string || token.sub as string
         session.user.role = token.role as string
         session.user.brandId = token.brandId as string | undefined
       }
@@ -122,7 +137,12 @@ export const authConfig: NextAuthConfig = {
 
     // Sign in callback - create or update user in database
     async signIn({ user, account, profile }) {
-      console.log('Sign in attempt:', { email: user.email, provider: account?.provider })
+      console.log('Sign in attempt:', { 
+        email: user.email, 
+        provider: account?.provider,
+        userId: user.id,
+        hasAccount: !!account
+      })
       
       if (user.email) {
         try {

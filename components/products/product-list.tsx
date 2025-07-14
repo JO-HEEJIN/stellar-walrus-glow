@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
 import { ShoppingCart } from 'lucide-react'
+import ProductFilters, { FilterValues } from './product-filters'
 
 interface Product {
   id: string
@@ -32,30 +33,53 @@ export default function ProductList({ userRole }: ProductListProps) {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [filters, setFilters] = useState<FilterValues>({})
   const addItem = useCartStore((state) => state.addItem)
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/products?page=${page}&limit=10`)
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch products')
+  const loadProducts = useCallback(async () => {
+    try {
+      setLoading(true)
+      
+      // Build query string
+      const params = new URLSearchParams()
+      params.append('page', page.toString())
+      params.append('limit', '10')
+      
+      // Add filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, value.toString())
         }
-
-        const data = await response.json()
-        setProducts(data.data || [])
-        setTotalPages(data.meta?.totalPages || 1)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred')
-      } finally {
-        setLoading(false)
+      })
+      
+      const response = await fetch(`/api/products?${params.toString()}`, {
+        credentials: 'include',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch products')
       }
+
+      const data = await response.json()
+      setProducts(data.data || [])
+      setTotalPages(data.meta?.totalPages || 1)
+      setTotalItems(data.meta?.totalItems || 0)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setLoading(false)
     }
-    
+  }, [page, filters])
+
+  useEffect(() => {
     loadProducts()
-  }, [page])
+  }, [loadProducts])
+
+  const handleFiltersChange = (newFilters: FilterValues) => {
+    setFilters(newFilters)
+    setPage(1) // Reset to first page when filters change
+  }
 
 
   const handleDelete = async (productId: string) => {
@@ -64,16 +88,24 @@ export default function ProductList({ userRole }: ProductListProps) {
     try {
       const response = await fetch(`/api/products/${productId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete product')
+        const data = await response.json()
+        if (response.status === 409) {
+          // Product is in use
+          alert('이 상품은 주문에서 사용 중이므로 삭제할 수 없습니다.')
+          return
+        }
+        throw new Error(data.error?.message || 'Failed to delete product')
       }
 
       // Refresh the list
+      alert('상품이 삭제되었습니다.')
       setPage(1) // This will trigger useEffect to reload
     } catch (err) {
-      alert('상품 삭제에 실패했습니다.')
+      alert(err instanceof Error ? err.message : '상품 삭제에 실패했습니다.')
     }
   }
 
@@ -100,6 +132,16 @@ export default function ProductList({ userRole }: ProductListProps) {
 
   return (
     <div>
+      {/* Search and Filters */}
+      <ProductFilters onFiltersChange={handleFiltersChange} userRole={userRole} />
+      
+      {/* Results Summary */}
+      {!loading && totalItems > 0 && (
+        <div className="mb-4 text-sm text-gray-600">
+          총 {totalItems}개의 상품이 있습니다.
+        </div>
+      )}
+      
       <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
         <table className="min-w-full divide-y divide-gray-300">
           <thead className="bg-gray-50">

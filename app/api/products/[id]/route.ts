@@ -4,7 +4,33 @@ import { prisma } from '@/lib/prisma'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Role } from '@/types'
 
-// GET: Get single product
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Get product details
+ *     description: Retrieve details of a specific product
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Product details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       404:
+ *         description: Product not found
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -31,7 +57,34 @@ export async function GET(
   }
 }
 
-// DELETE: Delete product
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: Delete a product
+ *     description: Delete a product (requires BRAND_ADMIN or MASTER_ADMIN role)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID to delete
+ *     responses:
+ *       204:
+ *         description: Product deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Insufficient permissions or not your brand's product
+ *       404:
+ *         description: Product not found
+ *       409:
+ *         description: Product is in use and cannot be deleted
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

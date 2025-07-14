@@ -22,34 +22,37 @@ export default function CartPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           items: items.map(item => ({
             productId: item.productId,
-            productName: item.productName,
             quantity: item.quantity,
-            price: item.price,
           })),
           shippingAddress: {
             // In a real app, this would come from a form
-            street: '서울시 강남구',
-            city: '서울',
-            postalCode: '12345',
-            country: 'KR',
+            name: '홍길동',
+            phone: '010-1234-5678',
+            address: '서울시 강남구 테헤란로 123',
+            addressDetail: '456호',
+            zipCode: '06234',
           },
           paymentMethod: 'CARD',
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create order')
+        const errorData = await response.json()
+        console.error('Order creation failed:', errorData)
+        throw new Error(errorData.error?.message || 'Failed to create order')
       }
 
-      const order = await response.json()
+      const result = await response.json()
       clearCart()
-      alert(`주문이 완료되었습니다. 주문번호: ${order.orderNumber}`)
+      alert(`주문이 완료되었습니다. 주문번호: ${result.data.orderNumber}`)
       router.push('/orders')
     } catch (error) {
-      alert('주문 처리 중 오류가 발생했습니다.')
+      console.error('Order error:', error)
+      alert(error instanceof Error ? error.message : '주문 처리 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }

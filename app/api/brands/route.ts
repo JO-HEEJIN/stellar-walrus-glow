@@ -3,7 +3,30 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse } from '@/lib/errors'
 
-// GET: List all active brands
+/**
+ * @swagger
+ * /api/brands:
+ *   get:
+ *     summary: Get brand list
+ *     description: Retrieve all active brands (filtered by user's brand for BRAND_ADMIN)
+ *     tags: [Brands]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Brand list retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Brand'
+ *       401:
+ *         description: Unauthorized
+ */
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
@@ -25,6 +48,13 @@ export async function GET(request: NextRequest) {
         nameCn: true,
         slug: true,
         description: true,
+        logoUrl: true,
+        isActive: true,
+        _count: {
+          select: {
+            products: true,
+          },
+        },
       },
       orderBy: { nameKo: 'asc' },
     })
