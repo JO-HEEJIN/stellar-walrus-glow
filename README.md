@@ -195,3 +195,7 @@ MIT License
 
 - **프로젝트 리드**: 조희진
 - **AI 어시스턴트**: Claude Code
+
+---
+
+**Latest deployment:** Ready for Vercel with Next.js 14 configuration
