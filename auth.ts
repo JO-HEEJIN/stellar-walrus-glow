@@ -30,6 +30,8 @@ export const authConfig: NextAuthConfig = {
       },
       // Add wellKnown endpoint for better compatibility
       wellKnown: `${process.env.COGNITO_ISSUER}/.well-known/openid-configuration`,
+      // Explicitly set check to none to avoid PKCE issues
+      checks: ['state'],
     }),
   ],
   session: {
@@ -175,6 +177,34 @@ export const authConfig: NextAuthConfig = {
     signIn: '/login',
     error: '/auth/error',
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    callbackUrl: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.callback-url' : 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+  },
   logger: {
     error(error) {
       console.error('Auth error:', error)
@@ -194,7 +224,7 @@ export const authConfig: NextAuthConfig = {
       const token = 'token' in params ? params.token : undefined
       console.log('User signed out:', token?.email)
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       console.log('User signed in:', user?.email)
     },
   },
