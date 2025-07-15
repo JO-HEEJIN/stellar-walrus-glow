@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // For CloudFront + S3 deployment
+  output: process.env.BUILD_STATIC === 'true' ? 'export' : 'standalone',
+  trailingSlash: true,
+  
   // Enable experimental features
   experimental: {
     // Server Components are now stable in Next.js 14

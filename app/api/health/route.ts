@@ -15,12 +15,14 @@ export async function GET() {
     environment: process.env.NODE_ENV || 'development',
   }
 
-  // Check database connection
-  try {
-    await prisma.$queryRaw`SELECT 1`
-    health.services.database = true
-  } catch (error) {
-    console.warn('Database health check failed:', error)
+  // Skip database checks during build time
+  if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV === 'preview') {
+    try {
+      await prisma.$queryRaw`SELECT 1`
+      health.services.database = true
+    } catch (error) {
+      console.warn('Database health check failed:', error)
+    }
   }
 
   // Check Redis connection
