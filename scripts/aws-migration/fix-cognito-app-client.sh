@@ -56,7 +56,6 @@ aws cognito-idp update-user-pool-client \
     --allowed-o-auth-scopes "openid" "email" "profile" \
     --supported-identity-providers "COGNITO" \
     --explicit-auth-flows "ALLOW_ADMIN_USER_PASSWORD_AUTH" "ALLOW_USER_PASSWORD_AUTH" "ALLOW_USER_SRP_AUTH" "ALLOW_REFRESH_TOKEN_AUTH" \
-    --generate-secret \
     --allowed-o-auth-flows-user-pool-client
 
 if [[ $? -eq 0 ]]; then

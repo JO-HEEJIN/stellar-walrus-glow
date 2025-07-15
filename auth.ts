@@ -30,8 +30,8 @@ export const authConfig: NextAuthConfig = {
       },
       // Add wellKnown endpoint for better compatibility
       wellKnown: `${process.env.COGNITO_ISSUER}/.well-known/openid-configuration`,
-      // Explicitly set check to none to avoid PKCE issues
-      checks: ['state'],
+      // Disable PKCE to avoid cookie issues
+      checks: [],
     }),
   ],
   session: {
