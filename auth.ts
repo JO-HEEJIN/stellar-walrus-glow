@@ -93,9 +93,9 @@ export const authConfig: NextAuthConfig = {
       
       // Set role based on email for testing (this takes priority)
       if (user?.email) {
-        if (user.email === 'master@kfashion.com') {
+        if (user.email === 'master@k-fashions.com') {
           token.role = Role.MASTER_ADMIN
-        } else if (user.email === 'brand@kfashion.com') {
+        } else if (user.email === 'brand@k-fashions.com') {
           token.role = Role.BRAND_ADMIN
           // Get the test brand ID for brand admin
           if (!token.brandId) {
@@ -156,8 +156,8 @@ export const authConfig: NextAuthConfig = {
               id: user.id,
               email: user.email,
               name: user.name || user.email.split('@')[0],
-              role: user.email === 'master@kfashion.com' ? 'MASTER_ADMIN' : 
-                    user.email === 'brand@kfashion.com' ? 'BRAND_ADMIN' : 
+              role: user.email === 'master@k-fashions.com' ? 'MASTER_ADMIN' : 
+                    user.email === 'brand@k-fashions.com' ? 'BRAND_ADMIN' : 
                     'BUYER',
               status: 'ACTIVE',
             },
