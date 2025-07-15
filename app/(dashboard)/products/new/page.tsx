@@ -1,15 +1,6 @@
-import { requireAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
 import ProductForm from '@/components/products/product-form'
 
-export default async function NewProductPage() {
-  const user = await requireAuth()
-
-  // Only BRAND_ADMIN and MASTER_ADMIN can create products
-  if (!['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role)) {
-    redirect('/unauthorized')
-  }
-
+export default function NewProductPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">

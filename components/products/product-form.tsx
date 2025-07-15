@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
 
 interface ProductFormData {
   brandId: string
@@ -22,7 +21,7 @@ interface ProductFormProps {
 
 export default function ProductForm({ onSuccess }: ProductFormProps) {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  // TODO: Replace with cookie-based auth if needed
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [brands, setBrands] = useState<Array<{ id: string; nameKo: string }>>([])

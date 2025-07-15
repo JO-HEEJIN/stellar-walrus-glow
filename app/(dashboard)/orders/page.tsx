@@ -1,9 +1,6 @@
-import { requireAuth } from '@/lib/auth'
 import OrderManagement from '@/components/orders/order-management'
 
-export default async function OrdersPage() {
-  const user = await requireAuth()
-
+export default function OrdersPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -16,7 +13,7 @@ export default async function OrdersPage() {
       </div>
 
       <div className="mt-8">
-        <OrderManagement userRole={user.role} />
+        <OrderManagement />
       </div>
     </div>
   )

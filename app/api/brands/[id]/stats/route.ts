@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server'
-import { auth } from '@/auth'
 
 // Mock data for development
 const getMockStats = () => {
@@ -57,30 +56,17 @@ const getMockStats = () => {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return Response.json(
-        { error: { message: 'Unauthorized' } },
-        { status: 401 }
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
-    const brandId = params.id
-
-    // Check permissions - only brand owners and master admins can view stats
-    const isOwnBrand = session.user.brandId === brandId
-    const isMasterAdmin = session.user.role === 'MASTER_ADMIN'
-
-    if (!isOwnBrand && !isMasterAdmin) {
-      return Response.json(
-        { error: { message: 'Forbidden' } },
-        { status: 403 }
-      )
-    }
+    // Permission checks removed for now
+    // TODO: Add proper permission checks when auth system is set up
+    // TODO: Use params.id to fetch brand-specific stats
+    console.log('Getting stats for brand:', params.id)
 
     // For now, return mock data
     // In production, this would aggregate data from orders, products, etc.

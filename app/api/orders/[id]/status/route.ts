@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Order } from '@/lib/domain/models'
-import { OrderStatus, Role } from '@/types'
+import { OrderStatus } from '@/types'
 
 // Status update schema
 const statusUpdateSchema = z.object({
@@ -31,22 +30,11 @@ export async function PATCH(
       )
     }
 
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INVALID_CREDENTIALS,
-        HttpStatus.UNAUTHORIZED
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
-    // Check role permissions - only BRAND_ADMIN and MASTER_ADMIN can update order status
-    if (!['BRAND_ADMIN', 'MASTER_ADMIN'].includes(session.user.role)) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
-        HttpStatus.FORBIDDEN
-      )
-    }
+    // Role permission checks removed for now
+    // TODO: Add proper role-based permission checks when auth system is set up
 
     // Parse and validate request body
     const body = await request.json()
@@ -85,21 +73,8 @@ export async function PATCH(
         )
       }
 
-      // Check brand permission for BRAND_ADMIN
-      if (session.user.role === Role.BRAND_ADMIN) {
-        // Brand admin can only update orders containing their products
-        const hasBrandProducts = order.items.some(
-          item => item.product.brandId === session.user.brandId
-        )
-        
-        if (!hasBrandProducts) {
-          throw new BusinessError(
-            ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
-            HttpStatus.FORBIDDEN,
-            { message: 'You can only update orders containing your brand products' }
-          )
-        }
-      }
+      // Brand permission check removed for now
+      // TODO: Add proper brand permission checks when auth system is set up
 
       // Create domain model to check state transition
       const orderModel = new Order({
@@ -153,7 +128,7 @@ export async function PATCH(
           // Audit log for inventory restoration
           await tx.auditLog.create({
             data: {
-              userId: session.user.id,
+              userId: 'system', // TODO: Replace with actual user ID when auth is set up
               action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
               entityType: 'Product',
               entityId: item.productId,
@@ -197,7 +172,7 @@ export async function PATCH(
       // Create audit log for status change
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: 'system', // TODO: Replace with actual user ID when auth is set up
           action: 'ORDER_STATUS_UPDATE',
           entityType: 'Order',
           entityId: order.id,

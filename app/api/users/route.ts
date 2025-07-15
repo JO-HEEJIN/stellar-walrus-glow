@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
-    // Only MASTER_ADMIN can list all users
-    if (session.user.role !== 'MASTER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    // Role permission checks removed for now
+    // TODO: Add proper role-based permission checks when auth system is set up
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
@@ -74,16 +68,11 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
-    // Only MASTER_ADMIN can update users
-    if (session.user.role !== 'MASTER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    // Role permission checks removed for now
+    // TODO: Add proper role-based permission checks when auth system is set up
 
     // Parse request body
     const body = await request.json()
@@ -113,7 +102,7 @@ export async function PATCH(request: NextRequest) {
       id: userId,
       ...updates,
       updatedAt: new Date().toISOString(),
-      updatedBy: session.user.id,
+      updatedBy: 'system', // TODO: Replace with actual user ID when auth is set up
     }
 
     return NextResponse.json(mockUpdatedUser)

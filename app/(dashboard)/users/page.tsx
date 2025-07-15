@@ -1,14 +1,4 @@
-import { requireAuth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
-
-export default async function UsersPage() {
-  const user = await requireAuth()
-
-  // Only MASTER_ADMIN can access this page
-  if (user.role !== 'MASTER_ADMIN') {
-    redirect('/unauthorized')
-  }
-
+export default function UsersPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -62,10 +52,10 @@ export default async function UsersPage() {
                   관리자
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {user.email}
+                  admin@example.com
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {user.role}
+                  MASTER_ADMIN
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   플랫폼 관리자

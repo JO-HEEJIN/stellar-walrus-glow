@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
-import { Role } from '@/types'
 
 /**
  * @swagger
@@ -90,22 +88,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INVALID_CREDENTIALS,
-        HttpStatus.UNAUTHORIZED
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
-    // Check role permissions
-    if (!['BRAND_ADMIN', 'MASTER_ADMIN'].includes(session.user.role)) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
-        HttpStatus.FORBIDDEN
-      )
-    }
+    // Role permission checks removed for now
+    // TODO: Add proper role-based permission checks when auth system is set up
 
     // Get the product first to check ownership
     const product = await prisma.product.findUnique({
@@ -120,13 +107,8 @@ export async function DELETE(
       )
     }
 
-    // For BRAND_ADMIN, ensure they can only delete their own brand's products
-    if (session.user.role === Role.BRAND_ADMIN && session.user.brandId !== product.brandId) {
-      throw new BusinessError(
-        ErrorCodes.PRODUCT_BRAND_MISMATCH,
-        HttpStatus.FORBIDDEN
-      )
-    }
+    // Brand ownership check removed for now
+    // TODO: Add proper brand ownership validation when auth system is set up
 
     // Check if product is used in any orders
     const orderCount = await prisma.orderItem.count({
@@ -149,7 +131,7 @@ export async function DELETE(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: 'system', // TODO: Replace with actual user ID when auth is set up
         action: 'PRODUCT_DELETE',
         entityType: 'Product',
         entityId: params.id,

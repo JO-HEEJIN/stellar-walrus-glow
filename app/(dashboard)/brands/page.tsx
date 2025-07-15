@@ -1,9 +1,6 @@
-import { requireAuth } from '@/lib/auth'
 import BrandList from '@/components/brands/brand-list'
 
-export default async function BrandsPage() {
-  const user = await requireAuth()
-
+export default function BrandsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -16,7 +13,7 @@ export default async function BrandsPage() {
       </div>
 
       <div className="mt-8">
-        <BrandList userBrandId={user.brandId} />
+        <BrandList />
       </div>
     </div>
   )

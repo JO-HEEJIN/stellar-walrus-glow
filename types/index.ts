@@ -29,7 +29,9 @@ export enum OrderStatus {
 // Interfaces
 export interface User {
   id: string
-  email: string
+  username: string        // 새로운 필드: kf001, kf002 형태의 고유 아이디
+  email: string          // 실제 사용자 이메일
+  systemEmail: string    // 시스템 이메일: username@k-fashions.com
   name?: string
   role: Role
   status: UserStatus
@@ -148,8 +150,14 @@ export interface RegisterFormData {
 }
 
 export interface LoginFormData {
-  email: string
+  username: string      // 변경: 아이디로 로그인
   password: string
+}
+
+// 아이디 찾기용 인터페이스
+export interface FindUsernameFormData {
+  name: string
+  email: string
 }
 
 export interface ProductFormData {

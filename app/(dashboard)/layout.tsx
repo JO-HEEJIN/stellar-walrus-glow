@@ -1,14 +1,66 @@
-import { requireAuth } from '@/lib/auth'
+'use client'
+
 import Link from 'next/link'
-import SignOutButton from '@/components/auth/sign-out-button'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import CartButton from '@/components/cart/cart-button'
 
-export default async function DashboardLayout({
+interface User {
+  username: string
+  role: 'MASTER_ADMIN' | 'BRAND_ADMIN' | 'BUYER'
+}
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const user = await requireAuth()
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data.user)
+        } else {
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        router.push('/login')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      localStorage.removeItem('token')
+      router.push('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">로딩 중...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,9 +129,14 @@ export default async function DashboardLayout({
                   </div>
                 )}
                 <div className="mr-3 text-sm text-gray-600">
-                  {user.email}
+                  {user.username}
                 </div>
-                <SignOutButton />
+                <button 
+                  onClick={handleLogout}
+                  className="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                >
+                  로그아웃
+                </button>
               </div>
             </div>
           </div>

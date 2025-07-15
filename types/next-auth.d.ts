@@ -7,6 +7,7 @@ declare module "next-auth" {
       id: string
       role: string
       brandId?: string
+      username?: string
     } & DefaultSession["user"]
   }
 
@@ -14,6 +15,7 @@ declare module "next-auth" {
     id: string
     role: string
     brandId?: string
+    username?: string
   }
 }
 
@@ -22,6 +24,7 @@ declare module "next-auth/jwt" {
     id: string
     role: string
     brandId?: string
+    username?: string
     refreshToken?: string
   }
 }

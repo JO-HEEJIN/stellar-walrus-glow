@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 
 const updateBrandSchema = z.object({
@@ -14,17 +13,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return Response.json(
-        { error: { message: 'Unauthorized' } },
-        { status: 401 }
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
     const brandId = params.id
 
-    // Check permissions - only brand admins/owners and master admins can update
+    // Permission checks removed for now
+    // TODO: Add proper permission checks when auth system is set up
     const brand = await prisma.brand.findUnique({
       where: { id: brandId },
     })
@@ -36,15 +31,8 @@ export async function PATCH(
       )
     }
 
-    const isOwnBrand = session.user.brandId === brandId
-    const isMasterAdmin = session.user.role === 'MASTER_ADMIN'
-
-    if (!isOwnBrand && !isMasterAdmin) {
-      return Response.json(
-        { error: { message: 'Forbidden' } },
-        { status: 403 }
-      )
-    }
+    // Brand ownership and role checks removed for now
+    // TODO: Add proper brand ownership validation when auth system is set up
 
     const body = await request.json()
     const validatedData = updateBrandSchema.parse(body)

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
 import { rateLimiters, getIdentifier, rateLimitResponse } from '@/lib/rate-limit'
 
 export async function middleware(request: NextRequest) {
@@ -32,17 +31,16 @@ export async function middleware(request: NextRequest) {
   
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval'" : "'strict-dynamic'"};
+    script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval' 'unsafe-inline'" : "'strict-dynamic'"};
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self';
     object-src 'none';
     base-uri 'self';
-    form-action 'self' https://cognito-idp.ap-northeast-1.amazonaws.com https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com;
+    form-action 'self' https://cognito-idp.us-east-2.amazonaws.com;
     frame-ancestors 'none';
-    connect-src 'self' https://cognito-idp.ap-northeast-1.amazonaws.com https://*.amazoncognito.com https://ap-northeast-1xv5gzrnik.auth.ap-northeast-1.amazoncognito.com;
-    block-all-mixed-content;
-    upgrade-insecure-requests;
+    connect-src 'self' https://cognito-idp.us-east-2.amazonaws.com https://*.amazoncognito.com;
+    ${isDev ? '' : 'block-all-mixed-content; upgrade-insecure-requests;'}
   `.replace(/\s{2,}/g, ' ').trim()
 
   // 3. Create response with security headers
@@ -52,38 +50,15 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Content-Security-Policy', cspHeader)
   response.headers.set('X-Nonce', nonce)
 
-  // 4. Define protected routes
-  const protectedPaths = ['/admin', '/master', '/dashboard', '/orders']
-  const authPaths = ['/login', '/register']
-  const isProtectedPath = protectedPaths.some(p => path.startsWith(p))
-  const isAuthPath = authPaths.some(p => path.startsWith(p))
-
-  // 5. Get authentication token
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET!,
-  })
-
-  // 6. Redirect authenticated users away from auth pages
-  if (isAuthPath && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  // 4. Skip auth middleware for logout-redirect page
+  if (path === '/logout-redirect') {
+    return response
   }
 
-  // 7. Protect authenticated routes
-  if (isProtectedPath && !token) {
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('callbackUrl', request.url)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // 8. Role-based access control
-  if (path.startsWith('/master') && token?.role !== 'MASTER_ADMIN') {
-    return NextResponse.redirect(new URL('/unauthorized', request.url))
-  }
-
-  if (path.startsWith('/admin') && !['BRAND_ADMIN', 'MASTER_ADMIN'].includes(token?.role as string)) {
-    return NextResponse.redirect(new URL('/unauthorized', request.url))
-  }
+  // Skip auth middleware for now - will be implemented later
+  // if (path.startsWith('/dashboard') || path.startsWith('/products') || path.startsWith('/orders')) {
+  //   // TODO: Implement authentication
+  // }
 
   return response
 }

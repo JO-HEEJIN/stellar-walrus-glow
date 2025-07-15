@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Authentication</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 8px; }
+        button { padding: 10px 20px; margin-right: 10px; }
+        .result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Test Cognito Authentication</h1>
+    
+    <div>
+        <h2>1. Create Test User</h2>
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" id="createUsername" placeholder="kf001" />
+        </div>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="createEmail" placeholder="test@k-fashions.com" />
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="createPassword" placeholder="TempPass123!" />
+        </div>
+        <button id="createBtn">Create User</button>
+        <div id="createResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div>
+        <h2>2. Test Login</h2>
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" id="loginUsername" placeholder="kf001" />
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="loginPassword" placeholder="TempPass123!" />
+        </div>
+        <button id="loginBtn">Login</button>
+        <div id="loginResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div>
+        <h2>3. Test Token Validation</h2>
+        <button id="meBtn">Get Current User</button>
+        <div id="meResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div>
+        <h2>4. Test Logout</h2>
+        <button id="logoutBtn">Logout</button>
+        <div id="logoutResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script src="/test-auth.js"></script>
+</body>
+</html>

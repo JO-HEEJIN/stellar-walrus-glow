@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
@@ -63,36 +62,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INVALID_CREDENTIALS,
-        HttpStatus.UNAUTHORIZED
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const query = orderSearchSchema.parse(Object.fromEntries(searchParams))
 
-    // Build where clause based on role
+    // Build where clause - show all orders for now
     const where: any = {}
     
-    // Filter by user role
-    if (session.user.role === Role.BUYER) {
-      where.userId = session.user.id
-    } else if (session.user.role === Role.BRAND_ADMIN && session.user.brandId) {
-      // Brand admin sees orders containing their products
-      where.items = {
-        some: {
-          product: {
-            brandId: session.user.brandId
-          }
-        }
-      }
-    }
-    // MASTER_ADMIN sees all orders
+    // User role filtering removed for now
+    // TODO: Add proper role-based filtering when auth system is set up
 
     // Add filters
     if (query.status) where.status = query.status
@@ -174,14 +155,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check authentication
-    const session = await auth()
-    if (!session) {
-      throw new BusinessError(
-        ErrorCodes.AUTH_INVALID_CREDENTIALS,
-        HttpStatus.UNAUTHORIZED
-      )
-    }
+    // Authentication removed for now
+    // TODO: Add proper authentication when auth system is set up
 
     // Parse and validate request body
     const body = await request.json()
@@ -242,7 +217,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Calculate price with discounts
-        const price = productModel.calculatePrice(item.quantity, session.user.role as Role)
+        const price = productModel.calculatePrice(item.quantity, Role.BUYER)
         
         orderItems.push({
           productId: item.productId,
@@ -268,7 +243,7 @@ export async function POST(request: NextRequest) {
       // 4. Create order
       const order = await tx.order.create({
         data: {
-          userId: session.user.id,
+          userId: 'system', // TODO: Replace with actual user ID when auth is set up
           status: OrderStatus.PENDING,
           totalAmount,
           shippingAddress: data.shippingAddress,
@@ -306,7 +281,7 @@ export async function POST(request: NextRequest) {
         // Audit log for inventory change
         await tx.auditLog.create({
           data: {
-            userId: session.user.id,
+            userId: 'system', // TODO: Replace with actual user ID when auth is set up
             action: 'INVENTORY_DECREASE_FOR_ORDER',
             entityType: 'Product',
             entityId: item.productId,
@@ -324,7 +299,7 @@ export async function POST(request: NextRequest) {
       // 6. Audit log for order creation
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: 'system', // TODO: Replace with actual user ID when auth is set up
           action: 'ORDER_CREATE',
           entityType: 'Order',
           entityId: order.id,
