@@ -187,7 +187,7 @@ export interface ShippingAddress {
 }
 
 // Constants
-export const MIN_ORDER_AMOUNT = 50000 // 최소 주문 금액 5만원
+export const MIN_ORDER_AMOUNT = 10000 // 최소 주문 금액 1만원
 export const MAX_PRODUCT_IMAGES = 10 // 상품 이미지 최대 개수
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 

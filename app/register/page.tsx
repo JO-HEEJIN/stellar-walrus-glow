@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [role, setRole] = useState<'BUYER' | 'BRAND_ADMIN'>('BUYER')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -30,7 +31,7 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, role }),
       })
 
       const data = await response.json()
@@ -39,8 +40,14 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Registration failed')
       }
 
-      // Redirect to login page
-      router.push('/login?message=회원가입이 완료되었습니다. 로그인해주세요.')
+      // Check if user needs email confirmation
+      if (data.needsConfirmation || data.message?.includes('이메일 인증')) {
+        // Normal signup - needs email confirmation
+        router.push(`/confirm-email?username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`)
+      } else {
+        // Admin created user - can login directly
+        router.push('/login?message=회원가입이 완료되었습니다. 로그인해주세요.')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -119,6 +126,40 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              계정 유형
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setRole('BUYER')}
+                className={`flex flex-col items-center p-4 border-2 rounded-lg transition-all ${
+                  role === 'BUYER'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <div className="text-2xl mb-2">🛒</div>
+                <div className="font-medium">바이어</div>
+                <div className="text-xs text-gray-500 mt-1">상품 구매</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('BRAND_ADMIN')}
+                className={`flex flex-col items-center p-4 border-2 rounded-lg transition-all ${
+                  role === 'BRAND_ADMIN'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <div className="text-2xl mb-2">🏢</div>
+                <div className="font-medium">브랜드</div>
+                <div className="text-xs text-gray-500 mt-1">상품 판매</div>
+              </button>
+            </div>
           </div>
 
           {error && (

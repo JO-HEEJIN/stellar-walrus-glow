@@ -6,6 +6,7 @@ import { OrderStatus, Role } from '@/types'
 
 interface OrderManagementProps {
   userRole: string
+  filters?: any
 }
 
 const statusColors = {
@@ -26,7 +27,7 @@ const statusLabels = {
   CANCELLED: '취소됨',
 }
 
-export default function OrderManagement({ userRole }: OrderManagementProps) {
+export default function OrderManagement({ userRole, filters }: OrderManagementProps) {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,12 +46,23 @@ export default function OrderManagement({ userRole }: OrderManagementProps) {
 
   useEffect(() => {
     fetchOrders()
-  }, [])
+  }, [filters])
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/orders')
+      
+      // Build query parameters from filters
+      const params = new URLSearchParams()
+      if (filters?.status) params.append('status', filters.status)
+      if (filters?.startDate) params.append('startDate', filters.startDate)
+      if (filters?.endDate) params.append('endDate', filters.endDate)
+      if (filters?.search) params.append('search', filters.search)
+      if (filters?.brandId) params.append('brandId', filters.brandId)
+      
+      const response = await fetch(`/api/orders?${params.toString()}`, {
+        credentials: 'include',
+      })
       
       if (!response.ok) {
         throw new Error('Failed to fetch orders')

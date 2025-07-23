@@ -31,7 +31,7 @@ export interface User {
   id: string
   username: string        // 새로운 필드: kf001, kf002 형태의 고유 아이디
   email: string          // 실제 사용자 이메일
-  systemEmail: string    // 시스템 이메일: username@k-fashions.com
+  systemEmail: string    // 시스템 이메일: username@kfashion.com
   name?: string
   role: Role
   status: UserStatus

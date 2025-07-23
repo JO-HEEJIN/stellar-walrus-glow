@@ -1,116 +1,190 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 
 export async function GET(request: NextRequest) {
   try {
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-    // Role permission checks removed for now
-    // TODO: Add proper role-based permission checks when auth system is set up
+    // Verify token and check role
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+      
+      // Only MASTER_ADMIN can view users
+      if (userInfo.role !== 'MASTER_ADMIN') {
+        throw new BusinessError(
+          ErrorCodes.AUTHORIZATION_ROLE_REQUIRED,
+          HttpStatus.FORBIDDEN,
+          { requiredRole: 'MASTER_ADMIN' }
+        )
+      }
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
-    const role = searchParams.get('role') || 'all'
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const role = searchParams.get('role')
+    const status = searchParams.get('status')
 
-    // Mock users data
-    const mockUsers = [
-      {
-        id: '1',
-        email: 'master@kfashion.com',
-        name: 'Master Admin',
-        role: 'MASTER_ADMIN',
-        status: 'ACTIVE',
-        createdAt: new Date('2024-01-01').toISOString(),
-      },
-      {
-        id: '2',
-        email: 'brand@kfashion.com',
-        name: 'Brand Admin',
-        role: 'BRAND_ADMIN',
-        brandId: 'brand1',
-        status: 'ACTIVE',
-        createdAt: new Date('2024-01-15').toISOString(),
-      },
-      {
-        id: '3',
-        email: 'buyer@kfashion.com',
-        name: 'Test Buyer',
-        role: 'BUYER',
-        status: 'ACTIVE',
-        createdAt: new Date('2024-02-01').toISOString(),
-      },
-    ]
+    // Build where clause
+    const where: any = {}
+    if (role && role !== 'all') where.role = role
+    if (status && status !== 'all') where.status = status
 
-    // Filter by role if specified
-    const users = role === 'all' 
-      ? mockUsers 
-      : mockUsers.filter(user => user.role === role)
+    // Count total users
+    const totalUsers = await prisma.user.count({ where })
+
+    // Fetch users
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        brand: {
+          select: { id: true, nameKo: true, nameCn: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
 
     return NextResponse.json({
-      users,
-      pagination: {
+      data: users,
+      meta: {
         page,
         limit,
-        total: users.length,
-        totalPages: Math.ceil(users.length / limit),
+        totalItems: totalUsers,
+        totalPages: Math.ceil(totalUsers / limit),
       },
     })
   } catch (error) {
-    console.error('Failed to fetch users:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
+    return createErrorResponse(error as Error, request.url)
   }
 }
 
-export async function PATCH(request: NextRequest) {
+// Create user schema for invite functionality
+const createUserSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  role: z.enum(['MASTER_ADMIN', 'BRAND_ADMIN', 'BUYER']).default('BUYER'),
+  brandId: z.string().nullable().optional(),
+})
+
+// POST: Create/invite new user
+export async function POST(request: NextRequest) {
   try {
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-    // Role permission checks removed for now
-    // TODO: Add proper role-based permission checks when auth system is set up
+    // Verify token and check role
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+      
+      // Only MASTER_ADMIN can create users
+      if (userInfo.role !== 'MASTER_ADMIN') {
+        throw new BusinessError(
+          ErrorCodes.AUTHORIZATION_ROLE_REQUIRED,
+          HttpStatus.FORBIDDEN,
+          { requiredRole: 'MASTER_ADMIN' }
+        )
+      }
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json()
-    const { userId, updates } = body
+    const data = createUserSchema.parse(body)
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: data.email },
+    })
+
+    if (existingUser) {
+      throw new BusinessError(
+        ErrorCodes.USER_EMAIL_EXISTS,
+        HttpStatus.CONFLICT
       )
     }
 
-    // Validate allowed updates
-    const allowedUpdates = ['role', 'status', 'brandId']
-    const updateKeys = Object.keys(updates)
-    const isValidUpdate = updateKeys.every(key => allowedUpdates.includes(key))
+    // If role is BRAND_ADMIN, validate brandId
+    if (data.role === 'BRAND_ADMIN' && data.brandId) {
+      const brand = await prisma.brand.findUnique({
+        where: { id: data.brandId },
+      })
 
-    if (!isValidUpdate) {
-      return NextResponse.json(
-        { error: 'Invalid update fields' },
-        { status: 400 }
-      )
+      if (!brand) {
+        throw new BusinessError(
+          ErrorCodes.BRAND_NOT_FOUND,
+          HttpStatus.NOT_FOUND
+        )
+      }
     }
 
-    // Mock updated user
-    const mockUpdatedUser = {
-      id: userId,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'system', // TODO: Replace with actual user ID when auth is set up
-    }
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        brandId: data.role === 'BRAND_ADMIN' ? data.brandId : null,
+        status: 'ACTIVE',
+      },
+      include: {
+        brand: {
+          select: { id: true, nameKo: true, nameCn: true },
+        },
+      },
+    })
 
-    return NextResponse.json(mockUpdatedUser)
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: null,
+        action: 'USER_CREATE',
+        entityType: 'User',
+        entityId: user.id,
+        metadata: {
+          createdBy: userInfo.username,
+          userEmail: user.email,
+          userRole: user.role,
+        },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      },
+    })
+
+    return NextResponse.json({ data: user }, { status: 201 })
   } catch (error) {
-    console.error('Failed to update user:', error)
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    )
+    return createErrorResponse(error as Error, request.url)
   }
 }

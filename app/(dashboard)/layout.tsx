@@ -7,6 +7,7 @@ import CartButton from '@/components/cart/cart-button'
 
 interface User {
   username: string
+  email: string
   role: 'MASTER_ADMIN' | 'BRAND_ADMIN' | 'BUYER'
 }
 
@@ -103,12 +104,20 @@ export default function DashboardLayout({
                     </Link>
                   )}
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role) && (
-                    <Link
-                      href="/brands"
-                      className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    >
-                      브랜드 관리
-                    </Link>
+                    <>
+                      <Link
+                        href="/analytics"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        분석
+                      </Link>
+                      <Link
+                        href="/brands"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        브랜드 관리
+                      </Link>
+                    </>
                   )}
                   {user.role === 'MASTER_ADMIN' && (
                     <Link
@@ -129,7 +138,8 @@ export default function DashboardLayout({
                   </div>
                 )}
                 <div className="mr-3 text-sm text-gray-600">
-                  {user.username}
+                  <div>{user.username}</div>
+                  <div className="text-xs text-gray-500">{user.role}</div>
                 </div>
                 <button 
                   onClick={handleLogout}

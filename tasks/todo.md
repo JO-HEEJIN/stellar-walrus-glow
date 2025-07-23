@@ -313,3 +313,88 @@
 - Implement order status management endpoints
 - Add more comprehensive testing
 - Set up monitoring with CloudWatch
+
+### Email Mapping Fix Task ✓
+**Date**: 2025-07-16
+**Status**: Completed
+**Summary**: Fixed all email mapping inconsistencies from "k-fashions.com" to "kfashion.com" and added missing error codes.
+
+### Load-Balanced Architecture Implementation ⏳
+**Date**: 2025-07-23
+**Objective**: Implement a scalable, load-balanced architecture for the K-Fashion platform
+
+**Current State Analysis**:
+- Database: Still using localhost MySQL (needs AWS Aurora with read replicas)
+- Caching: No caching layer (Upstash Redis configured but not implemented)
+- API Design: Some endpoints not optimized for concurrent access (especially inventory)
+- File Storage: S3 bucket configured but not fully integrated
+
+**Implementation Plan**:
+
+#### Phase 1: Commit Current Changes
+- [ ] Review and commit all pending changes
+- [ ] Ensure all tests pass before committing
+
+#### Phase 2: Database Load Balancing
+- [ ] Configure AWS Aurora MySQL with:
+  - [ ] Primary write instance
+  - [ ] 2+ read replicas for query distribution
+  - [ ] Connection pooling (pgBouncer or Aurora's built-in)
+  - [ ] Automatic failover configuration
+- [ ] Update Prisma configuration:
+  - [ ] Set up connection pool size based on expected load
+  - [ ] Configure connection timeout and retry logic
+  - [ ] Implement read/write splitting at ORM level
+- [ ] Create database indexes for high-traffic queries:
+  - [ ] Product search queries
+  - [ ] Order filtering by status/user
+  - [ ] Brand product listings
+
+#### Phase 3: Caching Layer for Load Reduction
+- [ ] Implement Redis caching with Upstash:
+  - [ ] Cache product listings (TTL: 5 minutes)
+  - [ ] Cache brand information (TTL: 30 minutes)
+  - [ ] Cache user sessions (TTL: 1 hour)
+  - [ ] Implement cache warming for popular products
+- [ ] Add cache invalidation strategy:
+  - [ ] On product updates
+  - [ ] On inventory changes
+  - [ ] On order status changes
+
+#### Phase 4: API Optimization
+- [ ] Implement request queuing for inventory updates:
+  - [ ] Use Redis-based queue for atomic operations
+  - [ ] Prevent race conditions on concurrent orders
+  - [ ] Add optimistic locking for inventory
+- [ ] Add pagination to all list endpoints:
+  - [ ] Limit default page size to 50 items
+  - [ ] Implement cursor-based pagination for large datasets
+- [ ] Optimize database queries:
+  - [ ] Use select specific fields instead of full objects
+  - [ ] Implement query batching where possible
+  - [ ] Add database query monitoring
+
+#### Phase 5: Static Asset Optimization
+- [ ] Configure CDN for static assets:
+  - [ ] Use Vercel Edge Network
+  - [ ] Set proper cache headers
+  - [ ] Implement image optimization
+- [ ] Implement lazy loading for images
+- [ ] Add progressive image loading
+
+#### Phase 6: Monitoring & Auto-scaling
+- [ ] Set up CloudWatch metrics:
+  - [ ] Database connection pool usage
+  - [ ] API response times
+  - [ ] Cache hit/miss ratios
+  - [ ] Error rates by endpoint
+- [ ] Configure auto-scaling policies:
+  - [ ] Scale read replicas based on CPU
+  - [ ] Alert on high connection counts
+  - [ ] Monitor query performance
+
+**Load Testing Targets**:
+- Support 1000 concurrent users
+- Handle 100 orders per minute
+- Maintain <200ms response time for product listings
+- Achieve 90% cache hit rate for popular products

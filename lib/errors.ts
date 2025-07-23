@@ -33,12 +33,16 @@ export const ErrorCodes = {
   AUTH_INSUFFICIENT_PERMISSION: '1004',
   AUTH_ACCOUNT_LOCKED: '1005',
   AUTH_INVALID_TOKEN: '1006',
+  AUTHENTICATION_REQUIRED: '1007',
+  AUTHORIZATION_ROLE_REQUIRED: '1008',
+  AUTHENTICATION_INVALID: '1009',
 
   // User Management (11xx)
   USER_NOT_FOUND: '1101',
   USER_ALREADY_EXISTS: '1102',
   USER_INVALID_STATUS: '1103',
   USER_CANNOT_DELETE: '1104',
+  USER_EMAIL_EXISTS: '1105',
 
   // Product Management (2xxx)
   PRODUCT_NOT_FOUND: '2001',
@@ -48,6 +52,10 @@ export const ErrorCodes = {
   PRODUCT_INVALID_STATUS: '2005',
   PRODUCT_BRAND_MISMATCH: '2006',
   PRODUCT_IN_USE: '2007',
+
+  // Brand Management (25xx)
+  BRAND_NOT_FOUND: '2501',
+  BRAND_ALREADY_EXISTS: '2502',
 
   // Order Management (3xxx)
   ORDER_NOT_FOUND: '3001',
@@ -68,6 +76,9 @@ export const ErrorCodes = {
   PAYMENT_PROCESSING_ERROR: '5002',
   PAYMENT_VERIFICATION_FAILED: '5003',
 
+  // Validation Errors (8xxx)
+  VALIDATION_FAILED: '8001',
+  
   // System Errors (9xxx)
   SYSTEM_DATABASE_ERROR: '9001',
   SYSTEM_EXTERNAL_SERVICE_ERROR: '9002',
@@ -85,12 +96,16 @@ export const ErrorMessages: Record<string, string> = {
   [ErrorCodes.AUTH_INSUFFICIENT_PERMISSION]: '권한이 없습니다.',
   [ErrorCodes.AUTH_ACCOUNT_LOCKED]: '계정이 잠겼습니다. 고객센터에 문의해주세요.',
   [ErrorCodes.AUTH_INVALID_TOKEN]: '유효하지 않은 토큰입니다.',
+  [ErrorCodes.AUTHENTICATION_REQUIRED]: '인증이 필요합니다.',
+  [ErrorCodes.AUTHORIZATION_ROLE_REQUIRED]: '필요한 권한이 없습니다.',
+  [ErrorCodes.AUTHENTICATION_INVALID]: '유효하지 않은 인증입니다.',
 
   // User Management
   [ErrorCodes.USER_NOT_FOUND]: '사용자를 찾을 수 없습니다.',
   [ErrorCodes.USER_ALREADY_EXISTS]: '이미 존재하는 사용자입니다.',
   [ErrorCodes.USER_INVALID_STATUS]: '유효하지 않은 사용자 상태입니다.',
   [ErrorCodes.USER_CANNOT_DELETE]: '해당 사용자는 삭제할 수 없습니다.',
+  [ErrorCodes.USER_EMAIL_EXISTS]: '이미 사용중인 이메일입니다.',
 
   // Product Management
   [ErrorCodes.PRODUCT_NOT_FOUND]: '상품을 찾을 수 없습니다.',
@@ -100,6 +115,10 @@ export const ErrorMessages: Record<string, string> = {
   [ErrorCodes.PRODUCT_INVALID_STATUS]: '유효하지 않은 상품 상태입니다.',
   [ErrorCodes.PRODUCT_BRAND_MISMATCH]: '브랜드가 일치하지 않습니다.',
   [ErrorCodes.PRODUCT_IN_USE]: '이 상품은 주문에서 사용 중이므로 삭제할 수 없습니다.',
+
+  // Brand Management
+  [ErrorCodes.BRAND_NOT_FOUND]: '브랜드를 찾을 수 없습니다.',
+  [ErrorCodes.BRAND_ALREADY_EXISTS]: '이미 존재하는 브랜드입니다.',
 
   // Order Management
   [ErrorCodes.ORDER_NOT_FOUND]: '주문을 찾을 수 없습니다.',
@@ -119,6 +138,9 @@ export const ErrorMessages: Record<string, string> = {
   [ErrorCodes.PAYMENT_INVALID_METHOD]: '유효하지 않은 결제 수단입니다.',
   [ErrorCodes.PAYMENT_PROCESSING_ERROR]: '결제 처리 중 오류가 발생했습니다.',
   [ErrorCodes.PAYMENT_VERIFICATION_FAILED]: '결제 검증에 실패했습니다.',
+
+  // Validation Errors
+  [ErrorCodes.VALIDATION_FAILED]: '입력값이 유효하지 않습니다.',
 
   // System Errors
   [ErrorCodes.SYSTEM_DATABASE_ERROR]: '데이터베이스 오류가 발생했습니다.',

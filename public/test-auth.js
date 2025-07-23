@@ -93,10 +93,64 @@ async function testLogout() {
     }
 }
 
+async function testForgotPassword() {
+    const username = document.getElementById('forgotPasswordUsername').value;
+    
+    try {
+        const response = await fetch('/api/auth/forgot-password/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username }),
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('forgotPasswordResult');
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = data.message;
+        resultDiv.className = response.ok ? 'result success' : 'result error';
+    } catch (error) {
+        const resultDiv = document.getElementById('forgotPasswordResult');
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'Error: ' + error.message;
+        resultDiv.className = 'result error';
+    }
+}
+
+async function testForgotId() {
+    const email = document.getElementById('forgotIdEmail').value;
+    
+    try {
+        const response = await fetch('/api/auth/forgot-id/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('forgotIdResult');
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = response.ok ? 
+            `${data.message} Username: ${data.username}` : 
+            data.message;
+        resultDiv.className = response.ok ? 'result success' : 'result error';
+    } catch (error) {
+        const resultDiv = document.getElementById('forgotIdResult');
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'Error: ' + error.message;
+        resultDiv.className = 'result error';
+    }
+}
+
 // Set up event listeners when page loads
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('createBtn').addEventListener('click', createUser);
     document.getElementById('loginBtn').addEventListener('click', testLogin);
     document.getElementById('meBtn').addEventListener('click', testMe);
     document.getElementById('logoutBtn').addEventListener('click', testLogout);
+    document.getElementById('forgotPasswordBtn').addEventListener('click', testForgotPassword);
+    document.getElementById('forgotIdBtn').addEventListener('click', testForgotId);
 });

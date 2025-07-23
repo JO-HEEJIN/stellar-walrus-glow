@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
+import { MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { Trash2 } from 'lucide-react'
 
 export default function CartPage() {
@@ -14,6 +15,12 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (items.length === 0) return
+    
+    // Check minimum order amount
+    if (totalAmount < MIN_ORDER_AMOUNT) {
+      alert(`최소 주문 금액은 ${formatPrice(MIN_ORDER_AMOUNT)}입니다. 현재 금액: ${formatPrice(totalAmount)}`)
+      return
+    }
 
     setLoading(true)
     try {
@@ -43,7 +50,14 @@ export default function CartPage() {
       if (!response.ok) {
         const errorData = await response.json()
         console.error('Order creation failed:', errorData)
-        throw new Error(errorData.error?.message || 'Failed to create order')
+        
+        // Handle specific error messages
+        if (response.status === 422 && errorData.error?.message?.includes('최소 주문 금액')) {
+          alert(errorData.error.message)
+        } else {
+          alert(errorData.error?.message || '주문 처리 중 오류가 발생했습니다.')
+        }
+        return
       }
 
       const result = await response.json()
@@ -147,11 +161,27 @@ export default function CartPage() {
                     </span>
                   </div>
                 </div>
+                
+                {/* 최소 주문 금액 안내 */}
+                {totalAmount < MIN_ORDER_AMOUNT && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          최소 주문 금액: {formatPrice(MIN_ORDER_AMOUNT)}
+                        </p>
+                        <p className="text-sm text-yellow-700">
+                          {formatPrice(MIN_ORDER_AMOUNT - totalAmount)} 더 주문하시면 결제가 가능합니다.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleCheckout}
-                disabled={loading || items.length === 0}
-                className="mt-6 w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || items.length === 0 || totalAmount < MIN_ORDER_AMOUNT}
+                className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? '처리중...' : '주문하기'}
               </button>

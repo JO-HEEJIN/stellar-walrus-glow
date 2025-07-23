@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Upload, X, Image as ImageIcon } from 'lucide-react'
 
 interface ProductFormData {
   brandId: string
@@ -13,6 +14,16 @@ interface ProductFormData {
   categoryId?: string
   basePrice: number
   inventory: number
+  images?: string[]
+  thumbnailImage?: string
+}
+
+interface UploadedImage {
+  url: string
+  key: string
+  name: string
+  size: number
+  type: string
 }
 
 interface ProductFormProps {
@@ -21,10 +32,13 @@ interface ProductFormProps {
 
 export default function ProductForm({ onSuccess }: ProductFormProps) {
   const router = useRouter()
-  // TODO: Replace with cookie-based auth if needed
   const [loading, setLoading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [brands, setBrands] = useState<Array<{ id: string; nameKo: string }>>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [thumbnailImage, setThumbnailImage] = useState<UploadedImage | null>(null)
+  const [userRole, setUserRole] = useState<string>('')
   const [formData, setFormData] = useState<ProductFormData>({
     brandId: '',
     sku: '',
@@ -35,21 +49,40 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     categoryId: '',
     basePrice: 0,
     inventory: 0,
+    images: [],
+    thumbnailImage: '',
   })
 
   // Set brand ID based on user's role
   useEffect(() => {
-    if (session?.user) {
-      if (session.user.role === 'BRAND_ADMIN') {
-        // For testing, use the test brand ID if brandId is not set
-        const brandId = session.user.brandId || 'cmd1c568s000113ja11hjgk9a'
-        setFormData(prev => ({ ...prev, brandId }))
-      } else if (session.user.role === 'MASTER_ADMIN') {
-        // For master admin, we should fetch available brands
-        fetchBrands()
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setUserRole(data.user.role)
+          
+          // Set appropriate brand based on user role
+          if (data.user.role === 'BRAND_ADMIN') {
+            // For brand admin, set their brand ID (or default)
+            const brandId = 'cmd1c568s000113ja11hjgk9a' // Default brand ID
+            setFormData(prev => ({ ...prev, brandId }))
+          } else if (data.user.role === 'MASTER_ADMIN') {
+            // For master admin, fetch available brands
+            fetchBrands()
+          }
+        } else {
+          // Redirect to login if not authenticated
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        router.push('/login')
       }
     }
-  }, [session])
+
+    checkAuth()
+  }, [])
 
   const fetchBrands = async () => {
     try {
@@ -69,20 +102,73 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     }
   }
 
+  const handleImageUpload = async (file: File, imageType: 'product' | 'thumbnail') => {
+    setUploadingImage(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('imageType', imageType)
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error?.message || 'Upload failed')
+      }
+
+      const result = await response.json()
+      const uploadedImage = result.data as UploadedImage
+
+      if (imageType === 'thumbnail') {
+        setThumbnailImage(uploadedImage)
+        setFormData(prev => ({ ...prev, thumbnailImage: uploadedImage.url }))
+      } else {
+        setUploadedImages(prev => [...prev, uploadedImage])
+        setFormData(prev => ({ 
+          ...prev, 
+          images: [...(prev.images || []), uploadedImage.url] 
+        }))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleRemoveImage = (index: number, imageType: 'product' | 'thumbnail') => {
+    if (imageType === 'thumbnail') {
+      setThumbnailImage(null)
+      setFormData(prev => ({ ...prev, thumbnailImage: '' }))
+    } else {
+      setUploadedImages(prev => prev.filter((_, i) => i !== index))
+      setFormData(prev => ({ 
+        ...prev, 
+        images: prev.images?.filter((_, i) => i !== index) || [] 
+      }))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    console.log('Session status:', status)
-    console.log('Session data:', session)
     console.log('Form data:', formData)
 
     try {
       // Clean up form data before sending
       const cleanedData = {
         ...formData,
-        categoryId: formData.categoryId || null, // Use null instead of undefined for JSON
+        categoryId: formData.categoryId || null,
+        images: uploadedImages.map(img => img.url),
+        thumbnailImage: thumbnailImage?.url || null,
       }
       
       console.log('Cleaned data being sent:', cleanedData)
@@ -116,16 +202,8 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
     }
   }
 
-  if (status === 'loading') {
+  if (!userRole) {
     return <div className="text-center py-4">로딩 중...</div>
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="rounded-md bg-yellow-50 p-4">
-        <p className="text-sm text-yellow-800">로그인이 필요합니다.</p>
-      </div>
-    )
   }
 
   return (
@@ -138,9 +216,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
 
       {/* Debug info - remove in production */}
       <div className="rounded-md bg-gray-100 p-4 text-xs">
-        <p>Session Status: {status}</p>
-        <p>User Role: {session?.user?.role || 'N/A'}</p>
-        <p>Brand ID: {session?.user?.brandId || 'N/A'}</p>
+        <p>User Role: {userRole || 'N/A'}</p>
         <p>Form Brand ID: {formData.brandId || 'N/A'}</p>
       </div>
 
@@ -149,7 +225,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
           <label htmlFor="brandId" className="block text-sm font-medium text-gray-700">
             브랜드 *
           </label>
-          {session?.user?.role === 'BRAND_ADMIN' ? (
+          {userRole === 'BRAND_ADMIN' ? (
             <input
               type="text"
               id="brandId"
@@ -298,6 +374,101 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
             placeholder="카테고리 ID (선택사항)"
           />
         </div>
+      </div>
+
+      {/* Image Upload Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">상품 이미지</h3>
+        
+        {/* Thumbnail Image */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            대표 이미지 (썸네일)
+          </label>
+          <div className="flex items-start space-x-4">
+            {thumbnailImage ? (
+              <div className="relative">
+                <img
+                  src={thumbnailImage.url}
+                  alt="Thumbnail"
+                  className="h-32 w-32 object-cover rounded-lg border"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(0, 'thumbnail')}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="h-32 w-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file, 'thumbnail')
+                  }}
+                  className="hidden"
+                  disabled={uploadingImage}
+                />
+                <ImageIcon className="h-8 w-8 text-gray-400" />
+                <span className="mt-2 text-xs text-gray-500">썸네일 업로드</span>
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Product Images */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            상품 상세 이미지
+          </label>
+          <div className="grid grid-cols-4 gap-4">
+            {uploadedImages.map((image, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={image.url}
+                  alt={`Product ${index + 1}`}
+                  className="h-32 w-32 object-cover rounded-lg border"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index, 'product')}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            {uploadedImages.length < 5 && (
+              <label className="h-32 w-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file, 'product')
+                  }}
+                  className="hidden"
+                  disabled={uploadingImage}
+                />
+                <Upload className="h-8 w-8 text-gray-400" />
+                <span className="mt-2 text-xs text-gray-500">이미지 추가</span>
+              </label>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            최대 5장까지 업로드 가능합니다. 권장 크기: 800x800px
+          </p>
+        </div>
+        
+        {uploadingImage && (
+          <div className="text-sm text-gray-600">
+            이미지 업로드 중...
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-end space-x-3">

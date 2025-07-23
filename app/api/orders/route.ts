@@ -4,7 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product, MIN_ORDER_AMOUNT } from '@/lib/domain/models'
-import { OrderStatus, ProductStatus, Role } from '@/types'
+import { ProductStatus, Role } from '@/types'
+import { OrderStatus } from '@prisma/client'
+import { emailService, OrderEmailData } from '@/lib/email'
 
 // Order search schema
 const orderSearchSchema = z.object({
@@ -13,6 +15,8 @@ const orderSearchSchema = z.object({
   status: z.enum(['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  search: z.string().optional(),
+  brandId: z.string().optional(),
 })
 
 /**
@@ -69,18 +73,106 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const query = orderSearchSchema.parse(Object.fromEntries(searchParams))
 
-    // Build where clause - show all orders for now
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Verify token and get user info
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Build where clause
     const where: any = {}
     
-    // User role filtering removed for now
-    // TODO: Add proper role-based filtering when auth system is set up
+    // Role-based filtering
+    if (userInfo.role === 'BUYER') {
+      // Buyers can only see their own orders
+      const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                        userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                        userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await prisma.user.findFirst({
+        where: { email: userEmail }
+      })
+      if (user) {
+        where.userId = user.id
+      } else {
+        // If user not found in DB, return empty results
+        where.userId = 'non-existent-id'
+      }
+    } else if (userInfo.role === 'BRAND_ADMIN') {
+      // Brand admins can see orders for their brand's products
+      const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await prisma.user.findFirst({
+        where: { email: userEmail }
+      })
+      if (user?.brandId) {
+        where.items = {
+          some: {
+            product: {
+              brandId: user.brandId
+            }
+          }
+        }
+      } else {
+        // If brand admin has no brandId, show no orders
+        where.items = {
+          some: {
+            product: {
+              brandId: 'non-existent-brand'
+            }
+          }
+        }
+      }
+    }
+    // MASTER_ADMIN can see all orders
 
     // Add filters
     if (query.status) where.status = query.status
+    if (query.brandId) {
+      where.items = {
+        some: {
+          product: {
+            brandId: query.brandId
+          }
+        }
+      }
+    }
     if (query.startDate || query.endDate) {
       where.createdAt = {}
       if (query.startDate) where.createdAt.gte = new Date(query.startDate)
-      if (query.endDate) where.createdAt.lte = new Date(query.endDate)
+      if (query.endDate) {
+        const endDate = new Date(query.endDate)
+        endDate.setHours(23, 59, 59, 999) // End of day
+        where.createdAt.lte = endDate
+      }
+    }
+    
+    // Search functionality
+    if (query.search) {
+      where.OR = [
+        { orderNumber: { contains: query.search } },
+        { user: { name: { contains: query.search } } },
+        { user: { email: { contains: query.search } } },
+        { shippingAddress: { path: ['name'], string_contains: query.search } },
+      ]
     }
 
     // Count total items
@@ -155,8 +247,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Get current user from cookie
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Verify token and get user info
+    const jwt = await import('jsonwebtoken')
+    let currentUser
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      currentUser = decoded.username
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
     // Parse and validate request body
     const body = await request.json()
@@ -240,10 +351,34 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 4. Create order
+      // 4. Find or create user in database
+      // Map username to email
+      const userEmail = currentUser === 'momo' ? 'master@kfashion.com' : 
+                        currentUser === 'kf001' ? 'kf001@kfashion.com' :
+                        currentUser === 'kf002' ? 'brand@kfashion.com' :
+                        `${currentUser}@kfashion.com`
+      
+      let user = await tx.user.findUnique({
+        where: { email: userEmail }
+      })
+
+      if (!user) {
+        // Create user if not exists (for testing)
+        user = await tx.user.create({
+          data: {
+            name: currentUser,
+            email: userEmail,
+            role: currentUser === 'momo' || currentUser === 'kf001' ? 'MASTER_ADMIN' : 
+                  currentUser === 'kf002' ? 'BRAND_ADMIN' : 'BUYER',
+            status: 'ACTIVE'
+          }
+        })
+      }
+
+      // 5. Create order
       const order = await tx.order.create({
         data: {
-          userId: 'system', // TODO: Replace with actual user ID when auth is set up
+          userId: user.id,
           status: OrderStatus.PENDING,
           totalAmount,
           shippingAddress: data.shippingAddress,
@@ -265,7 +400,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 5. Update inventory
+      // 6. Update inventory
       for (const item of data.items) {
         const product = products.find(p => p.id === item.productId)!
         const newInventory = product.inventory - item.quantity
@@ -281,7 +416,7 @@ export async function POST(request: NextRequest) {
         // Audit log for inventory change
         await tx.auditLog.create({
           data: {
-            userId: 'system', // TODO: Replace with actual user ID when auth is set up
+            userId: user.id,
             action: 'INVENTORY_DECREASE_FOR_ORDER',
             entityType: 'Product',
             entityId: item.productId,
@@ -296,10 +431,10 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 6. Audit log for order creation
+      // 7. Audit log for order creation
       await tx.auditLog.create({
         data: {
-          userId: 'system', // TODO: Replace with actual user ID when auth is set up
+          userId: user.id,
           action: 'ORDER_CREATE',
           entityType: 'Order',
           entityId: order.id,
@@ -315,6 +450,50 @@ export async function POST(request: NextRequest) {
       })
 
       return order
+    })
+
+    // Send email notifications (async, don't block response)
+    setImmediate(async () => {
+      try {
+        // Prepare email data
+        const emailData: OrderEmailData = {
+          order: {
+            id: result.id,
+            orderNumber: result.orderNumber,
+            status: result.status,
+            totalAmount: Number(result.totalAmount),
+            items: result.items.map(item => ({
+              productName: item.product.nameKo,
+              quantity: item.quantity,
+              price: Number(item.price),
+            })),
+            shippingAddress: result.shippingAddress as any, // Assuming this matches
+            paymentMethod: result.paymentMethod || 'N/A',
+            createdAt: result.createdAt,
+          },
+          user: {
+            email: result.user.email!,
+            name: result.user.name || currentUser,
+          },
+        }
+
+        // Send customer confirmation email
+        await emailService.sendOrderConfirmation(emailData)
+
+        // Send admin notification
+        const adminContent = `A new order has been placed:
+
+Order Number: ${result.orderNumber}
+Order ID: ${result.id}
+Customer: ${result.user.name || currentUser} (${result.user.email})
+Total Amount: ${result.totalAmount}
+
+View details: /admin/orders/${result.id}`
+        await emailService.sendAdminNotification('New Order Received', adminContent)
+      } catch (emailError) {
+        console.error('Failed to send order emails:', emailError)
+        // Don't fail the order creation if email fails
+      }
     })
 
     // Generate payment info

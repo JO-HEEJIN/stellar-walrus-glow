@@ -20,8 +20,27 @@ export async function GET(
       )
     }
 
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
+
+    // Verify token and get user info
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
     // Get order with all relations
     const order = await prisma.order.findUnique({
@@ -66,8 +85,49 @@ export async function GET(
       )
     }
 
-    // Access permission checks removed for now
-    // TODO: Add proper access permission checks when auth system is set up
+    // Role-based access control
+    if (userInfo.role === 'BUYER') {
+      // Buyers can only see their own orders
+      const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                        userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                        userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await prisma.user.findFirst({
+        where: { email: userEmail }
+      })
+      if (!user || order.userId !== user.id) {
+        throw new BusinessError(
+          ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+          HttpStatus.FORBIDDEN
+        )
+      }
+    } else if (userInfo.role === 'BRAND_ADMIN') {
+      // Brand admins can only see orders for their brand's products
+      const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await prisma.user.findFirst({
+        where: { email: userEmail }
+      })
+      
+      if (!user?.brandId) {
+        throw new BusinessError(
+          ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+          HttpStatus.FORBIDDEN
+        )
+      }
+
+      // Check if any order items belong to the admin's brand
+      const hasAccess = order.items.some(item => item.product.brandId === user.brandId)
+      if (!hasAccess) {
+        throw new BusinessError(
+          ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+          HttpStatus.FORBIDDEN
+        )
+      }
+    }
+    // MASTER_ADMIN can see all orders
 
     // Get status history from audit logs
     const statusHistory = await prisma.auditLog.findMany({

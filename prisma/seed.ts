@@ -15,6 +15,18 @@ async function main() {
     },
   })
 
+  // Create kf001 user
+  const kf001User = await prisma.user.upsert({
+    where: { email: 'kf001@kfashion.com' },
+    update: {},
+    create: {
+      email: 'kf001@kfashion.com',
+      name: 'KF001 Admin',
+      role: 'MASTER_ADMIN',
+      status: 'ACTIVE',
+    },
+  })
+
   // Create a test brand
   const testBrand = await prisma.brand.upsert({
     where: { slug: 'test-brand' },
@@ -74,8 +86,10 @@ async function main() {
   })
 
   // Create test products
-  const product1 = await prisma.product.create({
-    data: {
+  const product1 = await prisma.product.upsert({
+    where: { sku: 'TEST-SHIRT-001' },
+    update: {},
+    create: {
       brandId: testBrand.id,
       sku: 'TEST-SHIRT-001',
       nameKo: '프리미엄 셔츠',
@@ -94,8 +108,10 @@ async function main() {
     },
   })
 
-  const product2 = await prisma.product.create({
-    data: {
+  const product2 = await prisma.product.upsert({
+    where: { sku: 'TEST-PANTS-001' },
+    update: {},
+    create: {
       brandId: testBrand.id,
       sku: 'TEST-PANTS-001',
       nameKo: '슬림핏 팬츠',

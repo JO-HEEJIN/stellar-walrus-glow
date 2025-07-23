@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cognitoLogin, getUserRole } from '@/lib/cognito'
+import { cognitoLogin, getUserRole, cognitoGetUser } from '@/lib/cognito'
 import jwt from 'jsonwebtoken'
 
 export async function POST(request: NextRequest) {
@@ -23,13 +23,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user role based on username
-    const role = getUserRole(username)
+    // Get user details from Cognito to determine role
+    let email = ''
+    let role = 'BUYER' // Default role
+    
+    try {
+      const userInfo = await cognitoGetUser(authResult.AccessToken)
+      email = userInfo.UserAttributes?.find(attr => attr.Name === 'email')?.Value || ''
+      
+      // Get role from Cognito custom attribute first
+      const cognitoRole = userInfo.UserAttributes?.find(attr => attr.Name === 'custom:role')?.Value
+      if (cognitoRole && ['BUYER', 'BRAND_ADMIN', 'MASTER_ADMIN'].includes(cognitoRole)) {
+        role = cognitoRole as 'BUYER' | 'BRAND_ADMIN' | 'MASTER_ADMIN'
+      } else {
+        // Fallback to username/email based role determination
+        role = getUserRole(username, email)
+      }
+    } catch (error) {
+      console.error('Failed to get user info:', error)
+      // Fallback to username/email based role determination
+      role = getUserRole(username, email)
+    }
 
     // Create our own JWT token with user info
     const token = jwt.sign(
       {
         username,
+        email,
         role,
         cognitoAccessToken: authResult.AccessToken,
         cognitoRefreshToken: authResult.RefreshToken,
@@ -44,6 +64,7 @@ export async function POST(request: NextRequest) {
       token,
       user: {
         username,
+        email,
         role,
       },
     })

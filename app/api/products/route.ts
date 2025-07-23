@@ -162,6 +162,7 @@ const createProductSchema = z.object({
   categoryId: z.string().nullable().optional(),
   basePrice: z.number().positive(),
   inventory: z.number().int().min(0),
+  thumbnailImage: z.string().url().nullable().optional(),
   images: z.array(z.string().url()).max(10).optional(),
   options: z.record(z.array(z.string())).optional(),
 })
@@ -261,15 +262,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-    // Role permission checks removed for now
-    // TODO: Add proper role-based permission checks when auth system is set up
+    // Verify token and check role
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+      
+      // Only BRAND_ADMIN and MASTER_ADMIN can create products
+      if (userInfo.role !== 'BRAND_ADMIN' && userInfo.role !== 'MASTER_ADMIN') {
+        throw new BusinessError(
+          ErrorCodes.AUTHORIZATION_ROLE_REQUIRED,
+          HttpStatus.FORBIDDEN,
+          { requiredRole: 'BRAND_ADMIN or MASTER_ADMIN' }
+        )
+      }
+    } catch (error) {
+      console.error('JWT verification error:', error)
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
     // Parse and validate request body
     const body = await request.json()
+    console.log('Product creation request body:', body)
+    
     const data = createProductSchema.parse(body)
+    console.log('Validated product data:', data)
 
     // Brand ownership check removed for now
     // TODO: Add proper brand ownership validation when auth system is set up

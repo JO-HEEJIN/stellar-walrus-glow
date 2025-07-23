@@ -1,4 +1,47 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import UserList from '@/components/users/user-list'
+
 export default function UsersPage() {
+  const [userRole, setUserRole] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setUserRole(data.user.role)
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
+  if (loading) {
+    return <div className="text-center py-4">로딩 중...</div>
+  }
+
+  // Only MASTER_ADMIN can access user management
+  if (userRole !== 'MASTER_ADMIN') {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-md bg-yellow-50 p-4">
+          <p className="text-sm text-yellow-800">
+            사용자 관리 페이지는 최고 관리자만 접근할 수 있습니다.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -19,64 +62,7 @@ export default function UsersPage() {
       </div>
 
       <div className="mt-8">
-        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-300">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  이름
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  이메일
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  역할
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  소속
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  가입일
-                </th>
-                <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  상태
-                </th>
-                <th className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span className="sr-only">관리</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              <tr>
-                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                  관리자
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  admin@example.com
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  MASTER_ADMIN
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  플랫폼 관리자
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  -
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
-                    활성
-                  </span>
-                </td>
-                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                  <a href="#" className="text-primary hover:text-primary/90">
-                    편집
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <UserList userRole={userRole} />
       </div>
     </div>
   )

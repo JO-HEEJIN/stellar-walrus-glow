@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createErrorResponse } from '@/lib/errors'
+import { NextResponse } from 'next/server'
+// import { prisma } from '@/lib/prisma'
+// import { createErrorResponse } from '@/lib/errors'
 
 /**
  * @swagger
@@ -26,35 +26,64 @@ import { createErrorResponse } from '@/lib/errors'
  *       401:
  *         description: Unauthorized
  */
-export async function GET(request: NextRequest) {
+// Mock data for brands
+const mockBrands = [
+  {
+    id: 'brand-1',
+    name: 'test-brand',
+    description: '테스트 브랜드입니다. 고품질의 의류를 제공합니다.',
+    logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop',
+    status: 'ACTIVE',
+    productsCount: 15,
+    monthlyRevenue: 2500000,
+    website: 'https://test-brand.com',
+    contact: {
+      email: 'contact@test-brand.com',
+      phone: '02-123-4567',
+      address: '서울시 강남구 테스트로 123'
+    }
+  },
+  {
+    id: 'brand-2',
+    name: 'K-Fashion',
+    description: '한국 전통 패션을 현대적으로 재해석한 브랜드',
+    logo: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=100&h=100&fit=crop',
+    status: 'ACTIVE',
+    productsCount: 28,
+    monthlyRevenue: 4200000,
+    website: 'https://k-fashion.com',
+    contact: {
+      email: 'info@k-fashion.com',
+      phone: '02-987-6543',
+      address: '서울시 종로구 패션로 456'
+    }
+  },
+  {
+    id: 'brand-3',
+    name: 'Urban Style',
+    description: '도시적이고 세련된 스타일의 캐주얼 브랜드',
+    logo: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=100&h=100&fit=crop',
+    status: 'ACTIVE',
+    productsCount: 42,
+    monthlyRevenue: 6800000,
+    website: 'https://urban-style.com',
+    contact: {
+      email: 'hello@urban-style.com',
+      phone: '02-555-7890',
+      address: '서울시 마포구 어반로 789'
+    }
+  }
+]
+
+export async function GET() {
   try {
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
-
-    // Fetch all active brands for now
-    const where = { isActive: true }
-
-    const brands = await prisma.brand.findMany({
-      where,
-      select: {
-        id: true,
-        nameKo: true,
-        nameCn: true,
-        slug: true,
-        description: true,
-        logoUrl: true,
-        isActive: true,
-        _count: {
-          select: {
-            products: true,
-          },
-        },
-      },
-      orderBy: { nameKo: 'asc' },
-    })
-
-    return NextResponse.json({ data: brands })
+    // Return mock data instead of database query
+    return NextResponse.json(mockBrands)
   } catch (error) {
-    return createErrorResponse(error as Error, request.url)
+    console.error('Error fetching brands:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch brands' },
+      { status: 500 }
+    )
   }
 }

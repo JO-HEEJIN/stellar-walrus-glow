@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, ImageOff } from 'lucide-react'
 import ProductFilters, { FilterValues } from './product-filters'
 
 interface Product {
@@ -15,6 +15,8 @@ interface Product {
   descriptionCn?: string
   basePrice: number
   brandId: string
+  thumbnailImage?: string | null
+  images?: string[] | null
   brand?: {
     id: string
     nameKo: string
@@ -142,80 +144,89 @@ export default function ProductList({ userRole }: ProductListProps) {
         </div>
       )}
       
-      <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-        <table className="min-w-full divide-y divide-gray-300">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                상품명
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                설명
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                가격
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                등록일
-              </th>
-              <th className="relative px-6 py-3">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {products.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                  등록된 상품이 없습니다.
-                </td>
-              </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {product.nameKo}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {product.descriptionKo || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+      {/* Product Grid */}
+      {products.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">등록된 상품이 없습니다.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              {/* Product Image */}
+              <div className="aspect-square relative bg-gray-100">
+                {product.thumbnailImage ? (
+                  <img
+                    src={product.thumbnailImage}
+                    alt={product.nameKo}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageOff className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Product Info */}
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  {product.nameKo}
+                </h3>
+                {product.brand && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    {product.brand.nameKo}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                  {product.descriptionKo || '상품 설명이 없습니다.'}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-gray-900">
                     {formatPrice(Number(product.basePrice))}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(product.createdAt).toLocaleDateString('ko-KR')}
-                  </td>
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    SKU: {product.sku}
+                  </span>
+                </div>
+                
+                {/* Actions */}
+                <div className="mt-4 flex gap-2">
+                  {userRole === 'BUYER' && (
+                    <button
+                      onClick={() => addItem({
+                        productId: product.id,
+                        productName: product.nameKo,
+                        price: Number(product.basePrice)
+                      })}
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      장바구니 담기
+                    </button>
+                  )}
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(userRole) && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <>
+                      <button
+                        onClick={() => window.location.href = `/products/${product.id}/edit`}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        수정
+                      </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-900 ml-4"
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
                       >
                         삭제
                       </button>
-                    </td>
+                    </>
                   )}
-                  {userRole === 'BUYER' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => addItem({
-                          productId: product.id,
-                          productName: product.nameKo,
-                          price: Number(product.basePrice)
-                        })}
-                        className="inline-flex items-center text-primary hover:text-primary/90"
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        담기
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

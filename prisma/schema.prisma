@@ -102,6 +102,7 @@ model Product {
   status      ProductStatus @default(ACTIVE)
   basePrice   Decimal       @db.Decimal(10, 2)
   inventory   Int           @default(0)
+  thumbnailImage String?    // Main product thumbnail
   images      Json?         // ["url1", "url2", ...]
   options     Json?         // {"colors": [...], "sizes": [...]}
 
