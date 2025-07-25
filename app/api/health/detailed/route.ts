@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prismaRead, prismaWrite } from '@/lib/prisma-load-balanced'
 import { Redis } from '@upstash/redis'
 import { getMetrics, checkDatabaseHealth } from '@/lib/monitoring'
-import { getQueueStatus } from '@/lib/inventory-queue'
+// import { getQueueStatus } from '@/lib/inventory-queue'
 
 export async function GET() {
   const startTime = Date.now()
@@ -76,21 +76,10 @@ export async function GET() {
     health.services.cache.status = 'disabled'
   }
   
-  // Check inventory queue
-  try {
-    const queueStatus = await getQueueStatus()
-    health.services.queue = {
-      status: 'healthy',
-      queueLength: queueStatus.queueLength,
-      isProcessing: queueStatus.isProcessing
-    } as any
-    
-    if (queueStatus.queueLength > 100) {
-      health.issues.push(`High queue backlog: ${queueStatus.queueLength} items`)
-      if (health.status === 'healthy') health.status = 'degraded'
-    }
-  } catch (error) {
-    health.services.queue.status = 'unknown'
+  // Check inventory queue (disabled for now)
+  health.services.queue = {
+    status: 'disabled',
+    queueLength: 0
   }
   
   // Get performance metrics
