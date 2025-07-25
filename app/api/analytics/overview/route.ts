@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 // import { prisma } from '@/lib/prisma'
 // import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 // import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'

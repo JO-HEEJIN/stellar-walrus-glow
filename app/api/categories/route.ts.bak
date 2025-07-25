@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createErrorResponse } from '@/lib/errors'
@@ -6,16 +5,16 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 
 /**
  * @swagger
- * /api/brands:
+ * /api/categories:
  *   get:
- *     summary: Get brand list
- *     description: Retrieve all active brands (filtered by user's brand for BRAND_ADMIN)
- *     tags: [Brands]
+ *     summary: Get category list
+ *     description: Retrieve all active categories
+ *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Brand list retrieved successfully
+ *         description: Category list retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -24,7 +23,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Brand'
+ *                     $ref: '#/components/schemas/Category'
  *       401:
  *         description: Unauthorized
  */
@@ -45,9 +44,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get brands from database with product counts
-    const brands = await prisma.brand.findMany({
-      where: { isActive: true },
+    // Get categories from database with product counts
+    const categories = await prisma.category.findMany({
       include: {
         products: {
           select: { id: true },
@@ -58,32 +56,28 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { name: 'asc' },
     })
 
     // Transform data to include additional computed fields
-    const brandsWithStats = brands.map(brand => ({
-      id: brand.id,
-      nameKo: brand.nameKo,
-      nameCn: brand.nameCn,
-      slug: brand.slug,
-      description: brand.description,
-      logoUrl: brand.logoUrl,
-      isActive: brand.isActive,
-      productsCount: brand._count.products,
-      createdAt: brand.createdAt,
-      updatedAt: brand.updatedAt,
+    const categoriesWithStats = categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      parentId: category.parentId,
+      productsCount: category._count.products,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     }))
 
     return NextResponse.json({
-      data: brandsWithStats,
+      data: categoriesWithStats,
       meta: {
-        totalBrands: brands.length,
-        activeBrands: brands.filter(b => b.isActive).length,
+        totalCategories: categories.length,
       },
     })
   } catch (error) {
-    console.error('Error fetching brands:', error)
+    console.error('Error fetching categories:', error)
     return createErrorResponse(error as Error, request.url)
   }
 }
