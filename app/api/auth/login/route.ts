@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cognitoLogin, getUserRole, cognitoGetUser } from '@/lib/cognito'
 import jwt from 'jsonwebtoken'
+
+// Mock users for demo - in production this would be Cognito
+const mockUsers = [
+  { username: 'master@kfashion.com', password: 'password123', email: 'master@kfashion.com', role: 'MASTER_ADMIN' },
+  { username: 'brand@kfashion.com', password: 'password123', email: 'brand@kfashion.com', role: 'BRAND_ADMIN' },
+  { username: 'buyer@kfashion.com', password: 'password123', email: 'buyer@kfashion.com', role: 'BUYER' },
+  { username: 'demo', password: 'demo', email: 'demo@kfashion.com', role: 'MASTER_ADMIN' },
+  { username: 'admin', password: 'admin', email: 'admin@kfashion.com', role: 'MASTER_ADMIN' },
+]
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,37 +23,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Authenticate with Cognito
-    const authResult = await cognitoLogin(username, password)
+    // Check against mock users (for demo purposes)
+    const user = mockUsers.find(u => 
+      (u.username === username || u.email === username) && u.password === password
+    )
 
-    if (!authResult?.AccessToken) {
+    if (!user) {
       return NextResponse.json(
-        { message: '로그인에 실패했습니다.' },
+        { message: '사용자명 또는 비밀번호가 올바르지 않습니다.' },
         { status: 401 }
       )
     }
 
-    // Get user details from Cognito to determine role
-    let email = ''
-    let role = 'BUYER' // Default role
-    
-    try {
-      const userInfo = await cognitoGetUser(authResult.AccessToken)
-      email = userInfo.UserAttributes?.find(attr => attr.Name === 'email')?.Value || ''
-      
-      // Get role from Cognito custom attribute first
-      const cognitoRole = userInfo.UserAttributes?.find(attr => attr.Name === 'custom:role')?.Value
-      if (cognitoRole && ['BUYER', 'BRAND_ADMIN', 'MASTER_ADMIN'].includes(cognitoRole)) {
-        role = cognitoRole as 'BUYER' | 'BRAND_ADMIN' | 'MASTER_ADMIN'
-      } else {
-        // Fallback to username/email based role determination
-        role = getUserRole(username, email)
-      }
-    } catch (error) {
-      console.error('Failed to get user info:', error)
-      // Fallback to username/email based role determination
-      role = getUserRole(username, email)
-    }
+    const { email, role } = user
 
     // Create our own JWT token with user info
     const token = jwt.sign(
@@ -51,8 +43,6 @@ export async function POST(request: NextRequest) {
         username,
         email,
         role,
-        cognitoAccessToken: authResult.AccessToken,
-        cognitoRefreshToken: authResult.RefreshToken,
       },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
@@ -80,21 +70,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Login error:', error)
-    
-    // Handle specific Cognito errors
-    if (error.name === 'NotAuthorizedException') {
-      return NextResponse.json(
-        { message: '사용자명 또는 비밀번호가 올바르지 않습니다.' },
-        { status: 401 }
-      )
-    }
-    
-    if (error.name === 'UserNotFoundException') {
-      return NextResponse.json(
-        { message: '존재하지 않는 사용자입니다.' },
-        { status: 404 }
-      )
-    }
 
     return NextResponse.json(
       { message: '로그인 중 오류가 발생했습니다.' },

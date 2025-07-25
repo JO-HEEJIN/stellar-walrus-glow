@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cognitoLogout } from '@/lib/cognito'
-import jwt from 'jsonwebtoken'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from cookie
-    const token = request.cookies.get('auth-token')?.value
-
-    if (token) {
-      try {
-        // Decode the token to get Cognito access token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
-        
-        if (decoded.cognitoAccessToken) {
-          // Sign out from Cognito
-          await cognitoLogout(decoded.cognitoAccessToken)
-        }
-      } catch (error) {
-        console.error('Error during Cognito logout:', error)
-        // Continue with local logout even if Cognito logout fails
-      }
-    }
+    // Simple logout - just clear the cookie
 
     // Create response
     const response = NextResponse.json({
