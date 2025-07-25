@@ -15,6 +15,8 @@ interface Product {
   descriptionCn?: string
   basePrice: number
   brandId: string
+  inventory: number
+  status: string
   thumbnailImage?: string | null
   images?: string[] | null
   brand?: {
@@ -181,13 +183,27 @@ export default function ProductList({ userRole }: ProductListProps) {
                 <p className="text-sm text-gray-500 mb-3 line-clamp-2">
                   {product.descriptionKo || '상품 설명이 없습니다.'}
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-lg font-bold text-gray-900">
                     {formatPrice(Number(product.basePrice))}
                   </span>
                   <span className="text-xs text-gray-500">
                     SKU: {product.sku}
                   </span>
+                </div>
+                
+                {/* Inventory Status */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-600">
+                    재고: {product.inventory}개
+                  </span>
+                  {product.inventory === 0 ? (
+                    <span className="text-xs font-medium text-red-600">품절</span>
+                  ) : product.inventory <= 10 ? (
+                    <span className="text-xs font-medium text-orange-600">재고 부족</span>
+                  ) : (
+                    <span className="text-xs font-medium text-green-600">재고 있음</span>
+                  )}
                 </div>
                 
                 {/* Actions */}
@@ -199,10 +215,15 @@ export default function ProductList({ userRole }: ProductListProps) {
                         productName: product.nameKo,
                         price: Number(product.basePrice)
                       })}
-                      className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                      disabled={product.inventory === 0}
+                      className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
+                        product.inventory === 0
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-primary text-white hover:bg-primary/90'
+                      }`}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      장바구니 담기
+                      {product.inventory === 0 ? '품절' : '장바구니 담기'}
                     </button>
                   )}
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(userRole) && (

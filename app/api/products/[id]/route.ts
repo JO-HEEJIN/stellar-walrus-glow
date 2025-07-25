@@ -254,12 +254,12 @@ export async function DELETE(
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
       userInfo = decoded
       
-      // Only MASTER_ADMIN can delete
-      if (userInfo.role !== 'MASTER_ADMIN') {
+      // Only BRAND_ADMIN and MASTER_ADMIN can delete
+      if (userInfo.role !== 'BRAND_ADMIN' && userInfo.role !== 'MASTER_ADMIN') {
         throw new BusinessError(
           ErrorCodes.AUTHORIZATION_ROLE_REQUIRED,
           HttpStatus.FORBIDDEN,
-          { requiredRole: 'MASTER_ADMIN' }
+          { requiredRole: 'BRAND_ADMIN or MASTER_ADMIN' }
         )
       }
     } catch (error) {
@@ -284,6 +284,22 @@ export async function DELETE(
         ErrorCodes.PRODUCT_NOT_FOUND,
         HttpStatus.NOT_FOUND
       )
+    }
+
+    // For BRAND_ADMIN, verify they own the product
+    if (userInfo.role === 'BRAND_ADMIN') {
+      // Get user's brand
+      const user = await prisma.user.findFirst({
+        where: { email: `${userInfo.username}@kfashion.com` },
+      })
+      
+      if (!user?.brandId || user.brandId !== product.brandId) {
+        throw new BusinessError(
+          ErrorCodes.AUTH_INSUFFICIENT_PERMISSION,
+          HttpStatus.FORBIDDEN,
+          { message: '다른 브랜드의 상품은 삭제할 수 없습니다.' }
+        )
+      }
     }
 
     // Check if product is in any orders

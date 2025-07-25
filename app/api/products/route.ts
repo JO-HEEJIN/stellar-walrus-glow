@@ -13,7 +13,7 @@ const searchSchema = z.object({
   brandId: z.string().optional(),
   categoryId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'OUT_OF_STOCK']).optional(),
-  sortBy: z.enum(['createdAt', 'basePrice', 'nameKo']).default('createdAt'),
+  sortBy: z.enum(['createdAt', 'basePrice', 'nameKo', 'inventory', 'sku']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
 

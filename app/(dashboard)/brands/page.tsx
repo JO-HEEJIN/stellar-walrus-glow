@@ -5,12 +5,15 @@ import Link from 'next/link'
 
 interface Brand {
   id: string
-  name: string
-  description: string
-  logo?: string
-  status: 'ACTIVE' | 'INACTIVE'
+  nameKo: string
+  nameCn?: string
+  slug: string
+  description?: string
+  logoUrl?: string
+  isActive: boolean
   productsCount: number
-  monthlyRevenue: number
+  createdAt: string
+  updatedAt: string
 }
 
 export default function BrandsPage() {
@@ -27,7 +30,7 @@ export default function BrandsPage() {
           throw new Error('브랜드 목록을 불러올 수 없습니다')
         }
         const data = await response.json()
-        setBrands(data)
+        setBrands(data.data || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : '데이터를 불러오는 중 오류가 발생했습니다')
       } finally {
@@ -93,10 +96,10 @@ export default function BrandsPage() {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      {brand.logo ? (
+                      {brand.logoUrl ? (
                         <img 
-                          src={brand.logo} 
-                          alt={brand.name} 
+                          src={brand.logoUrl} 
+                          alt={brand.nameKo} 
                           className="h-12 w-12 rounded-lg object-cover"
                         />
                       ) : (
@@ -105,23 +108,24 @@ export default function BrandsPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{brand.name}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{brand.nameKo}</h3>
+                        {brand.nameCn && <p className="text-sm text-gray-500">{brand.nameCn}</p>}
                         <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
-                          brand.status === 'ACTIVE' 
+                          brand.isActive 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {brand.status === 'ACTIVE' ? '활성' : '비활성'}
+                          {brand.isActive ? '활성' : '비활성'}
                         </span>
                       </div>
                     </div>
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-4">{brand.description}</p>
+                  <p className="text-gray-600 text-sm mb-4">{brand.description || '브랜드 설명이 없습니다'}</p>
                   
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                     <span>상품 {brand.productsCount}개</span>
-                    <span>월 매출 ₩{brand.monthlyRevenue.toLocaleString()}</span>
+                    <span>생성일: {new Date(brand.createdAt).toLocaleDateString('ko-KR')}</span>
                   </div>
                   
                   <div className="flex space-x-2">
