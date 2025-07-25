@@ -21,7 +21,7 @@ const nextConfig = {
     // Server Components are now stable in Next.js 14
   },
   
-  // Security headers
+  // Basic security headers (CSP disabled for Next.js compatibility)
   async headers() {
     return [
       {
@@ -30,10 +30,6 @@ const nextConfig = {
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
           },
           {
             key: 'X-Content-Type-Options',
@@ -50,10 +46,6 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin'
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()'
           }
         ]
       }

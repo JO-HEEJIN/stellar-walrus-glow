@@ -23,31 +23,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Generate nonce for CSP
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
-  
-  // 2. Define CSP header
-  const isDev = process.env.NODE_ENV === 'development'
-  
-  const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://vercel.live;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self' https://cognito-idp.us-east-2.amazonaws.com;
-    frame-ancestors 'none';
-    connect-src 'self' https://cognito-idp.us-east-2.amazonaws.com https://*.amazoncognito.com https://vercel.live;
-  `.replace(/\s{2,}/g, ' ').trim()
-
-  // 3. Create response with security headers
+  // 2. Create response with basic security headers (CSP disabled for Next.js compatibility)
   const response = NextResponse.next()
   
-  // Apply security headers
-  response.headers.set('Content-Security-Policy', cspHeader)
-  response.headers.set('X-Nonce', nonce)
+  // Apply basic security headers without CSP
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
   // 4. Skip auth middleware for logout-redirect page
   if (path === '/logout-redirect') {
