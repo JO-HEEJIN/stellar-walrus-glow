@@ -63,7 +63,6 @@ export function ProductFormWithImages({
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),

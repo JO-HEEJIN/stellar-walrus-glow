@@ -5,11 +5,11 @@ const globalForPrisma = globalThis as unknown as {
   prismaRead: PrismaClient | undefined
 }
 
-// Configuration for connection pooling
-const poolConfig = {
-  connection_limit: parseInt(process.env.DATABASE_CONNECTION_LIMIT || '10'),
-  pool_timeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || '10'),
-}
+// Configuration for connection pooling (reserved for future use)
+// const poolConfig = {
+//   connection_limit: parseInt(process.env.DATABASE_CONNECTION_LIMIT || '10'),
+//   pool_timeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || '10'),
+// }
 
 // Write instance - connects to primary Aurora instance
 export const prismaWrite = globalForPrisma.prismaWrite ?? new PrismaClient({
