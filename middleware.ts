@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' ${isDev ? "'unsafe-eval' 'unsafe-inline'" : "'strict-dynamic'"};
+    script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://vercel.live;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self';
@@ -39,8 +39,7 @@ export async function middleware(request: NextRequest) {
     base-uri 'self';
     form-action 'self' https://cognito-idp.us-east-2.amazonaws.com;
     frame-ancestors 'none';
-    connect-src 'self' https://cognito-idp.us-east-2.amazonaws.com https://*.amazoncognito.com;
-    ${isDev ? '' : 'block-all-mixed-content; upgrade-insecure-requests;'}
+    connect-src 'self' https://cognito-idp.us-east-2.amazonaws.com https://*.amazoncognito.com https://vercel.live;
   `.replace(/\s{2,}/g, ' ').trim()
 
   // 3. Create response with security headers
