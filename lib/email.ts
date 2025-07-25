@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer'
-import { SESClient } from '@aws-sdk/client-ses'
+// import { SESClient } from '@aws-sdk/client-ses'
 import { Role } from '@/types'
 import { OrderStatus } from '@prisma/client'
 import { orderConfirmationTemplate } from './templates/order-confirmation'

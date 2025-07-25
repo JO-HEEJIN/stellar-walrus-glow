@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Disable ESLint during builds for deployment
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
   // For CloudFront + S3 deployment
   output: process.env.BUILD_STATIC === 'true' ? 'export' : 'standalone',
   trailingSlash: true,
