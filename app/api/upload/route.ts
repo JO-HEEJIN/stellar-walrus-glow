@@ -142,6 +142,26 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
+    console.error('Upload API error:', {
+      error: error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    })
+    
+    // Return more detailed error in development
+    if (process.env.NODE_ENV !== 'production') {
+      return NextResponse.json({
+        error: {
+          code: 'UPLOAD_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          details: error instanceof Error ? error.stack : undefined
+        },
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      }, { status: 500 })
+    }
+    
     return createErrorResponse(error as Error, request.url)
   }
 }

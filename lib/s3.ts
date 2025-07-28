@@ -7,14 +7,30 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
-// Initialize S3 client
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-2',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-})
+// Initialize S3 client with error handling
+let s3Client: S3Client
+
+try {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    console.error('Missing AWS credentials:', {
+      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION
+    })
+    throw new Error('AWS credentials not configured')
+  }
+
+  s3Client = new S3Client({
+    region: process.env.AWS_REGION || 'us-east-2',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  })
+} catch (error) {
+  console.error('Failed to initialize S3 client:', error)
+  throw error
+}
 
 const BUCKET_NAME = process.env.S3_BUCKET || 'k-fashion-products'
 
