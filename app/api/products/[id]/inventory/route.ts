@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
@@ -37,8 +37,9 @@ export async function PATCH(
     const body = await request.json()
     const data = inventoryUpdateSchema.parse(body)
 
-    // Start transaction for inventory update
-    const result = await prisma.$transaction(async (tx) => {
+    // Start transaction for inventory update using write instance
+    const result = await withRetry(async () => {
+      return await prismaWrite.$transaction(async (tx) => {
       // Get product with lock
       const product = await tx.product.findUnique({
         where: { id: params.id },
@@ -139,11 +140,12 @@ export async function PATCH(
         },
       })
 
-      return {
-        product: updatedProduct,
-        previousInventory,
-        newInventory,
-      }
+        return {
+          product: updatedProduct,
+          previousInventory,
+          newInventory,
+        }
+      })
     })
 
     return NextResponse.json({

@@ -1,64 +1,21 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createErrorResponse } from '@/lib/errors'
-import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
+import { prismaRead, withRetry } from '@/lib/prisma-load-balanced'
 
-/**
- * @swagger
- * /api/brands:
- *   get:
- *     summary: Get brand list
- *     description: Retrieve all active brands (filtered by user's brand for BRAND_ADMIN)
- *     tags: [Brands]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Brand list retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Brand'
- *       401:
- *         description: Unauthorized
- */
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
-    const identifier = getIdentifier(request)
-    const { success } = await rateLimiters.api.limit(identifier)
-    
-    if (!success) {
-      return new Response('Too Many Requests', {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': '10',
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': new Date().toISOString(),
-        },
-      })
-    }
-
-    // Get brands from database with product counts
-    const brands = await prisma.brand.findMany({
-      where: { isActive: true },
-      include: {
-        products: {
-          select: { id: true },
-        },
-        _count: {
-          select: {
-            products: true,
+    // Get brands from database using read replica with product counts
+    const brands = await withRetry(async () => {
+      return await prismaRead.brand.findMany({
+        include: {
+          _count: {
+            select: {
+              products: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
+        orderBy: { nameKo: 'asc' },
+      })
     })
 
     // Transform data to include additional computed fields
@@ -69,21 +26,21 @@ export async function GET(request: NextRequest) {
       slug: brand.slug,
       description: brand.description,
       logoUrl: brand.logoUrl,
+      website: brand.website,
+      contactEmail: brand.contactEmail,
+      contactPhone: brand.contactPhone,
+      address: brand.address,
       isActive: brand.isActive,
-      productsCount: brand._count.products,
       createdAt: brand.createdAt,
       updatedAt: brand.updatedAt,
+      productCount: brand._count.products,
     }))
 
     return NextResponse.json({
       data: brandsWithStats,
-      meta: {
-        totalBrands: brands.length,
-        activeBrands: brands.filter(b => b.isActive).length,
-      },
     })
   } catch (error) {
-    console.error('Error fetching brands:', error)
-    return createErrorResponse(error as Error, request.url)
+    console.error('Brands API error:', error)
+    return NextResponse.json({ error: 'Failed to fetch brands' }, { status: 500 })
   }
 }

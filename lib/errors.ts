@@ -36,6 +36,7 @@ export const ErrorCodes = {
   AUTHENTICATION_REQUIRED: '1007',
   AUTHORIZATION_ROLE_REQUIRED: '1008',
   AUTHENTICATION_INVALID: '1009',
+  AUTHORIZATION_INSUFFICIENT_PERMISSIONS: '1010',
 
   // User Management (11xx)
   USER_NOT_FOUND: '1101',
@@ -64,6 +65,7 @@ export const ErrorCodes = {
   ORDER_INVALID_TRANSITION: '3004',
   ORDER_PAYMENT_FAILED: '3005',
   ORDER_ALREADY_CANCELLED: '3006',
+  ORDER_INVALID_STATUS_TRANSITION: '3007',
 
   // File Management (4xxx)
   FILE_TOO_LARGE: '4001',
@@ -99,6 +101,7 @@ export const ErrorMessages: Record<string, string> = {
   [ErrorCodes.AUTHENTICATION_REQUIRED]: '인증이 필요합니다.',
   [ErrorCodes.AUTHORIZATION_ROLE_REQUIRED]: '필요한 권한이 없습니다.',
   [ErrorCodes.AUTHENTICATION_INVALID]: '유효하지 않은 인증입니다.',
+  [ErrorCodes.AUTHORIZATION_INSUFFICIENT_PERMISSIONS]: '권한이 부족합니다.',
 
   // User Management
   [ErrorCodes.USER_NOT_FOUND]: '사용자를 찾을 수 없습니다.',
@@ -127,6 +130,7 @@ export const ErrorMessages: Record<string, string> = {
   [ErrorCodes.ORDER_INVALID_TRANSITION]: '해당 상태로 변경할 수 없습니다.',
   [ErrorCodes.ORDER_PAYMENT_FAILED]: '결제 처리에 실패했습니다.',
   [ErrorCodes.ORDER_ALREADY_CANCELLED]: '이미 취소된 주문입니다.',
+  [ErrorCodes.ORDER_INVALID_STATUS_TRANSITION]: '유효하지 않은 주문 상태 변경입니다.',
 
   // File Management
   [ErrorCodes.FILE_TOO_LARGE]: '파일 크기가 너무 큽니다.',

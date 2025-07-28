@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prismaRead, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 
@@ -42,40 +42,42 @@ export async function GET(
       )
     }
 
-    // Get order with all relations
-    const order = await prisma.order.findUnique({
-      where: { id: params.id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-          }
-        },
-        items: {
-          include: {
-            product: {
-              include: {
-                brand: {
-                  select: {
-                    id: true,
-                    nameKo: true,
-                    nameCn: true,
-                  }
-                },
-                category: {
-                  select: {
-                    id: true,
-                    name: true,
+    // Get order with all relations using read replica
+    const order = await withRetry(async () => {
+      return await prismaRead.order.findUnique({
+        where: { id: params.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+            }
+          },
+          items: {
+            include: {
+              product: {
+                include: {
+                  brand: {
+                    select: {
+                      id: true,
+                      nameKo: true,
+                      nameCn: true,
+                    }
+                  },
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
+      })
     })
 
     if (!order) {
@@ -93,8 +95,10 @@ export async function GET(
                         userInfo.username === 'kf002' ? 'brand@kfashion.com' :
                         `${userInfo.username}@kfashion.com`
       
-      const user = await prisma.user.findFirst({
-        where: { email: userEmail }
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
       })
       if (!user || order.userId !== user.id) {
         throw new BusinessError(
@@ -107,8 +111,10 @@ export async function GET(
       const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
                         `${userInfo.username}@kfashion.com`
       
-      const user = await prisma.user.findFirst({
-        where: { email: userEmail }
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
       })
       
       if (!user?.brandId) {
@@ -129,31 +135,33 @@ export async function GET(
     }
     // MASTER_ADMIN can see all orders
 
-    // Get status history from audit logs
-    const statusHistory = await prisma.auditLog.findMany({
-      where: {
-        entityType: 'Order',
-        entityId: order.id,
-        action: {
-          in: ['ORDER_CREATE', 'ORDER_STATUS_UPDATE']
-        }
-      },
-      orderBy: {
-        createdAt: 'asc'
-      },
-      select: {
-        id: true,
-        action: true,
-        createdAt: true,
-        userId: true,
-        user: {
-          select: {
-            email: true,
-            name: true,
+    // Get status history from audit logs using read replica
+    const statusHistory = await withRetry(async () => {
+      return await prismaRead.auditLog.findMany({
+        where: {
+          entityType: 'Order',
+          entityId: order.id,
+          action: {
+            in: ['ORDER_CREATE', 'ORDER_STATUS_UPDATE']
           }
         },
-        metadata: true,
-      }
+        orderBy: {
+          createdAt: 'asc'
+        },
+        select: {
+          id: true,
+          action: true,
+          createdAt: true,
+          userId: true,
+          user: {
+            select: {
+              email: true,
+              name: true,
+            }
+          },
+          metadata: true,
+        }
+      })
     })
 
     // Format status history

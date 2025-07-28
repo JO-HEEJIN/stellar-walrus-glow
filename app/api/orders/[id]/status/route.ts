@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prismaRead, prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Order } from '@/lib/domain/models'
-import { OrderStatus } from '@/types'
+import { OrderStatus } from '@prisma/client'
 
 // Status update schema
 const statusUpdateSchema = z.object({
@@ -30,11 +30,27 @@ export async function PATCH(
       )
     }
 
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
+    // Check authentication
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
-    // Role permission checks removed for now
-    // TODO: Add proper role-based permission checks when auth system is set up
+    // Verify token and get user info
+    const jwt = await import('jsonwebtoken')
+    let userInfo
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+      userInfo = decoded
+    } catch (error) {
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
+      )
+    }
 
     // Parse and validate request body
     const body = await request.json()
@@ -50,7 +66,8 @@ export async function PATCH(
     }
 
     // Process status update in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await withRetry(async () => {
+      return await prismaWrite.$transaction(async (tx) => {
       // Get order with lock
       const order = await tx.order.findUnique({
         where: { id: params.id },
@@ -73,8 +90,38 @@ export async function PATCH(
         )
       }
 
-      // Brand permission check removed for now
-      // TODO: Add proper brand permission checks when auth system is set up
+      // Check permissions
+      if (userInfo.role === 'BUYER') {
+        // Buyers can only view their own orders, not update status
+        throw new BusinessError(
+          ErrorCodes.AUTHORIZATION_INSUFFICIENT_PERMISSIONS,
+          HttpStatus.FORBIDDEN,
+          { message: 'Buyers cannot update order status' }
+        )
+      } else if (userInfo.role === 'BRAND_ADMIN') {
+        // Brand admins can only update orders for their brand's products
+        const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' : 
+                          `${userInfo.username}@kfashion.com`
+        
+        const user = await tx.user.findFirst({
+          where: { email: userEmail }
+        })
+
+        if (user?.brandId) {
+          const hasBrandProducts = order.items.some(item => 
+            item.product.brandId === user.brandId
+          )
+          
+          if (!hasBrandProducts) {
+            throw new BusinessError(
+              ErrorCodes.AUTHORIZATION_INSUFFICIENT_PERMISSIONS,
+              HttpStatus.FORBIDDEN,
+              { message: 'Cannot update orders for other brands' }
+            )
+          }
+        }
+      }
+      // MASTER_ADMIN can update any order
 
       // Create domain model to check state transition
       const orderModel = new Order({
@@ -94,8 +141,8 @@ export async function PATCH(
       // Validate state transition
       if (!orderModel.canTransitionTo(data.status as OrderStatus)) {
         throw new BusinessError(
-          ErrorCodes.ORDER_INVALID_TRANSITION,
-          HttpStatus.CONFLICT,
+          ErrorCodes.ORDER_INVALID_STATUS_TRANSITION,
+          HttpStatus.UNPROCESSABLE_ENTITY,
           {
             currentStatus: order.status,
             requestedStatus: data.status,
@@ -126,20 +173,33 @@ export async function PATCH(
           }
 
           // Audit log for inventory restoration
-          await tx.auditLog.create({
-            data: {
-              userId: 'system', // TODO: Replace with actual user ID when auth is set up
-              action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
-              entityType: 'Product',
-              entityId: item.productId,
-              metadata: {
-                orderId: order.id,
-                orderNumber: order.orderNumber,
-                restoredQuantity: item.quantity,
-                newInventory: product.inventory,
-              }
-            }
+          const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                            userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                            userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                            userInfo.username === 'demo' ? 'demo@kfashion.com' :
+                            userInfo.username === 'admin' ? 'admin@kfashion.com' :
+                            `${userInfo.username}@kfashion.com`
+          
+          let auditUser = await tx.user.findUnique({
+            where: { email: userEmail }
           })
+
+          if (auditUser) {
+            await tx.auditLog.create({
+              data: {
+                userId: auditUser.id,
+                action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
+                entityType: 'Product',
+                entityId: item.productId,
+                metadata: {
+                  orderId: order.id,
+                  orderNumber: order.orderNumber,
+                  restoredQuantity: item.quantity,
+                  newInventory: product.inventory,
+                }
+              }
+            })
+          }
         }
       }
 
@@ -170,24 +230,39 @@ export async function PATCH(
       })
 
       // Create audit log for status change
-      await tx.auditLog.create({
-        data: {
-          userId: 'system', // TODO: Replace with actual user ID when auth is set up
-          action: 'ORDER_STATUS_UPDATE',
-          entityType: 'Order',
-          entityId: order.id,
-          metadata: {
-            orderNumber: order.orderNumber,
-            previousStatus: order.status,
-            newStatus: data.status,
-            reason: data.reason,
-            trackingNumber: data.trackingNumber,
-            requiresRefund: orderModel.requiresRefund() && data.status === OrderStatus.CANCELLED,
-          },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown',
-        }
+      const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                        userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                        userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        userInfo.username === 'demo' ? 'demo@kfashion.com' :
+                        userInfo.username === 'admin' ? 'admin@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      let auditUser = await tx.user.findUnique({
+        where: { email: userEmail }
       })
+
+      if (auditUser) {
+        await tx.auditLog.create({
+          data: {
+            userId: auditUser.id,
+            action: 'ORDER_STATUS_UPDATE',
+            entityType: 'Order',
+            entityId: order.id,
+            metadata: {
+              orderNumber: order.orderNumber,
+              previousStatus: order.status,
+              newStatus: data.status,
+              reason: data.reason,
+              trackingNumber: data.trackingNumber,
+              requiresRefund: orderModel.requiresRefund() && data.status === OrderStatus.CANCELLED,
+              updatedBy: userInfo.username,
+              userRole: userInfo.role
+            },
+            ip: request.headers.get('x-forwarded-for') || 'unknown',
+            userAgent: request.headers.get('user-agent') || 'unknown',
+          }
+        })
+      }
 
       return {
         order: updatedOrder,
@@ -198,6 +273,9 @@ export async function PATCH(
           recipient: order.user.email,
         }
       }
+      }, {
+        timeout: 30000, // 30 seconds timeout for international latency
+      })
     })
 
     // TODO: Send actual notifications (email/SMS)

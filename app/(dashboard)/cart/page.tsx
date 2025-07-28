@@ -62,7 +62,7 @@ export default function CartPage() {
 
       const result = await response.json()
       clearCart()
-      alert(`주문이 완료되었습니다. 주문번호: ${result.data.orderNumber}`)
+      alert(`주문이 완료되었습니다. 주문번호: ${result.data.order.orderNumber}`)
       router.push('/orders')
     } catch (error) {
       console.error('Order error:', error)

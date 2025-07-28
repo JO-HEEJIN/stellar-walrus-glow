@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prismaRead, prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { ProductStatus } from '@/types'
@@ -119,23 +119,27 @@ export async function GET(request: NextRequest) {
     if (query.categoryId) where.categoryId = query.categoryId
     if (query.status) where.status = query.status
 
-    // Count total items
-    const totalItems = await prisma.product.count({ where })
+    // Count total items using read replica
+    const totalItems = await withRetry(async () => {
+      return await prismaRead.product.count({ where })
+    })
 
-    // Fetch products
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        brand: {
-          select: { id: true, nameKo: true, nameCn: true },
+    // Fetch products using read replica
+    const products = await withRetry(async () => {
+      return await prismaRead.product.findMany({
+        where,
+        include: {
+          brand: {
+            select: { id: true, nameKo: true, nameCn: true },
+          },
+          category: {
+            select: { id: true, name: true },
+          },
         },
-        category: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: { [query.sortBy]: query.order },
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
+        orderBy: { [query.sortBy]: query.order },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      })
     })
 
     return NextResponse.json({
@@ -305,9 +309,11 @@ export async function POST(request: NextRequest) {
     // Brand ownership check removed for now
     // TODO: Add proper brand ownership validation when auth system is set up
 
-    // Check if brand exists
-    const brand = await prisma.brand.findUnique({
-      where: { id: data.brandId },
+    // Check if brand exists using read replica
+    const brand = await withRetry(async () => {
+      return await prismaRead.brand.findUnique({
+        where: { id: data.brandId },
+      })
     })
 
     if (!brand) {
@@ -318,9 +324,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check SKU uniqueness
-    const existingProduct = await prisma.product.findUnique({
-      where: { sku: data.sku },
+    // Check SKU uniqueness using read replica
+    const existingProduct = await withRetry(async () => {
+      return await prismaRead.product.findUnique({
+        where: { sku: data.sku },
+      })
     })
 
     if (existingProduct) {
@@ -330,34 +338,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create product with automatic status based on inventory
-    const product = await prisma.product.create({
-      data: {
-        ...data,
-        categoryId: data.categoryId || null, // Convert empty string to null
-        status: data.inventory > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK,
-      },
-      include: {
-        brand: true,
-        category: true,
-      },
+    // Create product with automatic status based on inventory using write instance
+    const product = await withRetry(async () => {
+      return await prismaWrite.product.create({
+        data: {
+          ...data,
+          categoryId: data.categoryId || null, // Convert empty string to null
+          status: data.inventory > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK,
+        },
+        include: {
+          brand: true,
+          category: true,
+        },
+      })
     })
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: 'system', // TODO: Replace with actual user ID when auth is set up
-        action: 'PRODUCT_CREATE',
-        entityType: 'Product',
-        entityId: product.id,
-        metadata: {
-          sku: product.sku,
-          nameKo: product.nameKo,
-          brandId: product.brandId,
+    // Create audit log using write instance
+    await withRetry(async () => {
+      return await prismaWrite.auditLog.create({
+        data: {
+          userId: 'system', // TODO: Replace with actual user ID when auth is set up
+          action: 'PRODUCT_CREATE',
+          entityType: 'Product',
+          entityId: product.id,
+          metadata: {
+            sku: product.sku,
+            nameKo: product.nameKo,
+            brandId: product.brandId,
+          },
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
         },
-        ip: request.headers.get('x-forwarded-for') || 'unknown',
-        userAgent: request.headers.get('user-agent') || 'unknown',
-      },
+      })
     })
 
     return NextResponse.json({ data: product }, { status: 201 })

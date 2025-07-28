@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prismaRead, withRetry } from '@/lib/prisma-load-balanced'
 import { createErrorResponse } from '@/lib/errors'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 
@@ -45,19 +45,21 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get categories from database with product counts
-    const categories = await prisma.category.findMany({
-      include: {
-        products: {
-          select: { id: true },
-        },
-        _count: {
-          select: {
-            products: true,
+    // Get categories from database with product counts using read replica
+    const categories = await withRetry(async () => {
+      return await prismaRead.category.findMany({
+        include: {
+          products: {
+            select: { id: true },
+          },
+          _count: {
+            select: {
+              products: true,
+            },
           },
         },
-      },
-      orderBy: { name: 'asc' },
+        orderBy: { name: 'asc' },
+      })
     })
 
     // Transform data to include additional computed fields

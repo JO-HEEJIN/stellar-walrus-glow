@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prismaRead, prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product, MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { ProductStatus, Role } from '@/types'
 import { OrderStatus } from '@prisma/client'
-import { emailService, OrderEmailData } from '@/lib/email'
+// import { emailService, OrderEmailData } from '@/lib/email'
 
 // Order search schema
 const orderSearchSchema = z.object({
@@ -106,8 +106,10 @@ export async function GET(request: NextRequest) {
                         userInfo.username === 'kf002' ? 'brand@kfashion.com' :
                         `${userInfo.username}@kfashion.com`
       
-      const user = await prisma.user.findFirst({
-        where: { email: userEmail }
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
       })
       if (user) {
         where.userId = user.id
@@ -120,8 +122,10 @@ export async function GET(request: NextRequest) {
       const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
                         `${userInfo.username}@kfashion.com`
       
-      const user = await prisma.user.findFirst({
-        where: { email: userEmail }
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
       })
       if (user?.brandId) {
         where.items = {
@@ -175,31 +179,35 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Count total items
-    const totalItems = await prisma.order.count({ where })
+    // Count total items using read replica
+    const totalItems = await withRetry(async () => {
+      return await prismaRead.order.count({ where })
+    })
 
-    // Fetch orders
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        user: {
-          select: { id: true, email: true, name: true },
-        },
-        items: {
-          include: {
-            product: {
-              include: {
-                brand: {
-                  select: { id: true, nameKo: true, nameCn: true },
+    // Fetch orders using read replica
+    const orders = await withRetry(async () => {
+      return await prismaRead.order.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, email: true, name: true },
+          },
+          items: {
+            include: {
+              product: {
+                include: {
+                  brand: {
+                    select: { id: true, nameKo: true, nameCn: true },
+                  },
                 },
               },
             },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
+        orderBy: { createdAt: 'desc' },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      })
     })
 
     return NextResponse.json({
@@ -273,14 +281,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createOrderSchema.parse(body)
 
-    // Process order in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    // Process order in transaction using write instance with increased timeout
+    const result = await withRetry(async () => {
+      return await prismaWrite.$transaction(async (tx) => {
       // 1. Fetch and lock products
       const productIds = data.items.map(item => item.productId)
+      
       const products = await tx.product.findMany({
         where: {
           id: { in: productIds },
-          status: ProductStatus.ACTIVE,
+          status: 'ACTIVE', // Use string instead of enum
         },
         include: { brand: true },
       })
@@ -375,9 +385,11 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // 5. Create order
+      // 5. Create order with custom order number
+      const orderNumber = generateOrderNumber()
       const order = await tx.order.create({
         data: {
+          orderNumber,
           userId: user.id,
           status: OrderStatus.PENDING,
           totalAmount,
@@ -449,52 +461,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      return order
+        return order
+      }, {
+        timeout: 30000, // 30 seconds timeout for international latency
+      })
     })
 
-    // Send email notifications (async, don't block response)
-    setImmediate(async () => {
-      try {
-        // Prepare email data
-        const emailData: OrderEmailData = {
-          order: {
-            id: result.id,
-            orderNumber: result.orderNumber,
-            status: result.status,
-            totalAmount: Number(result.totalAmount),
-            items: result.items.map(item => ({
-              productName: item.product.nameKo,
-              quantity: item.quantity,
-              price: Number(item.price),
-            })),
-            shippingAddress: result.shippingAddress as any, // Assuming this matches
-            paymentMethod: result.paymentMethod || 'N/A',
-            createdAt: result.createdAt,
-          },
-          user: {
-            email: result.user.email!,
-            name: result.user.name || currentUser,
-          },
-        }
-
-        // Send customer confirmation email
-        await emailService.sendOrderConfirmation(emailData)
-
-        // Send admin notification
-        const adminContent = `A new order has been placed:
-
-Order Number: ${result.orderNumber}
-Order ID: ${result.id}
-Customer: ${result.user.name || currentUser} (${result.user.email})
-Total Amount: ${result.totalAmount}
-
-View details: /admin/orders/${result.id}`
-        await emailService.sendAdminNotification('New Order Received', adminContent)
-      } catch (emailError) {
-        console.error('Failed to send order emails:', emailError)
-        // Don't fail the order creation if email fails
-      }
-    })
+    // TODO: Send email notifications (disabled for now)
+    console.log(`📧 Order created: ${result.orderNumber} for ${result.user.email}`)
 
     // Generate payment info
     const paymentInfo = generatePaymentInfo(result)
@@ -506,8 +480,20 @@ View details: /admin/orders/${result.id}`
       },
     }, { status: 201 })
   } catch (error) {
+    console.error('❌ Order creation error:', error)
     return createErrorResponse(error as Error, request.url)
   }
+}
+
+// Helper function to generate readable order number
+function generateOrderNumber(): string {
+  const now = new Date()
+  const year = now.getFullYear().toString().slice(-2) // Last 2 digits of year
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase() // 6 random chars
+  
+  return `KF${year}${month}${day}${random}` // e.g., KF2507283A7B9C
 }
 
 // Helper function to generate payment info
