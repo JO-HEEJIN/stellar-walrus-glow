@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
     })
     
+    // Upload to S3
     const imageUrl = await uploadToS3(
       buffer,
       s3Key,
