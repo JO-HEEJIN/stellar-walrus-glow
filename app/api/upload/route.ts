@@ -111,6 +111,13 @@ export async function POST(request: NextRequest) {
     console.log('Generated S3 key:', s3Key)
 
     // Upload to S3
+    console.log('Attempting S3 upload with config:', {
+      bucket: process.env.S3_BUCKET,
+      region: process.env.AWS_REGION,
+      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+    })
+    
     const imageUrl = await uploadToS3(
       buffer,
       s3Key,
@@ -121,6 +128,8 @@ export async function POST(request: NextRequest) {
         imageType,
       }
     )
+    
+    console.log('S3 upload successful, URL:', imageUrl)
 
     return NextResponse.json({
       success: true,

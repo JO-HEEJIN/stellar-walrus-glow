@@ -39,8 +39,15 @@ export async function uploadToS3(
     // Return the public URL (assuming bucket is configured for public read)
     return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
   } catch (error) {
-    console.error('S3 upload error:', error)
-    throw error
+    console.error('S3 upload error details:', {
+      error: error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      bucket: BUCKET_NAME,
+      key,
+      region: process.env.AWS_REGION
+    })
+    throw new Error(`S3 upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
