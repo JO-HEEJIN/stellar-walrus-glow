@@ -15,7 +15,8 @@ function initializeS3Client() {
     // Clean environment variables to remove any whitespace/newlines
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID?.trim()
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY?.trim()
-    const region = process.env.AWS_REGION?.trim() || 'us-east-2'
+    // Force correct region for our S3 bucket
+    const region = 'us-east-2' // Hard-coded to match our bucket location
     const bucket = process.env.S3_BUCKET?.trim()
 
     if (!accessKeyId || !secretAccessKey) {
