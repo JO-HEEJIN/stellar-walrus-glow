@@ -116,32 +116,45 @@ export async function POST(request: NextRequest) {
       region: process.env.AWS_REGION,
       hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
       hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-    })
-    
-    // Upload to S3
-    const imageUrl = await uploadToS3(
-      buffer,
+      bufferSize: buffer.length,
       s3Key,
-      file.type,
-      {
-        uploadedBy: userInfo.username,
-        productId: productId || 'none',
-        imageType,
-      }
-    )
-    
-    console.log('S3 upload successful, URL:', imageUrl)
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        url: imageUrl,
-        key: s3Key,
-        size: file.size,
-        type: file.type,
-        name: file.name,
-      }
+      contentType: file.type
     })
+    
+    try {
+      // Upload to S3
+      const imageUrl = await uploadToS3(
+        buffer,
+        s3Key,
+        file.type,
+        {
+          uploadedBy: userInfo.username,
+          productId: productId || 'none',
+          imageType,
+        }
+      )
+      
+      console.log('S3 upload successful, URL:', imageUrl)
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          url: imageUrl,
+          key: s3Key,
+          size: file.size,
+          type: file.type,
+          name: file.name,
+        }
+      })
+    } catch (s3Error) {
+      console.error('S3 upload failed:', {
+        error: s3Error,
+        message: s3Error instanceof Error ? s3Error.message : 'Unknown S3 error',
+        stack: s3Error instanceof Error ? s3Error.stack : undefined,
+        type: s3Error instanceof Error ? s3Error.constructor.name : typeof s3Error
+      })
+      throw s3Error
+    }
   } catch (error) {
     console.error('Upload API error:', {
       error: error,

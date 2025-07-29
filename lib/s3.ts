@@ -10,26 +10,44 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 // Initialize S3 client with error handling
 let s3Client: S3Client
 
-try {
-  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-    console.error('Missing AWS credentials:', {
+function initializeS3Client() {
+  try {
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+      console.error('Missing AWS credentials:', {
+        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION,
+        bucket: process.env.S3_BUCKET
+      })
+      throw new Error('AWS credentials not configured')
+    }
+
+    console.log('Initializing S3 client with config:', {
+      region: process.env.AWS_REGION || 'us-east-2',
+      bucket: process.env.S3_BUCKET,
       hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
       hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION
     })
-    throw new Error('AWS credentials not configured')
-  }
 
-  s3Client = new S3Client({
-    region: process.env.AWS_REGION || 'us-east-2',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  })
-} catch (error) {
-  console.error('Failed to initialize S3 client:', error)
-  throw error
+    return new S3Client({
+      region: process.env.AWS_REGION || 'us-east-2',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+    })
+  } catch (error) {
+    console.error('Failed to initialize S3 client:', error)
+    throw error
+  }
+}
+
+// Lazy initialization to avoid issues with environment variables during build
+function getS3Client() {
+  if (!s3Client) {
+    s3Client = initializeS3Client()
+  }
+  return s3Client
 }
 
 const BUCKET_NAME = process.env.S3_BUCKET || 'k-fashion-products'
@@ -42,6 +60,15 @@ export async function uploadToS3(
   metadata?: Record<string, string>
 ) {
   try {
+    console.log('Starting S3 upload with:', {
+      bucket: BUCKET_NAME,
+      key,
+      contentType,
+      fileSize: file.length,
+      metadata
+    })
+
+    const client = getS3Client()
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
@@ -50,7 +77,9 @@ export async function uploadToS3(
       Metadata: metadata,
     })
 
-    await s3Client.send(command)
+    console.log('Sending S3 command...')
+    const result = await client.send(command)
+    console.log('S3 upload result:', result)
     
     // Return the public URL (assuming bucket is configured for public read)
     return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
@@ -75,7 +104,7 @@ export async function deleteFromS3(key: string) {
       Key: key,
     })
 
-    await s3Client.send(command)
+    await getS3Client().send(command)
     return true
   } catch (error) {
     console.error('S3 delete error:', error)
@@ -96,7 +125,7 @@ export async function generatePresignedUploadUrl(
       ContentType: contentType,
     })
 
-    const url = await getSignedUrl(s3Client, command, { expiresIn })
+    const url = await getSignedUrl(getS3Client(), command, { expiresIn })
     return url
   } catch (error) {
     console.error('S3 presigned URL error:', error)
@@ -115,7 +144,7 @@ export async function generatePresignedDownloadUrl(
       Key: key,
     })
 
-    const url = await getSignedUrl(s3Client, command, { expiresIn })
+    const url = await getSignedUrl(getS3Client(), command, { expiresIn })
     return url
   } catch (error) {
     console.error('S3 presigned download URL error:', error)
@@ -132,7 +161,7 @@ export async function listS3Objects(prefix: string, maxKeys: number = 100) {
       MaxKeys: maxKeys,
     })
 
-    const response = await s3Client.send(command)
+    const response = await getS3Client().send(command)
     return response.Contents || []
   } catch (error) {
     console.error('S3 list error:', error)
