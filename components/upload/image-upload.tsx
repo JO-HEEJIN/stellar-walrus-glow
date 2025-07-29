@@ -98,69 +98,77 @@ export function ImageUpload({
         prev.map(f => f.id === id ? { ...f, progress: 10 } : f)
       )
 
-      // Create form data
-      const formData = new FormData()
-      formData.append('file', file)
-      if (productId) formData.append('productId', productId)
-      formData.append('imageType', imageType)
-
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setUploadingFiles(prev =>
-          prev.map(f => {
-            if (f.id === id && f.progress < 80) {
-              return { ...f, progress: f.progress + 10 }
-            }
-            return f
-          })
-        )
-      }, 200)
-
-      // Upload to server
-      const response = await fetch('/api/upload', {
+      // Step 1: Get presigned URL
+      const presignedResponse = await fetch('/api/upload/presigned', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          productId,
+          imageType
+        })
       })
 
-      clearInterval(progressInterval)
-
-      if (!response.ok) {
-        let errorMessage = `Upload failed: ${response.status}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error?.message || errorData.message || errorMessage
-          
-          // Log detailed error for debugging
-          console.error('Upload API Error Details:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            errorData
-          })
-        } catch (parseError) {
-          console.error('Could not parse error response:', parseError)
-        }
-        
-        throw new Error(errorMessage)
+      if (!presignedResponse.ok) {
+        const errorData = await presignedResponse.json()
+        throw new Error(errorData.error?.message || 'Failed to get upload URL')
       }
 
-      const data = await response.json()
+      const { data } = await presignedResponse.json()
+      const { presignedUrl, imageUrl } = data
 
-      // Update with success
+      // Update progress
       setUploadingFiles(prev =>
-        prev.map(f =>
-          f.id === id
-            ? { ...f, progress: 100, url: data.data.url }
-            : f
-        )
+        prev.map(f => f.id === id ? { ...f, progress: 30 } : f)
       )
 
-      // Call success callback
-      if (onUploadComplete) {
-        onUploadComplete(data.data.url, file)
-      }
+      // Step 2: Upload directly to S3
+      const xhr = new XMLHttpRequest()
+      
+      // Set up progress tracking
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round(30 + (event.loaded / event.total) * 60) // 30% to 90%
+          setUploadingFiles(prev =>
+            prev.map(f => f.id === id ? { ...f, progress } : f)
+          )
+        }
+      })
 
-      toast.success(`${file.name} uploaded successfully`)
+      // Upload promise
+      const uploadPromise = new Promise<string>((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            resolve(imageUrl)
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`))
+          }
+        }
+        
+        xhr.onerror = () => reject(new Error('Upload failed'))
+        
+        xhr.open('PUT', presignedUrl)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+
+      const finalUrl = await uploadPromise
+
+      // Complete
+      setUploadingFiles(prev =>
+        prev.map(f => f.id === id ? { ...f, progress: 100, url: finalUrl } : f)
+      )
+
+      onUploadComplete?.(finalUrl, file)
+      toast.success(`${file.name} 업로드 완료`)
+
+      // Remove from uploading list after a delay
+      setTimeout(() => {
+        setUploadingFiles(prev => prev.filter(f => f.id !== id))
+      }, 2000)
 
     } catch (error: any) {
       console.error('Upload error:', error)
