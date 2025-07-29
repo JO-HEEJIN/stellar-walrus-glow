@@ -32,13 +32,25 @@ export default function GoogleAdsense({
 }: GoogleAdsenseProps) {
   useEffect(() => {
     try {
-      if (typeof window !== 'undefined' && window.adsbygoogle) {
-        window.adsbygoogle.push({})
+      if (typeof window !== 'undefined') {
+        // Wait for AdSense script to load
+        const checkAndPush = () => {
+          if (window.adsbygoogle) {
+            console.log('Pushing AdSense ad:', { adClient, adSlot, adFormat })
+            window.adsbygoogle.push({})
+          } else {
+            console.warn('AdSense script not loaded yet, retrying...')
+            setTimeout(checkAndPush, 100)
+          }
+        }
+        
+        // Small delay to ensure DOM is ready
+        setTimeout(checkAndPush, 100)
       }
     } catch (error) {
       console.error('AdSense error:', error)
     }
-  }, [])
+  }, [adClient, adSlot, adFormat])
 
   return (
     <>
