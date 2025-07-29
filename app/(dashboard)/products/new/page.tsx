@@ -65,6 +65,7 @@ export default function NewProductPage() {
       }
 
       toast.success('상품이 성공적으로 등록되었습니다')
+      // 성공 시 바로 리다이렉트 (onCancel은 컴포넌트에서 처리)
       router.push('/products')
     } catch (error: any) {
       toast.error(error.message || '상품 등록 중 오류가 발생했습니다')
