@@ -125,8 +125,23 @@ export function ImageUpload({
       clearInterval(progressInterval)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Upload failed: ${response.status}`)
+        let errorMessage = `Upload failed: ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error?.message || errorData.message || errorMessage
+          
+          // Log detailed error for debugging
+          console.error('Upload API Error Details:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            errorData
+          })
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError)
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

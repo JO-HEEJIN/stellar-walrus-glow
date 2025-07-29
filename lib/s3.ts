@@ -12,28 +12,36 @@ let s3Client: S3Client
 
 function initializeS3Client() {
   try {
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    // Clean environment variables to remove any whitespace/newlines
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID?.trim()
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY?.trim()
+    const region = process.env.AWS_REGION?.trim() || 'us-east-2'
+    const bucket = process.env.S3_BUCKET?.trim()
+
+    if (!accessKeyId || !secretAccessKey) {
       console.error('Missing AWS credentials:', {
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION,
-        bucket: process.env.S3_BUCKET
+        hasAccessKey: !!accessKeyId,
+        hasSecretKey: !!secretAccessKey,
+        region,
+        bucket
       })
       throw new Error('AWS credentials not configured')
     }
 
     console.log('Initializing S3 client with config:', {
-      region: process.env.AWS_REGION || 'us-east-2',
-      bucket: process.env.S3_BUCKET,
-      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+      region,
+      bucket,
+      hasAccessKey: !!accessKeyId,
+      hasSecretKey: !!secretAccessKey,
+      accessKeyLength: accessKeyId.length,
+      secretKeyLength: secretAccessKey.length
     })
 
     return new S3Client({
-      region: process.env.AWS_REGION || 'us-east-2',
+      region,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId,
+        secretAccessKey,
       },
     })
   } catch (error) {
@@ -50,7 +58,7 @@ function getS3Client() {
   return s3Client
 }
 
-const BUCKET_NAME = process.env.S3_BUCKET || 'k-fashion-products'
+const BUCKET_NAME = process.env.S3_BUCKET?.trim() || 'k-fashion-products-711082721767'
 
 // Upload file to S3
 export async function uploadToS3(
