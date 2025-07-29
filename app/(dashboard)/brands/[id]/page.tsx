@@ -209,25 +209,8 @@ export default function BrandDetailPage() {
             <h2 className="text-xl font-semibold text-gray-900">브랜드 정보</h2>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">연락처</h3>
-                <div className="space-y-1">
-                  <p className="text-sm text-gray-900">이메일: {brand.contact.email}</p>
-                  <p className="text-sm text-gray-900">전화: {brand.contact.phone}</p>
-                  <p className="text-sm text-gray-900">주소: {brand.contact.address}</p>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">기타 정보</h3>
-                <div className="space-y-1">
-                  {brand.website && (
-                    <p className="text-sm text-gray-900">
-                      웹사이트: <a href={brand.website} className="text-blue-600 hover:text-blue-800">{brand.website}</a>
-                    </p>
-                  )}
-                </div>
-              </div>
+            <div className="text-center text-gray-500">
+              <p className="text-sm">연락처 및 추가 정보는 준비 중입니다.</p>
             </div>
           </div>
         </div>

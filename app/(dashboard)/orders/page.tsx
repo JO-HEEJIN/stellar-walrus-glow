@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import OrderManagement from '@/components/orders/order-management'
-import OrderFilters from '@/components/orders/order-filters'
+import EnhancedOrderManagement from '@/components/orders/enhanced-order-management'
 
 export default function OrdersPage() {
   const [userRole, setUserRole] = useState<string>('')
@@ -51,11 +50,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="mt-8">
-        <OrderFilters onFiltersChange={setFilters} userRole={userRole} />
-      </div>
-
-      <div className="mt-6">
-        <OrderManagement userRole={userRole} filters={filters} />
+        <EnhancedOrderManagement userRole={userRole} filters={filters} />
       </div>
     </div>
   )
