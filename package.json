@@ -17,7 +17,8 @@
     "test:database": "tsx scripts/test-database.ts",
     "test:cache": "tsx scripts/test-cache.ts",
     "test:infrastructure": "npm run test:database && npm run test:cache",
-    "fix:s3-cors": "node scripts/fix-s3-cors.js"
+    "fix:s3-cors": "node scripts/fix-s3-cors.js",
+    "fix:s3-permissions": "node scripts/fix-s3-permissions.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

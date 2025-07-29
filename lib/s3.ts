@@ -133,6 +133,12 @@ export async function generatePresignedUploadUrl(
       Bucket: BUCKET_NAME,
       Key: key,
       ContentType: contentType,
+      ACL: 'public-read', // Make uploaded files publicly readable
+      Metadata: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD',
+        'Access-Control-Allow-Headers': '*'
+      }
     })
 
     const url = await getSignedUrl(getS3Client(), command, { expiresIn })
