@@ -25,6 +25,24 @@ export default function GoogleAdSense() {
     const preloadLinks = document.querySelectorAll('link[href*="adsbygoogle.js"]')
     preloadLinks.forEach(link => link.remove())
     
+    // Load script and enable auto ads
+    script.onload = () => {
+      try {
+        // Initialize adsbygoogle array if not exists
+        window.adsbygoogle = window.adsbygoogle || []
+        
+        // Enable auto ads for page level ads
+        window.adsbygoogle.push({
+          google_ad_client: 'ca-pub-9558805716031898',
+          enable_page_level_ads: true
+        })
+        
+        console.log('AdSense auto ads enabled')
+      } catch (error) {
+        console.error('AdSense auto ads error:', error)
+      }
+    }
+    
     document.head.appendChild(script)
 
     // Meta 태그 추가 (중복 체크)

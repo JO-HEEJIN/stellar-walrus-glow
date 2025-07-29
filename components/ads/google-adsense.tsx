@@ -35,17 +35,20 @@ export default function GoogleAdsense({
       if (typeof window !== 'undefined') {
         // Wait for AdSense script to load
         const checkAndPush = () => {
-          if (window.adsbygoogle) {
+          if (window.adsbygoogle && window.adsbygoogle.loaded) {
             console.log('Pushing AdSense ad:', { adClient, adSlot, adFormat })
+            window.adsbygoogle.push({})
+          } else if (window.adsbygoogle) {
+            console.log('Pushing AdSense ad (script loaded):', { adClient, adSlot, adFormat })
             window.adsbygoogle.push({})
           } else {
             console.warn('AdSense script not loaded yet, retrying...')
-            setTimeout(checkAndPush, 100)
+            setTimeout(checkAndPush, 200)
           }
         }
         
-        // Small delay to ensure DOM is ready
-        setTimeout(checkAndPush, 100)
+        // Longer delay to ensure DOM and script are ready
+        setTimeout(checkAndPush, 500)
       }
     } catch (error) {
       console.error('AdSense error:', error)

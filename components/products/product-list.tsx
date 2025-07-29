@@ -106,9 +106,16 @@ export default function ProductList({ userRole }: ProductListProps) {
         throw new Error(data.error?.message || 'Failed to delete product')
       }
 
-      // Refresh the list
+      // Immediately remove the product from the local state
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== productId))
+      setTotalItems(prev => prev - 1)
+      
       alert('상품이 삭제되었습니다.')
-      setPage(1) // This will trigger useEffect to reload
+      
+      // Also reload to ensure we're in sync with the server
+      setTimeout(() => {
+        loadProducts()
+      }, 100)
     } catch (err) {
       alert(err instanceof Error ? err.message : '상품 삭제에 실패했습니다.')
     }

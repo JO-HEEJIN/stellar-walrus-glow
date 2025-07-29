@@ -140,6 +140,7 @@ export function ImageUpload({
         xhr.onerror = () => reject(new Error('Network error during upload'))
         
         xhr.open('POST', '/api/upload')
+        xhr.withCredentials = true // Include cookies for authentication
         xhr.send(formData)
       })
 
