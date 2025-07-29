@@ -30,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" suppressHydrationWarning>
-      <head>
+      <body className={inter.className}>
         {/* Google AdSense Verification Script */}
         <Script
           async
@@ -38,9 +38,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="beforeInteractive"
         />
-        <meta name="google-adsense-account" content="ca-pub-9558805716031898" />
-      </head>
-      <body className={inter.className}>
+        
         {/* Google AdSense - Auto Ads */}
         <GoogleAdSense />
         {children}
