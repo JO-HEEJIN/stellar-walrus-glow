@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import ProductList from '@/components/products/product-list'
+import { BannerAd, InlineAd } from '@/components/ads/ad-layouts'
 
 export default function ProductsPage() {
   const [user, setUser] = useState<{username: string, role: string} | null>(null)
@@ -34,6 +35,12 @@ export default function ProductsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Top Banner Ad */}
+      <BannerAd 
+        adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_BANNER_SLOT || 'XXXXXXXXXX'} 
+        className="mb-6"
+      />
+
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -59,6 +66,12 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Inline Ad between header and product list */}
+      <InlineAd 
+        adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_INLINE_SLOT || 'XXXXXXXXXX'} 
+        className="my-6"
+      />
 
       <div className="mt-8">
         <ProductList userRole={user?.role || 'GUEST'} />

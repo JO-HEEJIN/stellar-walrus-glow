@@ -12,3 +12,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# AdSense crawler
+User-agent: Mediapartners-Google
+Allow: /
+
+# Sitemap
+Sitemap: https://k-fashions.com/sitemap.xml

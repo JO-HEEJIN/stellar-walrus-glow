@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
 import { ShoppingCart, ImageOff } from 'lucide-react'
 import ProductFilters, { FilterValues } from './product-filters'
+import { ProductListAd, MobileAd } from '@/components/ads/ad-layouts'
 
 interface Product {
   id: string
@@ -153,8 +154,9 @@ export default function ProductList({ userRole }: ProductListProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          {products.map((product, index) => [
+            // Product card
+            (<div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               {/* Product Image */}
               <div className="aspect-square relative bg-gray-100">
                 {product.thumbnailImage ? (
@@ -197,24 +199,28 @@ export default function ProductList({ userRole }: ProductListProps) {
                   <span className="text-sm text-gray-600">
                     재고: {product.inventory}개
                   </span>
-                  {product.inventory === 0 ? (
-                    <span className="text-xs font-medium text-red-600">품절</span>
-                  ) : product.inventory <= 10 ? (
-                    <span className="text-xs font-medium text-orange-600">재고 부족</span>
-                  ) : (
-                    <span className="text-xs font-medium text-green-600">재고 있음</span>
-                  )}
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    product.status === 'ACTIVE' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {product.status === 'ACTIVE' ? '판매중' : '판매중지'}
+                  </span>
                 </div>
-                
-                {/* Actions */}
-                <div className="mt-4 flex gap-2">
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
                   {userRole === 'BUYER' && (
                     <button
-                      onClick={() => addItem({
-                        productId: product.id,
-                        productName: product.nameKo,
-                        price: Number(product.basePrice)
-                      })}
+                      onClick={() => {
+                        if (product.inventory > 0) {
+                          addItem({
+                            productId: product.id,
+                            productName: product.nameKo,
+                            price: Number(product.basePrice)
+                          })
+                        }
+                      }}
                       disabled={product.inventory === 0}
                       className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
                         product.inventory === 0
@@ -244,10 +250,23 @@ export default function ProductList({ userRole }: ProductListProps) {
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            </div>),
+            // Insert ad every 8 products
+            ...((index + 1) % 8 === 0 && index < products.length - 1 ? [
+              <ProductListAd 
+                key={`ad-${index}`}
+                adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_PRODUCTS_SLOT || '4919529387'}
+              />
+            ] : [])
+          ]).flat()}
         </div>
       )}
+
+      {/* Mobile Ad */}
+      <MobileAd 
+        adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_MOBILE_SLOT || 'XXXXXXXXXX'} 
+        className="my-6"
+      />
 
       {/* Pagination */}
       {totalPages > 1 && (
