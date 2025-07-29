@@ -34,7 +34,8 @@ function initializeS3Client() {
       hasAccessKey: !!accessKeyId,
       hasSecretKey: !!secretAccessKey,
       accessKeyLength: accessKeyId.length,
-      secretKeyLength: secretAccessKey.length
+      secretKeyLength: secretAccessKey.length,
+      expectedRegion: 'us-east-2'
     })
 
     return new S3Client({
