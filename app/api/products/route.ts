@@ -161,14 +161,14 @@ const createProductSchema = z.object({
   brandId: z.string().min(1),
   sku: z.string().min(1).max(50),
   nameKo: z.string().min(1).max(200),
-  nameCn: z.string().max(200).optional(),
-  descriptionKo: z.string().max(5000).optional(),
-  descriptionCn: z.string().max(5000).optional(),
-  categoryId: z.string().nullable().optional(),
+  nameCn: z.string().max(200).optional().or(z.literal('')),
+  descriptionKo: z.string().max(5000).optional().or(z.literal('')),
+  descriptionCn: z.string().max(5000).optional().or(z.literal('')),
+  categoryId: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   basePrice: z.number().positive(),
   inventory: z.number().int().min(0),
-  thumbnailImage: z.string().url().nullable().optional(),
-  images: z.array(z.string().url()).max(10).optional(),
+  thumbnailImage: z.string().url().min(1), // Required
+  images: z.array(z.string().url()).max(10).default([]),
   options: z.record(z.array(z.string())).optional(),
 })
 
@@ -300,11 +300,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json()
-    console.log('Product creation request body:', body)
+    let body
+    try {
+      body = await request.json()
+      console.log('Product creation request body:', body)
+    } catch (error) {
+      console.error('Failed to parse JSON body:', error)
+      throw new BusinessError(
+        ErrorCodes.VALIDATION_FAILED,
+        HttpStatus.BAD_REQUEST,
+        { message: 'Invalid JSON in request body' }
+      )
+    }
     
-    const data = createProductSchema.parse(body)
-    console.log('Validated product data:', data)
+    let data
+    try {
+      data = createProductSchema.parse(body)
+      console.log('Validated product data:', data)
+    } catch (error) {
+      console.error('Schema validation error:', error)
+      throw new BusinessError(
+        ErrorCodes.VALIDATION_FAILED,
+        HttpStatus.BAD_REQUEST,
+        { 
+          message: 'Validation failed',
+          details: error instanceof z.ZodError ? error.errors : error
+        }
+      )
+    }
 
     // Brand ownership check removed for now
     // TODO: Add proper brand ownership validation when auth system is set up

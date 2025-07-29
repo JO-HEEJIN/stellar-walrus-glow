@@ -60,8 +60,31 @@ export default function NewProductPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || '상품 등록에 실패했습니다')
+        let errorMessage = '상품 등록에 실패했습니다'
+        try {
+          const error = await response.json()
+          console.error('Product creation API error:', error)
+          
+          if (error.error?.message) {
+            errorMessage = error.error.message
+          } else if (error.message) {
+            errorMessage = error.message
+          } else if (error.error?.details) {
+            errorMessage = `Validation error: ${JSON.stringify(error.error.details)}`
+          }
+          
+          // Specific error handling
+          if (response.status === 409) {
+            errorMessage = 'SKU가 이미 존재합니다. 다른 SKU를 사용해주세요.'
+          } else if (response.status === 400) {
+            errorMessage = `입력 데이터 오류: ${errorMessage}`
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       toast.success('상품이 성공적으로 등록되었습니다')
