@@ -6,7 +6,7 @@ import EnhancedOrderManagement from '@/components/orders/enhanced-order-manageme
 export default function OrdersPage() {
   const [userRole, setUserRole] = useState<string>('')
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({})
+  const [filters] = useState({})
 
   useEffect(() => {
     const checkAuth = async () => {

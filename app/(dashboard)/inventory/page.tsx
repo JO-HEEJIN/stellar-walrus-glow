@@ -176,7 +176,7 @@ export default function InventoryPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">상태 필터</label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'low' | 'out')}
               className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="all">전체</option>
@@ -189,7 +189,7 @@ export default function InventoryPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">정렬</label>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as 'inventory' | 'nameKo' | 'sku')}
               className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
               <option value="inventory">재고 수량</option>
@@ -202,7 +202,8 @@ export default function InventoryPage() {
 
       {/* Product Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -275,7 +276,8 @@ export default function InventoryPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
         
         {products.length === 0 && (
           <div className="text-center py-12">
