@@ -56,6 +56,7 @@ export default function GoogleAdsense({
     <>
       {/* Google AdSense Script */}
       <Script
+        id={`adsense-${adSlot}`}
         async
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adClient}`}
         crossOrigin="anonymous"

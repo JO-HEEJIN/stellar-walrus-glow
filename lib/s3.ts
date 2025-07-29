@@ -91,8 +91,8 @@ export async function uploadToS3(
     const result = await client.send(command)
     console.log('S3 upload result:', result)
     
-    // Return the public URL (assuming bucket is configured for public read)
-    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+    // Return the public URL (using correct region)
+    return `https://${BUCKET_NAME}.s3.us-east-2.amazonaws.com/${key}`
   } catch (error) {
     console.error('S3 upload error details:', {
       error: error,
