@@ -91,8 +91,10 @@ export async function uploadToS3(
     const result = await client.send(command)
     console.log('S3 upload result:', result)
     
-    // Return the public URL (using correct region)
-    return `https://${BUCKET_NAME}.s3.us-east-2.amazonaws.com/${key}`
+    // Return the public URL (using correct region and format)
+    const publicUrl = `https://${BUCKET_NAME}.s3.us-east-2.amazonaws.com/${key}`
+    console.log('Generated public URL:', publicUrl)
+    return publicUrl
   } catch (error) {
     console.error('S3 upload error details:', {
       error: error,
@@ -133,12 +135,7 @@ export async function generatePresignedUploadUrl(
       Bucket: BUCKET_NAME,
       Key: key,
       ContentType: contentType,
-      ACL: 'public-read', // Make uploaded files publicly readable
-      Metadata: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD',
-        'Access-Control-Allow-Headers': '*'
-      }
+      ACL: 'public-read' // Make uploaded files publicly readable
     })
 
     const url = await getSignedUrl(getS3Client(), command, { expiresIn })

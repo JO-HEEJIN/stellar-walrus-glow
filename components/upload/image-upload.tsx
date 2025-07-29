@@ -98,40 +98,19 @@ export function ImageUpload({
         prev.map(f => f.id === id ? { ...f, progress: 10 } : f)
       )
 
-      // Step 1: Get presigned URL
-      const presignedResponse = await fetch('/api/upload/presigned', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          productId,
-          imageType
-        })
-      })
+      // Use traditional server upload instead of presigned URL
+      const formData = new FormData()
+      formData.append('file', file)
+      if (productId) formData.append('productId', productId)
+      formData.append('imageType', imageType)
 
-      if (!presignedResponse.ok) {
-        const errorData = await presignedResponse.json()
-        throw new Error(errorData.error?.message || 'Failed to get upload URL')
-      }
-
-      const { data } = await presignedResponse.json()
-      const { presignedUrl, imageUrl } = data
-
-      // Update progress
-      setUploadingFiles(prev =>
-        prev.map(f => f.id === id ? { ...f, progress: 30 } : f)
-      )
-
-      // Step 2: Upload directly to S3
+      // Create XMLHttpRequest for progress tracking
       const xhr = new XMLHttpRequest()
       
       // Set up progress tracking
       xhr.upload.addEventListener('progress', (event) => {
         if (event.lengthComputable) {
-          const progress = Math.round(30 + (event.loaded / event.total) * 60) // 30% to 90%
+          const progress = Math.round(10 + (event.loaded / event.total) * 80) // 10% to 90%
           setUploadingFiles(prev =>
             prev.map(f => f.id === id ? { ...f, progress } : f)
           )
@@ -142,17 +121,26 @@ export function ImageUpload({
       const uploadPromise = new Promise<string>((resolve, reject) => {
         xhr.onload = () => {
           if (xhr.status === 200) {
-            resolve(imageUrl)
+            try {
+              const response = JSON.parse(xhr.responseText)
+              resolve(response.data.url)
+            } catch (error) {
+              reject(new Error('Invalid response format'))
+            }
           } else {
-            reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`))
+            try {
+              const errorResponse = JSON.parse(xhr.responseText)
+              reject(new Error(errorResponse.error?.message || `Upload failed: ${xhr.status} ${xhr.statusText}`))
+            } catch (error) {
+              reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`))
+            }
           }
         }
         
-        xhr.onerror = () => reject(new Error('Upload failed'))
+        xhr.onerror = () => reject(new Error('Network error during upload'))
         
-        xhr.open('PUT', presignedUrl)
-        xhr.setRequestHeader('Content-Type', file.type)
-        xhr.send(file)
+        xhr.open('POST', '/api/upload')
+        xhr.send(formData)
       })
 
       const finalUrl = await uploadPromise
