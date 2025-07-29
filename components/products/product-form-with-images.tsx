@@ -63,6 +63,7 @@ export function ProductFormWithImages({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -120,6 +121,10 @@ export function ProductFormWithImages({
 
     loadData()
   }, [])
+
+  // Watch form values for controlled components
+  const watchedBrandId = watch('brandId')
+  const watchedCategoryId = watch('categoryId')
 
   const handleThumbnailUpload = (url: string) => {
     setThumbnailImage(url)
@@ -204,7 +209,7 @@ export function ProductFormWithImages({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="brandId">Brand *</Label>
-                    <Select onValueChange={(value) => setValue('brandId', value)}>
+                    <Select value={watchedBrandId} onValueChange={(value) => setValue('brandId', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
@@ -223,7 +228,7 @@ export function ProductFormWithImages({
 
                   <div>
                     <Label htmlFor="categoryId">Category</Label>
-                    <Select onValueChange={(value) => setValue('categoryId', value || undefined)}>
+                    <Select value={watchedCategoryId || "none"} onValueChange={(value) => setValue('categoryId', value === "none" ? undefined : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select category (optional)" />
                       </SelectTrigger>

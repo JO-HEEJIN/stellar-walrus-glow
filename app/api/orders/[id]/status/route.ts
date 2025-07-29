@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prismaRead, prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
+import { prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Order } from '@/lib/domain/models'
@@ -127,7 +127,7 @@ export async function PATCH(
       const orderModel = new Order({
         id: order.id,
         userId: order.userId,
-        status: order.status as OrderStatus,
+        status: order.status as any,
         items: order.items.map(item => ({
           id: item.id,
           productId: item.productId,
@@ -139,7 +139,7 @@ export async function PATCH(
       })
 
       // Validate state transition
-      if (!orderModel.canTransitionTo(data.status as OrderStatus)) {
+      if (!orderModel.canTransitionTo(data.status as any)) {
         throw new BusinessError(
           ErrorCodes.ORDER_INVALID_STATUS_TRANSITION,
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -180,7 +180,7 @@ export async function PATCH(
                             userInfo.username === 'admin' ? 'admin@kfashion.com' :
                             `${userInfo.username}@kfashion.com`
           
-          let auditUser = await tx.user.findUnique({
+          const auditUser = await tx.user.findUnique({
             where: { email: userEmail }
           })
 

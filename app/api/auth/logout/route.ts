@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Simple logout - just clear the cookie
 
