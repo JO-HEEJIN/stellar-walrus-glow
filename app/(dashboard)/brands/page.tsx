@@ -11,7 +11,7 @@ interface Brand {
   description?: string
   logoUrl?: string
   isActive: boolean
-  productsCount: number
+  productCount: number
   createdAt: string
   updatedAt: string
 }
@@ -124,7 +124,7 @@ export default function BrandsPage() {
                   <p className="text-gray-600 text-sm mb-4">{brand.description || '브랜드 설명이 없습니다'}</p>
                   
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <span>상품 {brand.productsCount}개</span>
+                    <span>상품 {brand.productCount}개</span>
                     <span>생성일: {new Date(brand.createdAt).toLocaleDateString('ko-KR')}</span>
                   </div>
                   

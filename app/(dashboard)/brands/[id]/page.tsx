@@ -6,20 +6,22 @@ import Link from 'next/link'
 
 interface Brand {
   id: string
-  name: string
-  description: string
-  logo?: string
-  website?: string
-  contact: {
-    email: string
-    phone: string
-    address: string
-  }
-  stats: {
-    totalProducts: number
-    totalOrders: number
-    monthlyRevenue: number
-  }
+  nameKo: string
+  nameCn?: string
+  slug: string
+  description?: string
+  logoUrl?: string
+  isActive: boolean
+  productCount: number
+  recentProducts: {
+    id: string
+    nameKo: string
+    thumbnailImage?: string
+    basePrice: number
+    createdAt: string
+  }[]
+  createdAt: string
+  updatedAt: string
 }
 
 interface Product {
@@ -53,7 +55,7 @@ export default function BrandDetailPage() {
           throw new Error('브랜드 정보를 불러올 수 없습니다')
         }
         const brandData = await brandResponse.json()
-        setBrand(brandData)
+        setBrand(brandData.data)
         
         // Fetch brand products
         const productsResponse = await fetch(`/api/brands/${brandId}/products`)
@@ -129,7 +131,7 @@ export default function BrandDetailPage() {
             <li>
               <div className="flex items-center">
                 <span className="mx-2 text-gray-400">/</span>
-                <span className="text-gray-500">{brand.name}</span>
+                <span className="text-gray-500">{brand.nameKo}</span>
               </div>
             </li>
           </ol>
@@ -139,15 +141,15 @@ export default function BrandDetailPage() {
         <div className="mb-8 bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {brand.logo && (
+              {brand.logoUrl && (
                 <img 
-                  src={brand.logo} 
-                  alt={brand.name} 
+                  src={brand.logoUrl} 
+                  alt={brand.nameKo} 
                   className="h-16 w-16 rounded-lg object-cover"
                 />
               )}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{brand.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{brand.nameKo}</h1>
                 <p className="text-gray-600 mt-1">{brand.description}</p>
               </div>
             </div>
@@ -171,7 +173,7 @@ export default function BrandDetailPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">총 상품 수</p>
-                <p className="text-2xl font-semibold text-gray-900">{brand.stats.totalProducts}</p>
+                <p className="text-2xl font-semibold text-gray-900">{brand.productCount}</p>
               </div>
             </div>
           </div>
@@ -182,7 +184,7 @@ export default function BrandDetailPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">총 주문 수</p>
-                <p className="text-2xl font-semibold text-gray-900">{brand.stats.totalOrders}</p>
+                <p className="text-2xl font-semibold text-gray-900">-</p>
               </div>
             </div>
           </div>
@@ -194,7 +196,7 @@ export default function BrandDetailPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">월간 매출</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  ₩{brand.stats.monthlyRevenue.toLocaleString()}
+                  -
                 </p>
               </div>
             </div>
