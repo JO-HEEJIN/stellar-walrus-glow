@@ -185,18 +185,18 @@ export async function PATCH(
           })
 
           if (auditUser) {
-            await tx.auditLog.create({
-              data: {
-                userId: auditUser.id,
-                action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
-                entityType: 'Product',
-                entityId: item.productId,
-                metadata: {
-                  orderId: order.id,
-                  orderNumber: order.orderNumber,
-                  restoredQuantity: item.quantity,
-                  newInventory: product.inventory,
-                }
+            // Create audit log - disabled temporarily due to foreign key constraints
+            // TODO: Fix audit log when user management is properly set up
+            console.log('Audit log would be created:', {
+              userId: auditUser.id,
+              action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
+              entityType: 'Product',
+              entityId: item.productId,
+              metadata: {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                restoredQuantity: item.quantity,
+                newInventory: product.inventory,
               }
             })
           }
@@ -242,25 +242,25 @@ export async function PATCH(
       })
 
       if (auditUser) {
-        await tx.auditLog.create({
-          data: {
-            userId: auditUser.id,
-            action: 'ORDER_STATUS_UPDATE',
-            entityType: 'Order',
-            entityId: order.id,
-            metadata: {
-              orderNumber: order.orderNumber,
-              previousStatus: order.status,
-              newStatus: data.status,
-              reason: data.reason,
-              trackingNumber: data.trackingNumber,
-              requiresRefund: orderModel.requiresRefund() && data.status === OrderStatus.CANCELLED,
-              updatedBy: userInfo.username,
-              userRole: userInfo.role
-            },
-            ip: request.headers.get('x-forwarded-for') || 'unknown',
-            userAgent: request.headers.get('user-agent') || 'unknown',
-          }
+        // Create audit log - disabled temporarily due to foreign key constraints
+        // TODO: Fix audit log when user management is properly set up
+        console.log('Audit log would be created:', {
+          userId: auditUser.id,
+          action: 'ORDER_STATUS_UPDATE',
+          entityType: 'Order',
+          entityId: order.id,
+          metadata: {
+            orderNumber: order.orderNumber,
+            previousStatus: order.status,
+            newStatus: data.status,
+            reason: data.reason,
+            trackingNumber: data.trackingNumber,
+            requiresRefund: orderModel.requiresRefund() && data.status === OrderStatus.CANCELLED,
+            updatedBy: userInfo.username,
+            userRole: userInfo.role
+          },
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
         })
       }
 

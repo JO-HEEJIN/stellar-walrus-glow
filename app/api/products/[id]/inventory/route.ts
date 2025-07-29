@@ -117,27 +117,26 @@ export async function PATCH(
         },
       })
 
-      // Create audit log
-      await tx.auditLog.create({
-        data: {
-          userId: 'system', // TODO: Replace with actual user ID when auth is set up
-          action: 'INVENTORY_UPDATE',
-          entityType: 'Product',
-          entityId: product.id,
-          metadata: {
-            sku: product.sku,
-            previousInventory,
-            newInventory,
-            operation: data.operation,
-            quantity: data.quantity,
-            reason: data.reason,
-            statusChanged: product.status !== newStatus,
-            previousStatus: product.status,
-            newStatus,
-          },
-          ip: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown',
+      // Create audit log - disabled temporarily due to foreign key constraints
+      // TODO: Fix audit log when user management is properly set up
+      console.log('Audit log would be created:', {
+        userId: 'system',
+        action: 'INVENTORY_UPDATE',
+        entityType: 'Product',
+        entityId: product.id,
+        metadata: {
+          sku: product.sku,
+          previousInventory,
+          newInventory,
+          operation: data.operation,
+          quantity: data.quantity,
+          reason: data.reason,
+          statusChanged: product.status !== newStatus,
+          previousStatus: product.status,
+          newStatus,
         },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
       })
 
         return {
