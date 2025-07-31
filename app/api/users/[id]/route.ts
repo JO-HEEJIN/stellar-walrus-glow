@@ -68,6 +68,7 @@ const updateUserSchema = z.object({
   email: z.string().email().optional(),
   role: z.enum(['MASTER_ADMIN', 'BRAND_ADMIN', 'BUYER']).optional(),
   status: z.enum(['ACTIVE', 'SUSPENDED', 'DELETED']).optional(),
+  isActive: z.boolean().optional(), // For active/inactive toggle
   brandId: z.string().nullable().optional(),
 })
 
@@ -176,17 +177,26 @@ export async function PATCH(
 
     // Create audit log - disabled temporarily due to foreign key constraints
     // TODO: Fix audit log when user management is properly set up
-    console.log('Audit log would be created:', {
-      userId: null, // We don't have user ID from JWT
-      action: 'USER_UPDATE',
-      entityType: 'User',
-      entityId: user.id,
-      metadata: {
-        updatedBy: userInfo.username,
-        changes: data,
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system', // Use system user for audit logs
+        action: 'USER_UPDATE',
+        entityType: 'User',
+        entityId: user.id,
+        metadata: {
+          updatedBy: userInfo.username,
+          changes: data,
+          previousValues: {
+            name: existingUser.name,
+            email: existingUser.email,
+            role: existingUser.role,
+            status: existingUser.status,
+          },
+        },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
       },
-      ip: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
     })
 
     return NextResponse.json({ data: user })

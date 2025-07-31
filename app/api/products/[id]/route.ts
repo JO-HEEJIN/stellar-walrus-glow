@@ -211,19 +211,20 @@ export async function PATCH(
       },
     })
 
-    // Create audit log - disabled temporarily due to foreign key constraints
-    // TODO: Fix audit log when user management is properly set up
-    console.log('Audit log would be created:', {
-      userId: userInfo.username || 'unknown',
-      action: 'PRODUCT_UPDATE',
-      entityType: 'Product',
-      entityId: product.id,
-      metadata: {
-        updatedBy: userInfo.username,
-        changes: data,
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system', // Use system user for audit logs
+        action: 'PRODUCT_UPDATE',
+        entityType: 'Product',
+        entityId: product.id,
+        metadata: {
+          updatedBy: userInfo.username,
+          changes: data,
+        },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
       },
-      ip: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
     })
 
     return NextResponse.json({ data: product })
@@ -333,20 +334,21 @@ export async function DELETE(
       where: { id: params.id },
     })
 
-    // Create audit log - disabled temporarily due to foreign key constraints
-    // TODO: Fix audit log when user management is properly set up
-    console.log('Audit log would be created:', {
-      userId: userInfo.username || 'unknown',
-      action: 'PRODUCT_DELETE',
-      entityType: 'Product',
-      entityId: params.id,
-      metadata: {
-        deletedBy: userInfo.username,
-        sku: product.sku,
-        nameKo: product.nameKo,
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system', // Use system user for audit logs
+        action: 'PRODUCT_DELETE',
+        entityType: 'Product',
+        entityId: params.id,
+        metadata: {
+          deletedBy: userInfo.username,
+          sku: product.sku,
+          nameKo: product.nameKo,
+        },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
       },
-      ip: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
     })
 
     return NextResponse.json({ success: true })

@@ -172,23 +172,10 @@ export async function PATCH(
             })
           }
 
-          // Audit log for inventory restoration
-          const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
-                            userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
-                            userInfo.username === 'kf002' ? 'brand@kfashion.com' :
-                            userInfo.username === 'demo' ? 'demo@kfashion.com' :
-                            userInfo.username === 'admin' ? 'admin@kfashion.com' :
-                            `${userInfo.username}@kfashion.com`
-          
-          const auditUser = await tx.user.findUnique({
-            where: { email: userEmail }
-          })
-
-          if (auditUser) {
-            // Create audit log - disabled temporarily due to foreign key constraints
-            // TODO: Fix audit log when user management is properly set up
-            console.log('Audit log would be created:', {
-              userId: auditUser.id,
+          // Create audit log for inventory restoration
+          await tx.auditLog.create({
+            data: {
+              userId: 'system', // Use system user for audit logs
               action: 'INVENTORY_RESTORE_FOR_CANCELLATION',
               entityType: 'Product',
               entityId: item.productId,
@@ -197,9 +184,11 @@ export async function PATCH(
                 orderNumber: order.orderNumber,
                 restoredQuantity: item.quantity,
                 newInventory: product.inventory,
-              }
-            })
-          }
+              },
+              ip: request.headers.get('x-forwarded-for') || 'unknown',
+              userAgent: request.headers.get('user-agent') || 'unknown',
+            },
+          })
         }
       }
 
@@ -230,22 +219,9 @@ export async function PATCH(
       })
 
       // Create audit log for status change
-      const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
-                        userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
-                        userInfo.username === 'kf002' ? 'brand@kfashion.com' :
-                        userInfo.username === 'demo' ? 'demo@kfashion.com' :
-                        userInfo.username === 'admin' ? 'admin@kfashion.com' :
-                        `${userInfo.username}@kfashion.com`
-      
-      let auditUser = await tx.user.findUnique({
-        where: { email: userEmail }
-      })
-
-      if (auditUser) {
-        // Create audit log - disabled temporarily due to foreign key constraints
-        // TODO: Fix audit log when user management is properly set up
-        console.log('Audit log would be created:', {
-          userId: auditUser.id,
+      await tx.auditLog.create({
+        data: {
+          userId: 'system', // Use system user for audit logs
           action: 'ORDER_STATUS_UPDATE',
           entityType: 'Order',
           entityId: order.id,
@@ -261,8 +237,8 @@ export async function PATCH(
           },
           ip: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
-        })
-      }
+        },
+      })
 
       return {
         order: updatedOrder,

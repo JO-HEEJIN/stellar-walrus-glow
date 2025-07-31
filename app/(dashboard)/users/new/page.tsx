@@ -7,12 +7,12 @@ import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-const updateUserSchema = z.object({
+const userSchema = z.object({
   email: z.string().email('유효한 이메일 주소를 입력해주세요'),
   name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다'),
+  password: z.string().min(8, '비밀번호는 최소 8자 이상이어야 합니다'),
   role: z.enum(['BUYER', 'BRAND_ADMIN', 'MASTER_ADMIN']),
-  brandId: z.string().optional().nullable(),
-  isActive: z.boolean(),
+  brandId: z.string().optional(),
 })
 
 interface Brand {
@@ -21,38 +21,25 @@ interface Brand {
   isActive: boolean
 }
 
-interface UserData {
-  id: string
-  email: string
-  name: string | null
-  role: string
-  isActive: boolean
-  brandId: string | null
-  brand?: {
-    id: string
-    nameKo: string
-  } | null
-}
-
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function NewUserPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [brands, setBrands] = useState<Brand[]>([])
-  const [userData, setUserData] = useState<UserData | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
+    password: '',
     role: 'BUYER',
     brandId: '',
-    isActive: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    // Check permissions
     checkAuth()
+    // Load brands for BRAND_ADMIN selection
     loadBrands()
-    loadUser()
-  }, [params.id])
+  }, [])
 
   const checkAuth = async () => {
     try {
@@ -66,28 +53,6 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       }
     } catch (error) {
       console.error('Auth check error:', error)
-    }
-  }
-
-  const loadUser = async () => {
-    try {
-      const response = await fetch(`/api/users/${params.id}`)
-      if (!response.ok) {
-        throw new Error('사용자를 찾을 수 없습니다')
-      }
-      const data = await response.json()
-      const user = data.data
-      setUserData(user)
-      setFormData({
-        email: user.email || '',
-        name: user.name || '',
-        role: user.role,
-        brandId: user.brandId || '',
-        isActive: user.isActive,
-      })
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '사용자 정보를 불러오는데 실패했습니다')
-      router.push('/users')
     }
   }
 
@@ -109,7 +74,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
     try {
       // Validate form data
-      const validatedData = updateUserSchema.parse(formData)
+      const validatedData = userSchema.parse(formData)
       
       // Check if brand is required
       if (validatedData.role === 'BRAND_ADMIN' && !validatedData.brandId) {
@@ -119,8 +84,8 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
       setLoading(true)
 
-      const response = await fetch(`/api/users/${params.id}`, {
-        method: 'PATCH',
+      const response = await fetch('/api/users', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(validatedData),
       })
@@ -131,10 +96,10 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
           setErrors({ email: '이미 존재하는 이메일입니다' })
           return
         }
-        throw new Error(data.error?.message || '사용자 수정에 실패했습니다')
+        throw new Error(data.error?.message || '사용자 생성에 실패했습니다')
       }
 
-      toast.success('사용자 정보가 성공적으로 수정되었습니다')
+      toast.success('사용자가 성공적으로 생성되었습니다')
       router.push('/users')
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -146,19 +111,11 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         })
         setErrors(fieldErrors)
       } else {
-        toast.error(error instanceof Error ? error.message : '사용자 수정 중 오류가 발생했습니다')
+        toast.error(error instanceof Error ? error.message : '사용자 생성 중 오류가 발생했습니다')
       }
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!userData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-lg">로딩 중...</div>
-      </div>
-    )
   }
 
   return (
@@ -176,10 +133,10 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       <div className="bg-white shadow sm:rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg font-medium leading-6 text-gray-900">
-            사용자 정보 수정
+            새 사용자 추가
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            사용자의 정보를 수정합니다.
+            시스템에 새로운 사용자를 추가합니다.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -217,6 +174,27 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name}</p>
               )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                비밀번호 *
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                required
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                최소 8자 이상의 비밀번호를 입력하세요.
+              </p>
             </div>
 
             {/* Role */}
@@ -262,27 +240,6 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               </div>
             )}
 
-            {/* Active Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                계정 상태
-              </label>
-              <div className="mt-2">
-                <label className="inline-flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">활성 계정</span>
-                </label>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                비활성화된 계정은 로그인할 수 없습니다.
-              </p>
-            </div>
-
             {/* Submit Buttons */}
             <div className="flex justify-end space-x-3 pt-6">
               <button
@@ -297,7 +254,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                 disabled={loading}
                 className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
-                {loading ? '수정 중...' : '사용자 수정'}
+                {loading ? '생성 중...' : '사용자 생성'}
               </button>
             </div>
           </form>

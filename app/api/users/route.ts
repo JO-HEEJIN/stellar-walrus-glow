@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
 const createUserSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
+  password: z.string().min(8).optional(), // Optional for invite flow
   role: z.enum(['MASTER_ADMIN', 'BRAND_ADMIN', 'BUYER']).default('BUYER'),
   brandId: z.string().nullable().optional(),
 })
@@ -150,14 +151,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Hash password if provided
+    let hashedPassword = null
+    if (data.password) {
+      const bcrypt = await import('bcryptjs')
+      hashedPassword = await bcrypt.hash(data.password, 10)
+    }
+
     // Create user
     const user = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
+        password: hashedPassword, // Will be null for invite flow
         role: data.role,
         brandId: data.role === 'BRAND_ADMIN' ? data.brandId : null,
         status: 'ACTIVE',
+        isActive: true,
       },
       include: {
         brand: {
@@ -166,20 +176,21 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create audit log - disabled temporarily due to foreign key constraints
-    // TODO: Fix audit log when user management is properly set up
-    console.log('Audit log would be created:', {
-      userId: null,
-      action: 'USER_CREATE',
-      entityType: 'User',
-      entityId: user.id,
-      metadata: {
-        createdBy: userInfo.username,
-        userEmail: user.email,
-        userRole: user.role,
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system', // Use system user for audit logs
+        action: 'USER_CREATE',
+        entityType: 'User',
+        entityId: user.id,
+        metadata: {
+          createdBy: userInfo.username,
+          userEmail: user.email,
+          userRole: user.role,
+        },
+        ip: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
       },
-      ip: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
     })
 
     return NextResponse.json({ data: user }, { status: 201 })

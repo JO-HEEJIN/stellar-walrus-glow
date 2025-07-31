@@ -75,9 +75,9 @@ export default function BrandsPage() {
               <h1 className="text-3xl font-bold text-gray-900">브랜드 관리</h1>
               <p className="mt-2 text-gray-600">등록된 브랜드를 관리하고 상세 정보를 확인하세요</p>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <Link href="/brands/new" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
               새 브랜드 등록
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -85,9 +85,9 @@ export default function BrandsPage() {
         {brands.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <div className="text-gray-400 text-lg mb-4">등록된 브랜드가 없습니다</div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+            <Link href="/brands/new" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block">
               첫 브랜드 등록하기
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -135,9 +135,12 @@ export default function BrandsPage() {
                     >
                       상세 보기
                     </Link>
-                    <button className="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700">
+                    <Link 
+                      href={`/brands/${brand.id}/edit`}
+                      className="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 text-center"
+                    >
                       편집
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

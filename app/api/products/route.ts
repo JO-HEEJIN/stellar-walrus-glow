@@ -376,20 +376,24 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // Create audit log using write instance - disabled temporarily due to foreign key constraints
-    // TODO: Fix audit log when user management is properly set up
-    console.log('Audit log would be created:', {
-      userId: userInfo.username || 'unknown',
-      action: 'PRODUCT_CREATE',
-      entityType: 'Product',
-      entityId: product.id,
-      metadata: {
-        sku: product.sku,
-        nameKo: product.nameKo,
-        brandId: product.brandId,
-      },
-      ip: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
+    // Create audit log using write instance
+    await withRetry(async () => {
+      return await prismaWrite.auditLog.create({
+        data: {
+          userId: 'system', // Use system user for audit logs
+          action: 'PRODUCT_CREATE',
+          entityType: 'Product',
+          entityId: product.id,
+          metadata: {
+            createdBy: userInfo.username || 'unknown',
+            sku: product.sku,
+            nameKo: product.nameKo,
+            brandId: product.brandId,
+          },
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+          userAgent: request.headers.get('user-agent') || 'unknown',
+        },
+      })
     })
 
     return NextResponse.json({ data: product }, { status: 201 })
