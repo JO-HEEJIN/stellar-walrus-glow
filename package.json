@@ -17,6 +17,10 @@
     "test:database": "tsx scripts/test-database.ts",
     "test:cache": "tsx scripts/test-cache.ts",
     "test:infrastructure": "npm run test:database && npm run test:cache",
+    "test:audit": "tsx scripts/test-audit-logs.ts",
+    "test:integration": "tsx scripts/system-integration-test.ts",
+    "test:comprehensive": "tsx scripts/comprehensive-test-suite.ts",
+    "test:all": "npm run test:comprehensive",
     "fix:s3-cors": "node scripts/fix-s3-cors.js",
     "fix:s3-permissions": "node scripts/fix-s3-permissions.js"
   },

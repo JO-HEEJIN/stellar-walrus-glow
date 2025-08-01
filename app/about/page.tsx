@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'NIA INTERNATIONAL 소개 - 한국 패션 B2B 도매 플랫폼',
+  description: 'NIA INTERNATIONAL은 2020년 설립된 한국 패션 도매 전문 플랫폼입니다. 500+ 브랜드, 50+ 수출국가, 3000+ 활성 바이어와 함께하는 글로벌 네트워크를 제공합니다.',
+  keywords: 'NIA INTERNATIONAL, 회사소개, 한국패션, 도매플랫폼, 글로벌네트워크, 패션수출',
+}
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">

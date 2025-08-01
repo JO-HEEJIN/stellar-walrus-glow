@@ -1,6 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { Metadata } from 'next'
+import SocialLinks from '@/components/ui/social-links'
+
+export const metadata: Metadata = {
+  title: 'NIA INTERNATIONAL 연락처 - 문의 및 상담',
+  description: 'NIA INTERNATIONAL 고객센터 1544-7734. 평일 09:00-17:30, 토요일 09:00-13:00. 서울시 강남구 논현로102길 5, 4층. 일반문의, 사업제휴, 고객지원 서비스 제공.',
+  keywords: 'NIA INTERNATIONAL, 연락처, 고객센터, 문의, 상담, 서비스',
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -88,9 +96,8 @@ export default function ContactPage() {
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">전화번호</h3>
                     <p className="text-gray-600">
-                      대표전화: 02-1234-5678<br />
-                      고객센터: 1688-1234<br />
-                      팩스: 02-1234-5679
+                      고객센터: 1544-7734<br />
+                      이메일: master@k-fashions.com
                     </p>
                   </div>
                 </div>
@@ -106,9 +113,9 @@ export default function ContactPage() {
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">이메일</h3>
                     <p className="text-gray-600">
-                      일반문의: info@k-fashions.com<br />
-                      사업제휴: partnership@k-fashions.com<br />
-                      고객지원: support@k-fashions.com
+                      일반문의: master@k-fashions.com<br />
+                      사업제휴: master@k-fashions.com<br />
+                      고객지원: master@k-fashions.com
                     </p>
                   </div>
                 </div>
@@ -124,7 +131,7 @@ export default function ContactPage() {
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">운영시간</h3>
                     <p className="text-gray-600">
-                      평일: 오전 9시 - 오후 6시<br />
+                      평일: 오전 9시 - 오후 5시 30분<br />
                       토요일: 오전 9시 - 오후 1시<br />
                       일요일 및 공휴일: 휴무
                     </p>
@@ -144,6 +151,15 @@ export default function ContactPage() {
                 <p><strong>버스:</strong> 강남역 정류장 하차</p>
                 <p><strong>주차:</strong> 건물 지하 1-3층 주차장 이용 가능</p>
               </div>
+            </div>
+
+            {/* Social Media */}
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">소셜 미디어</h3>
+              <p className="text-gray-600 mb-6">
+                NIA INTERNATIONAL의 최신 소식과 다양한 정보를 소셜 미디어에서 만나보세요.
+              </p>
+              <SocialLinks size="large" showLabels={true} orientation="vertical" />
             </div>
           </div>
 

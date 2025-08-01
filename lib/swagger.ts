@@ -4,12 +4,12 @@ export const swaggerOptions: Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'K-Fashion Platform API',
+      title: 'NIA INTERNATIONAL Platform API',
       version: '1.0.0',
-      description: 'API documentation for K-Fashion B2B wholesale platform',
+      description: 'API documentation for NIA INTERNATIONAL B2B wholesale platform',
       contact: {
-        name: 'K-Fashion Support',
-        email: 'support@kfashion.com',
+        name: 'NIA INTERNATIONAL Support',
+        email: 'master@k-fashions.com',
       },
     },
     servers: [

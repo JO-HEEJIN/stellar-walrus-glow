@@ -14,7 +14,7 @@ interface TestAdProps {
 }
 
 export function TestAd({ className = '', adSlot = '1234567890' }: TestAdProps) {
-  const adRef = useRef<HTMLElement>(null)
+  const adRef = useRef<HTMLModElement>(null)
 
   useEffect(() => {
     try {

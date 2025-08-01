@@ -35,7 +35,7 @@ export default function GoogleAdsense({
       if (typeof window !== 'undefined') {
         // Wait for AdSense script to load
         const checkAndPush = () => {
-          if (window.adsbygoogle && window.adsbygoogle.loaded) {
+          if (window.adsbygoogle && (window.adsbygoogle as any).loaded) {
             console.log('Pushing AdSense ad:', { adClient, adSlot, adFormat })
             window.adsbygoogle.push({})
           } else if (window.adsbygoogle) {

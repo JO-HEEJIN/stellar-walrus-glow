@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'NIA INTERNATIONAL 이용약관',
+  description: 'NIA INTERNATIONAL B2B 도매 플랫폼의 이용약관입니다. 서비스 이용 시 준수해야 할 규정과 회원의 권리 및 의무사항을 확인하세요.',
+  keywords: '이용약관, 서비스약관, NIA INTERNATIONAL, B2B플랫폼, 회원약관',
+}
+
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">

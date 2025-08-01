@@ -125,8 +125,8 @@ const orderConfirmationTemplate = (data: OrderEmailData) => `
         </div>
 
         <div class="footer">
-            <p>K-Fashion 고객센터: 1588-0000 | support@k-fashion.com</p>
-            <p>© 2025 K-Fashion. All rights reserved.</p>
+            <p>NIA INTERNATIONAL 고객센터: 1544-7734 | master@k-fashions.com</p>
+            <p>© 2025 NIA INTERNATIONAL. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -192,8 +192,8 @@ const orderStatusUpdateTemplate = (data: OrderEmailData) => `
         </div>
 
         <div class="footer">
-            <p>K-Fashion 고객센터: 1588-0000 | support@k-fashion.com</p>
-            <p>© 2025 K-Fashion. All rights reserved.</p>
+            <p>NIA INTERNATIONAL 고객센터: 1544-7734 | master@k-fashions.com</p>
+            <p>© 2025 NIA INTERNATIONAL. All rights reserved.</p>
         </div>
     </div>
 </body>

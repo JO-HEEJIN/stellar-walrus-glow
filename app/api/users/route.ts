@@ -163,11 +163,11 @@ export async function POST(request: NextRequest) {
       data: {
         name: data.name,
         email: data.email,
-        password: hashedPassword, // Will be null for invite flow
+        // password field doesn't exist in User model
         role: data.role,
         brandId: data.role === 'BRAND_ADMIN' ? data.brandId : null,
         status: 'ACTIVE',
-        isActive: true,
+        // isActive field doesn't exist in User model
       },
       include: {
         brand: {

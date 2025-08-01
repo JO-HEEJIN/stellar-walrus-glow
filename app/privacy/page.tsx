@@ -1,3 +1,11 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'NIA INTERNATIONAL 개인정보 처리방침',
+  description: 'NIA INTERNATIONAL의 개인정보 처리방침 및 개인정보 보호에 관한 정책을 확인하세요. 안전한 개인정보 처리를 위한 보안조치와 이용자 권리를 안내합니다.',
+  keywords: '개인정보처리방침, 개인정보보호, NIA INTERNATIONAL, 개인정보보호책임자',
+}
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -11,7 +19,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mt-8 mb-4">1. 개인정보의 처리 목적</h2>
-            <p>K-Fashion(이하 '회사')은 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.</p>
+            <p>NIA INTERNATIONAL(이하 '회사')은 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>회원 가입 및 관리: 회원제 서비스 제공에 따른 본인 식별·인증, 회원자격 유지·관리</li>
               <li>재화 또는 서비스 제공: 물품 배송, 서비스 제공, 계약서·청구서 발송, 본인인증, 구매 및 요금 결제</li>
@@ -66,10 +74,10 @@ export default function PrivacyPage() {
             <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
             <div className="bg-gray-100 p-4 rounded-lg mt-4">
               <p><strong>개인정보 보호책임자</strong></p>
-              <p>성명: 조희진</p>
+              <p>성명: 윤지언</p>
               <p>직책: 대표이사</p>
-              <p>연락처: privacy@k-fashions.com</p>
-              <p>전화번호: 02-1234-5678</p>
+              <p>연락처: master@k-fashions.com</p>
+              <p>전화번호: 1544-7734</p>
             </div>
           </section>
 

@@ -37,13 +37,13 @@ export async function GET(request: NextRequest) {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const lastWeek = new Date(today)
     lastWeek.setDate(lastWeek.getDate() - 7)
-    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    // const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    // const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
     // Build where clause based on user role
-    let productWhere: any = {}
-    let orderWhere: any = {}
-    let userWhere: any = {}
+    const productWhere: any = {}
+    const orderWhere: any = {}
+    // const userWhere: any = {}
     
     if (userInfo.role === 'BRAND_ADMIN') {
       // For brand admins, filter by their brand
