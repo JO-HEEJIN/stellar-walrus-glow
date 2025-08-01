@@ -5,7 +5,7 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl mb-4">
-            K-Fashion 소개
+            NIA INTERNATIONAL 소개
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             한국 패션의 우수성을 세계에 알리는 B2B 도매 플랫폼
@@ -18,7 +18,7 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">회사 개요</h2>
             <div className="space-y-4 text-gray-600">
               <p>
-                K-Fashion은 2020년 설립된 한국 패션 도매 전문 플랫폼입니다. 
+                NIA INTERNATIONAL은 2020년 설립된 한국 패션 도매 전문 플랫폼입니다. 
                 우리는 한국의 우수한 패션 브랜드와 전 세계 바이어를 연결하여 
                 한국 패션의 글로벌 진출을 지원하고 있습니다.
               </p>
@@ -26,6 +26,14 @@ export default function AboutPage() {
                 최신 기술과 효율적인 물류 시스템을 통해 빠르고 안전한 거래를 
                 보장하며, 양질의 한국 패션 제품을 합리적인 가격에 제공합니다.
               </p>
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  <strong>회사명:</strong> NIA INTERNATIONAL<br />
+                  <strong>대표자:</strong> 윤지언<br />
+                  <strong>사업자등록번호:</strong> 291-81-02452<br />
+                  <strong>주소:</strong> 서울특별시 강남구 논현로102길 5, 4층
+                </p>
+              </div>
             </div>
           </div>
 
@@ -52,7 +60,7 @@ export default function AboutPage() {
 
         {/* Statistics */}
         <div className="bg-white rounded-lg shadow-lg p-8 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">K-Fashion in Numbers</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">NIA INTERNATIONAL in Numbers</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
@@ -124,7 +132,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-32 h-32 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900">조희진</h3>
+              <h3 className="text-xl font-semibold text-gray-900">윤지언</h3>
               <p className="text-gray-600">CEO / 대표이사</p>
               <p className="text-sm text-gray-500 mt-2">
                 15년 이상의 패션 유통 경험

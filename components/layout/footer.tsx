@@ -7,13 +7,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-bold mb-4">K-Fashion</h3>
+            <h3 className="text-2xl font-bold mb-4">NIA INTERNATIONAL</h3>
             <p className="text-gray-400 mb-4 max-w-md">
               한국 패션의 우수성을 세계에 알리는 B2B 도매 플랫폼입니다. 
               우수한 품질의 K-Fashion 제품을 합리적인 가격에 제공합니다.
             </p>
             <div className="space-y-2 text-sm text-gray-400">
-              <p>📍 서울특별시 강남구 테헤란로 123, K-Fashion 빌딩 10층</p>
+              <p>📍 서울특별시 강남구 논현로102길 5, 4층</p>
               <p>📞 대표전화: 02-1234-5678</p>
               <p>📧 이메일: info@k-fashions.com</p>
             </div>
@@ -78,8 +78,8 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-sm text-gray-400 mb-4 md:mb-0">
-              <p>&copy; 2025 K-Fashion Co., Ltd. All rights reserved.</p>
-              <p>사업자등록번호: 123-45-67890 | 통신판매업신고번호: 2025-서울강남-1234</p>
+              <p>&copy; 2025 NIA INTERNATIONAL. All rights reserved.</p>
+              <p>사업자등록번호: 291-81-02452 | 통신판매업신고번호: 2025-서울강남-1234</p>
             </div>
             
             {/* Social Links */}

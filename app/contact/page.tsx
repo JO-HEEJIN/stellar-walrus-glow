@@ -70,8 +70,9 @@ export default function ContactPage() {
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900">주소</h3>
                     <p className="text-gray-600">
-                      서울특별시 강남구 테헤란로 123, K-Fashion 빌딩 10층<br />
-                      (우편번호: 06234)
+                      서울특별시 강남구 논현로102길 5, 4층<br />
+                      (우편번호: 06234)<br />
+                      사업자등록번호: 291-81-02452
                     </p>
                   </div>
                 </div>

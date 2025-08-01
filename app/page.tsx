@@ -9,7 +9,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              K-Fashion Wholesale Platform
+              NIA INTERNATIONAL
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
               한국 패션의 우수성을 세계에 알리는 B2B 도매 플랫폼<br />
@@ -35,7 +35,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              왜 K-Fashion을 선택해야 할까요?
+              왜 NIA INTERNATIONAL을 선택해야 할까요?
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               전문적이고 안전한 B2B 도매 거래 플랫폼
@@ -87,7 +87,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              K-Fashion 성과
+              NIA INTERNATIONAL 성과
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               숫자로 보는 우리의 성장
@@ -122,7 +122,7 @@ export default function HomePage() {
             지금 시작하세요
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            K-Fashion과 함께 글로벌 패션 시장에서 성공하세요
+            NIA INTERNATIONAL과 함께 글로벌 패션 시장에서 성공하세요
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
