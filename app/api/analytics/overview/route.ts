@@ -1,156 +1,301 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prismaRead, withRetry } from '@/lib/prisma-load-balanced'
+import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 
 export const dynamic = 'force-dynamic'
-// import { prisma } from '@/lib/prisma'
-// import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
-// import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 
 export async function GET(request: NextRequest) {
   try {
-    // Authentication check
+    // Check authentication
     const token = request.cookies.get('auth-token')?.value
     if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_REQUIRED,
+        HttpStatus.UNAUTHORIZED
       )
     }
 
-    // Verify token and get user info
+    // Verify token
     const jwt = await import('jsonwebtoken')
     let userInfo
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
       userInfo = decoded
     } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
+      throw new BusinessError(
+        ErrorCodes.AUTHENTICATION_INVALID,
+        HttpStatus.UNAUTHORIZED
       )
     }
 
-    // Only MASTER_ADMIN and BRAND_ADMIN can view analytics
-    if (userInfo.role === 'BUYER') {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      )
-    }
+    // Get date ranges
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const lastWeek = new Date(today)
+    lastWeek.setDate(lastWeek.getDate() - 7)
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-    // Mock data for analytics (replace with DB when connected)
-    const isBrandAdmin = userInfo.role === 'BRAND_ADMIN'
-
-    // Mock analytics data
-    const mockData = {
-      todayRevenue: isBrandAdmin ? 850000 : 2500000,
-      todayOrders: isBrandAdmin ? 12 : 45,
-      yesterdayRevenue: isBrandAdmin ? 750000 : 2200000,
-      yesterdayOrders: isBrandAdmin ? 10 : 38,
-      totalUsers: isBrandAdmin ? 0 : 1250,
-      newUsersToday: isBrandAdmin ? 0 : 5,
-      totalProducts: isBrandAdmin ? 28 : 156,
-      lowStockProducts: isBrandAdmin ? 3 : 12
-    }
-
-    const revenueChange = ((mockData.todayRevenue - mockData.yesterdayRevenue) / mockData.yesterdayRevenue * 100).toFixed(1)
-    const orderChange = ((mockData.todayOrders - mockData.yesterdayOrders) / mockData.yesterdayOrders * 100).toFixed(1)
-
-    const ordersByStatus = isBrandAdmin ? [
-      { status: 'PENDING', count: 5 },
-      { status: 'PROCESSING', count: 3 },
-      { status: 'SHIPPED', count: 8 },
-      { status: 'DELIVERED', count: 25 },
-      { status: 'CANCELLED', count: 2 }
-    ] : [
-      { status: 'PENDING', count: 18 },
-      { status: 'PROCESSING', count: 12 },
-      { status: 'SHIPPED', count: 35 },
-      { status: 'DELIVERED', count: 98 },
-      { status: 'CANCELLED', count: 7 }
-    ]
-
-    // Generate last 7 days revenue data
-    const dailyRevenue = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date()
-      date.setDate(date.getDate() - (6 - i))
-      return {
-        date: date.toISOString().split('T')[0],
-        orders: Math.floor(Math.random() * (isBrandAdmin ? 15 : 50)) + 5,
-        revenue: Math.floor(Math.random() * (isBrandAdmin ? 800000 : 2000000)) + (isBrandAdmin ? 200000 : 500000)
+    // Build where clause based on user role
+    let productWhere: any = {}
+    let orderWhere: any = {}
+    let userWhere: any = {}
+    
+    if (userInfo.role === 'BRAND_ADMIN') {
+      // For brand admins, filter by their brand
+      const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
+      })
+      
+      if (user?.brandId) {
+        productWhere.brandId = user.brandId
+        orderWhere.items = {
+          some: {
+            product: {
+              brandId: user.brandId
+            }
+          }
+        }
       }
+    } else if (userInfo.role === 'BUYER') {
+      // For buyers, show their own orders
+      const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                        userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                        userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                        `${userInfo.username}@kfashion.com`
+      
+      const user = await withRetry(async () => {
+        return await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
+      })
+      
+      if (user) {
+        orderWhere.userId = user.id
+      }
+    }
+
+    // Get today's statistics
+    const [
+      todayRevenue,
+      todayOrders,
+      yesterdayRevenue,
+      yesterdayOrders,
+      totalUsers,
+      newUsersToday,
+      totalProducts,
+      lowStockProducts,
+      ordersByStatus
+    ] = await Promise.all([
+      // Today's revenue
+      withRetry(async () => {
+        const result = await prismaRead.order.aggregate({
+          where: { 
+            ...orderWhere,
+            status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] },
+            createdAt: { gte: today, lt: tomorrow }
+          },
+          _sum: { totalAmount: true }
+        })
+        return result._sum.totalAmount || 0
+      }),
+      
+      // Today's orders
+      withRetry(async () => {
+        return await prismaRead.order.count({
+          where: { 
+            ...orderWhere,
+            createdAt: { gte: today, lt: tomorrow }
+          }
+        })
+      }),
+      
+      // Yesterday's revenue
+      withRetry(async () => {
+        const result = await prismaRead.order.aggregate({
+          where: { 
+            ...orderWhere,
+            status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] },
+            createdAt: { gte: yesterday, lt: today }
+          },
+          _sum: { totalAmount: true }
+        })
+        return result._sum.totalAmount || 0
+      }),
+      
+      // Yesterday's orders
+      withRetry(async () => {
+        return await prismaRead.order.count({
+          where: { 
+            ...orderWhere,
+            createdAt: { gte: yesterday, lt: today }
+          }
+        })
+      }),
+      
+      // Total users (only for MASTER_ADMIN)
+      userInfo.role === 'MASTER_ADMIN' ? withRetry(async () => {
+        return await prismaRead.user.count({ where: { status: 'ACTIVE' } })
+      }) : 0,
+      
+      // New users today (only for MASTER_ADMIN)
+      userInfo.role === 'MASTER_ADMIN' ? withRetry(async () => {
+        return await prismaRead.user.count({
+          where: { 
+            status: 'ACTIVE',
+            createdAt: { gte: today, lt: tomorrow }
+          }
+        })
+      }) : 0,
+      
+      // Total products
+      withRetry(async () => {
+        return await prismaRead.product.count({ where: productWhere })
+      }),
+      
+      // Low stock products (inventory < 10)
+      withRetry(async () => {
+        return await prismaRead.product.count({
+          where: { 
+            ...productWhere,
+            inventory: { lt: 10 },
+            status: 'ACTIVE'
+          }
+        })
+      }),
+      
+      // Orders by status
+      withRetry(async () => {
+        const statuses = ['PENDING', 'PAID', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+        const counts = await Promise.all(
+          statuses.map(status => 
+            prismaRead.order.count({
+              where: { ...orderWhere, status }
+            })
+          )
+        )
+        return statuses.map((status, index) => ({
+          status,
+          count: counts[index]
+        }))
+      })
+    ])
+
+    // Calculate changes
+    const revenueChange = Number(yesterdayRevenue) > 0 
+      ? ((Number(todayRevenue) - Number(yesterdayRevenue)) / Number(yesterdayRevenue) * 100).toFixed(1)
+      : '0'
+    
+    const orderChange = yesterdayOrders > 0
+      ? ((todayOrders - yesterdayOrders) / yesterdayOrders * 100).toFixed(1)
+      : '0'
+
+    // Get daily revenue for last 7 days
+    const dailyRevenue = await withRetry(async () => {
+      const revenues = []
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+        const nextDate = new Date(date)
+        nextDate.setDate(nextDate.getDate() + 1)
+        
+        const [revenue, orders] = await Promise.all([
+          prismaRead.order.aggregate({
+            where: {
+              ...orderWhere,
+              status: { in: ['PAID', 'PREPARING', 'SHIPPED', 'DELIVERED'] },
+              createdAt: { gte: date, lt: nextDate }
+            },
+            _sum: { totalAmount: true }
+          }),
+          prismaRead.order.count({
+            where: {
+              ...orderWhere,
+              createdAt: { gte: date, lt: nextDate }
+            }
+          })
+        ])
+        
+        revenues.push({
+          date: date.toISOString().split('T')[0],
+          revenue: Number(revenue._sum.totalAmount || 0),
+          orders
+        })
+      }
+      return revenues
     })
 
-    const topProducts = isBrandAdmin ? [
-      {
-        productId: 'prod-1',
-        productName: '클래식 셔츠',
-        productSku: 'CS-001',
-        brandName: userInfo.username.includes('brand') ? 'test-brand' : 'K-Fashion',
-        quantity: 25,
-        revenue: 2225000,
-        orderCount: 15
-      },
-      {
-        productId: 'prod-2',
-        productName: '데님 자켓',
-        productSku: 'DJ-001',
-        brandName: userInfo.username.includes('brand') ? 'test-brand' : 'K-Fashion',
-        quantity: 18,
-        revenue: 2322000,
-        orderCount: 12
-      }
-    ] : [
-      {
-        productId: 'prod-1',
-        productName: '클래식 셔츠',
-        productSku: 'CS-001',
-        brandName: 'test-brand',
-        quantity: 45,
-        revenue: 4005000,
-        orderCount: 28
-      },
-      {
-        productId: 'prod-2',
-        productName: '데님 자켓',
-        productSku: 'DJ-001',
-        brandName: 'test-brand',
-        quantity: 32,
-        revenue: 4128000,
-        orderCount: 20
-      },
-      {
-        productId: 'prod-4',
-        productName: '한복 원피스',
-        productSku: 'HP-001',
-        brandName: 'K-Fashion',
-        quantity: 28,
-        revenue: 4452000,
-        orderCount: 18
-      }
-    ]
+    // Get top products
+    const topProducts = await withRetry(async () => {
+      const products = await prismaRead.orderItem.groupBy({
+        by: ['productId'],
+        where: orderWhere.items ? orderWhere.items : {},
+        _sum: {
+          quantity: true,
+          price: true
+        },
+        _count: true,
+        orderBy: {
+          _sum: {
+            price: 'desc'
+          }
+        },
+        take: 5
+      })
+      
+      // Get product details
+      const productDetails = await prismaRead.product.findMany({
+        where: {
+          id: { in: products.map(p => p.productId) }
+        },
+        include: {
+          brand: {
+            select: { nameKo: true }
+          }
+        }
+      })
+      
+      return products.map(p => {
+        const product = productDetails.find(pd => pd.id === p.productId)
+        return {
+          productId: p.productId,
+          productName: product?.nameKo || 'Unknown',
+          productSku: product?.sku || 'Unknown',
+          brandName: product?.brand.nameKo || 'Unknown',
+          quantity: p._sum.quantity || 0,
+          revenue: Number(p._sum.price || 0) * (p._sum.quantity || 0),
+          orderCount: p._count
+        }
+      })
+    })
 
     return NextResponse.json({
       overview: {
-        todayRevenue: mockData.todayRevenue,
-        todayOrders: mockData.todayOrders,
-        yesterdayRevenue: mockData.yesterdayRevenue,
-        yesterdayOrders: mockData.yesterdayOrders,
+        todayRevenue: Number(todayRevenue),
+        todayOrders,
+        yesterdayRevenue: Number(yesterdayRevenue),
+        yesterdayOrders,
         revenueChange,
         orderChange,
-        totalUsers: mockData.totalUsers,
-        newUsersToday: mockData.newUsersToday,
-        totalProducts: mockData.totalProducts,
-        lowStockProducts: mockData.lowStockProducts
+        totalUsers,
+        newUsersToday,
+        totalProducts,
+        lowStockProducts
       },
       ordersByStatus,
       dailyRevenue,
       topProducts
     })
   } catch (error) {
-    console.error('Analytics error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics data' },
-      { status: 500 }
-    )
+    return createErrorResponse(error as Error, request.url)
   }
 }
