@@ -303,12 +303,14 @@ export default function EnhancedOrderManagement({ userRole, filters }: EnhancedO
                           {order.user?.email || '-'}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {order.items[0]?.product?.nameKo || 'Unknown'}
-                          {order.items.length > 1 && (
-                            <span className="text-gray-500"> 외 {order.items.length - 1}개</span>
-                          )}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="max-w-xs">
+                          <div className="text-sm text-gray-900 truncate">
+                            {order.items[0]?.product?.nameKo || 'Unknown'}
+                            {order.items.length > 1 && (
+                              <span className="text-gray-500"> 외 {order.items.length - 1}개</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

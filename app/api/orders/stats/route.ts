@@ -34,14 +34,38 @@ export async function GET(request: NextRequest) {
       
       // BUYER can only see their own orders
       if (userInfo.role === 'BUYER') {
-        whereClause.userId = userInfo.username
+        // Get user from database based on username
+        const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                          userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                          userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                          `${userInfo.username}@kfashion.com`
+        
+        const user = await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
+        
+        if (user) {
+          whereClause.userId = user.id
+        } else {
+          // If user not found, return empty results
+          whereClause.userId = 'non-existent-id'
+        }
       }
       // BRAND_ADMIN can see orders from their brand's products
-      else if (userInfo.role === 'BRAND_ADMIN' && userInfo.brandId) {
-        whereClause.items = {
-          some: {
-            product: {
-              brandId: userInfo.brandId
+      else if (userInfo.role === 'BRAND_ADMIN') {
+        const userEmail = userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                          `${userInfo.username}@kfashion.com`
+        
+        const user = await prismaRead.user.findFirst({
+          where: { email: userEmail }
+        })
+        
+        if (user?.brandId) {
+          whereClause.items = {
+            some: {
+              product: {
+                brandId: user.brandId
+              }
             }
           }
         }
