@@ -32,6 +32,20 @@ export const metadata: Metadata = {
   other: {
     'google-adsense-account': 'ca-pub-9558805716031898',
     'google-site-verification': 'ca-pub-9558805716031898',
+    'naver-site-verification': 'nia-international-naver-verification',
+    'msvalidate.01': 'nia-international-bing-verification',
+    'yandex-verification': 'nia-international-yandex-verification',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 

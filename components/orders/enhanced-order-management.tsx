@@ -242,8 +242,112 @@ export default function EnhancedOrderManagement({ userRole, filters }: EnhancedO
         </form>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Orders Cards - Mobile */}
+      <div className="md:hidden space-y-4">
+        {orders.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+            <Package className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">주문이 없습니다</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {searchTerm || statusFilter ? '검색 조건에 맞는 주문이 없습니다.' : '아직 주문이 없습니다.'}
+            </p>
+          </div>
+        ) : (
+          orders.map((order) => {
+            const StatusIcon = statusIcons[order.status as keyof typeof statusIcons]
+            
+            return (
+              <div key={order.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {order.orderNumber}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatDateTime(order.createdAt)}
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <StatusIcon className="h-4 w-4 mr-1 text-gray-400" />
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                      statusColors[order.status as keyof typeof statusColors]
+                    }`}>
+                      {statusLabels[order.status as keyof typeof statusLabels]}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mb-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">고객</span>
+                    <span className="text-gray-900">{order.user?.email || '-'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">상품</span>
+                    <span className="text-gray-900 text-right">
+                      {order.items[0]?.product?.nameKo || 'Unknown'}
+                      {order.items.length > 1 && (
+                        <span className="text-gray-500"> 외 {order.items.length - 1}개</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">금액</span>
+                    <span className="font-medium text-gray-900">
+                      {formatPrice(Number(order.totalAmount))}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="flex-1 text-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                  >
+                    상세보기
+                  </Link>
+                  {canUpdateStatus && (
+                    <Link
+                      href={`/orders/${order.id}?edit=status`}
+                      className="flex-1 text-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                    >
+                      상태변경
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+        
+        {/* Mobile Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                이전
+              </button>
+              <span className="text-sm text-gray-700">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Orders Table - Desktop */}
+      <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

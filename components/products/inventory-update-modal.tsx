@@ -114,21 +114,21 @@ export function InventoryUpdateModal({ product, isOpen, onClose, onSuccess }: In
             <div className="space-y-2">
               <Label>작업 유형</Label>
               <RadioGroup value={operation} onValueChange={(value: any) => setOperation(value)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="increment" id="increment" />
-                  <Label htmlFor="increment" className="font-normal cursor-pointer">
+                <div className="flex items-center space-x-3 py-2 max-sm:py-3">
+                  <RadioGroupItem value="increment" id="increment" className="max-sm:w-5 max-sm:h-5" />
+                  <Label htmlFor="increment" className="font-normal cursor-pointer max-sm:text-base max-sm:py-2 flex-1">
                     재고 추가
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="decrement" id="decrement" />
-                  <Label htmlFor="decrement" className="font-normal cursor-pointer">
+                <div className="flex items-center space-x-3 py-2 max-sm:py-3">
+                  <RadioGroupItem value="decrement" id="decrement" className="max-sm:w-5 max-sm:h-5" />
+                  <Label htmlFor="decrement" className="font-normal cursor-pointer max-sm:text-base max-sm:py-2 flex-1">
                     재고 차감
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="set" id="set" />
-                  <Label htmlFor="set" className="font-normal cursor-pointer">
+                <div className="flex items-center space-x-3 py-2 max-sm:py-3">
+                  <RadioGroupItem value="set" id="set" className="max-sm:w-5 max-sm:h-5" />
+                  <Label htmlFor="set" className="font-normal cursor-pointer max-sm:text-base max-sm:py-2 flex-1">
                     재고 설정
                   </Label>
                 </div>
@@ -144,6 +144,7 @@ export function InventoryUpdateModal({ product, isOpen, onClose, onSuccess }: In
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder={operation === 'set' ? '새로운 재고 수량' : '변경할 수량'}
+                className="max-sm:h-12 max-sm:text-base"
                 required
               />
             </div>
@@ -165,15 +166,26 @@ export function InventoryUpdateModal({ product, isOpen, onClose, onSuccess }: In
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="재고 변경 사유를 입력하세요"
                 rows={3}
+                className="max-sm:text-base max-sm:min-h-[80px]"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <DialogFooter className="max-sm:gap-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={isSubmitting}
+              className="max-sm:h-12 max-sm:text-base max-sm:w-full"
+            >
               취소
             </Button>
-            <Button type="submit" disabled={isSubmitting || !quantity}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !quantity}
+              className="max-sm:h-12 max-sm:text-base max-sm:w-full"
+            >
               {isSubmitting ? '처리 중...' : '업데이트'}
             </Button>
           </DialogFooter>

@@ -17,13 +17,24 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
-                href="/login"
+                href="/products"
                 className="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
+              >
+                제품 카탈로그
+              </Link>
+              <Link href="/brands" className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors">
+                브랜드 보기 <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-x-6">
+              <Link
+                href="/login"
+                className="text-sm font-semibold leading-6 text-gray-600 hover:text-blue-600 transition-colors"
               >
                 로그인
               </Link>
-              <Link href="/about" className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors">
-                자세히 알아보기 <span aria-hidden="true">→</span>
+              <Link href="/about" className="text-sm font-semibold leading-6 text-gray-600 hover:text-blue-600 transition-colors">
+                회사소개
               </Link>
             </div>
           </div>

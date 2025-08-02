@@ -34,15 +34,15 @@ export default function OrdersPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">주문 관리</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-2xl font-semibold text-gray-900 max-sm:text-xl">주문 관리</h1>
+          <p className="mt-2 text-sm text-gray-700 max-sm:text-base">
             주문 내역을 확인하고 상태를 관리합니다.
           </p>
         </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none max-sm:mt-6">
           <button
             onClick={() => window.location.href = '/orders/export'}
-            className="block rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary/90"
+            className="block rounded-md bg-primary px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary/90 max-sm:w-full max-sm:h-12 max-sm:text-base"
           >
             주문 내역 내보내기
           </button>
