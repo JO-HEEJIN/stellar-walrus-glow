@@ -33,14 +33,27 @@ export default function GoogleAdsense({
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
+        // Check if this ad unit has already been initialized
+        const adElement = document.querySelector(`ins[data-ad-slot="${adSlot}"]`) as HTMLElement
+        if (adElement && (adElement as any).__adsbygooglePushed) {
+          return // Already initialized
+        }
+
         // Wait for AdSense script to load
         const checkAndPush = () => {
+          const currentAdElement = document.querySelector(`ins[data-ad-slot="${adSlot}"]`) as HTMLElement
+          if (!currentAdElement || (currentAdElement as any).__adsbygooglePushed) {
+            return // Element not found or already pushed
+          }
+
           if (window.adsbygoogle && (window.adsbygoogle as any).loaded) {
             console.log('Pushing AdSense ad:', { adClient, adSlot, adFormat })
             window.adsbygoogle.push({})
+            ;(currentAdElement as any).__adsbygooglePushed = true
           } else if (window.adsbygoogle) {
             console.log('Pushing AdSense ad (script loaded):', { adClient, adSlot, adFormat })
             window.adsbygoogle.push({})
+            ;(currentAdElement as any).__adsbygooglePushed = true
           } else {
             console.warn('AdSense script not loaded yet, retrying...')
             setTimeout(checkAndPush, 200)

@@ -6,7 +6,7 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 import { Product, MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { ProductStatus, Role } from '@/types'
 import { OrderStatus } from '@prisma/client'
-import { notificationManager } from '../notifications/websocket/route'
+import { createNewOrderNotification } from '@/lib/notification-store'
 // import { emailService, OrderEmailData } from '@/lib/email'
 
 // Order search schema
@@ -470,13 +470,14 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // Send real-time notification for new order
+    // Send notification for new order to admins
     try {
-      notificationManager.sendNewOrderNotification(
+      createNewOrderNotification(
+        result.id,
         result.orderNumber,
         result.user.email
       )
-      console.log(`📧 Real-time notification sent for new order: ${result.orderNumber}`)
+      console.log(`📧 Notification sent for new order: ${result.orderNumber}`)
     } catch (notificationError) {
       console.error('Failed to send new order notification:', notificationError)
       // Don't fail the entire request if notification fails

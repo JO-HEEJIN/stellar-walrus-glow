@@ -5,7 +5,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
 import { ProductStatus } from '@/types'
-import { notificationManager } from '../../../notifications/websocket/route'
+import { createInventoryAlertNotification } from '@/lib/notification-store'
 
 // Inventory update schema
 const inventoryUpdateSchema = z.object({
@@ -153,7 +153,7 @@ export async function PATCH(
     const LOW_STOCK_THRESHOLD = 10 // You can make this configurable per product
     if (result.newInventory <= LOW_STOCK_THRESHOLD && result.newInventory > 0) {
       try {
-        notificationManager.sendInventoryAlert(
+        createInventoryAlertNotification(
           result.product.id,
           result.product.nameKo || result.product.nameCn || 'Unknown Product',
           result.newInventory,

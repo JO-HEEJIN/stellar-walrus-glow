@@ -20,6 +20,7 @@ export default function BrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -40,6 +41,40 @@ export default function BrandsPage() {
 
     fetchBrands()
   }, [])
+
+  const handleDelete = async (brandId: string, brandName: string) => {
+    if (!confirm(`정말로 "${brandName}" 브랜드를 삭제하시겠습니까?\n\n주의: 이 작업은 취소할 수 없습니다.`)) {
+      return
+    }
+
+    setDeletingId(brandId)
+    try {
+      const response = await fetch(`/api/brands/${brandId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        if (data.code === 'VALIDATION_FAILED' && data.details?.message?.includes('products')) {
+          throw new Error('이 브랜드에 등록된 상품이 있어 삭제할 수 없습니다. 먼저 모든 상품을 삭제하거나 다른 브랜드로 이동시켜주세요.')
+        }
+        throw new Error(data.error || '브랜드 삭제에 실패했습니다')
+      }
+
+      // Remove the brand from the list or update its status
+      const updatedBrands = brands.map(brand => 
+        brand.id === brandId ? { ...brand, isActive: false } : brand
+      )
+      setBrands(updatedBrands)
+      
+      alert('브랜드가 비활성화되었습니다.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '브랜드 삭제 중 오류가 발생했습니다')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -141,6 +176,17 @@ export default function BrandsPage() {
                     >
                       편집
                     </Link>
+                    <button
+                      onClick={() => handleDelete(brand.id, brand.nameKo)}
+                      disabled={deletingId === brand.id || !brand.isActive}
+                      className={`px-3 py-2 rounded text-sm ${
+                        brand.isActive
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      } ${deletingId === brand.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {deletingId === brand.id ? '삭제 중...' : brand.isActive ? '삭제' : '비활성'}
+                    </button>
                   </div>
                 </div>
               </div>
