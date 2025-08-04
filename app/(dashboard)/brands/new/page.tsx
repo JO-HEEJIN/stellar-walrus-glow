@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -8,6 +8,7 @@ export default function NewBrandPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [userRole, setUserRole] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     nameKo: '',
@@ -17,6 +18,24 @@ export default function NewBrandPage() {
     logoUrl: '',
     isActive: true,
   })
+
+  // Check user role on mount
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setUserRole(data.user?.role || null)
+        }
+      } catch (err) {
+        console.error('Failed to check user role:', err)
+      }
+    }
+    checkUserRole()
+  }, [])
 
   const generateSlug = (name: string) => {
     return name
@@ -57,11 +76,27 @@ export default function NewBrandPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Check for specific error details
+        if (data.code === 'AUTHORIZATION_ROLE_REQUIRED') {
+          throw new Error('브랜드 등록 권한이 없습니다. MASTER_ADMIN 권한이 필요합니다.')
+        } else if (data.code === 'AUTHENTICATION_REQUIRED') {
+          throw new Error('로그인이 필요합니다.')
+        } else if (data.code === 'VALIDATION_FAILED') {
+          throw new Error(data.details?.message || data.error || '입력한 정보를 확인해주세요.')
+        }
         throw new Error(data.error || '브랜드 생성에 실패했습니다')
       }
 
+      // Check for warnings (e.g., mock mode)
+      if (data.warning) {
+        console.warn('Brand creation warning:', data.warning)
+      }
+
+      // Show success message
+      alert('브랜드가 성공적으로 등록되었습니다!')
       router.push('/brands')
     } catch (err) {
+      console.error('Brand creation error:', err)
       setError(err instanceof Error ? err.message : '브랜드 생성에 실패했습니다')
     } finally {
       setIsLoading(false)
@@ -86,6 +121,20 @@ export default function NewBrandPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {userRole && userRole !== 'MASTER_ADMIN' && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+              <p className="font-semibold">권한 안내</p>
+              <p className="text-sm mt-1">브랜드 등록은 MASTER_ADMIN 권한이 필요합니다.</p>
+              <p className="text-sm">현재 권한: {userRole}</p>
+              <p className="text-sm mt-2">테스트를 위해 다음 계정으로 로그인하세요:</p>
+              <ul className="text-sm list-disc list-inside mt-1">
+                <li>ID: master@kfashion.com / PW: password123</li>
+                <li>ID: demo / PW: demo</li>
+                <li>ID: admin / PW: admin</li>
+              </ul>
             </div>
           )}
 
