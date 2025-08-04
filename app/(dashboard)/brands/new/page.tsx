@@ -207,10 +207,12 @@ export default function NewBrandPage() {
               브랜드 로고
             </label>
             <ImageUpload
-              onUploadComplete={(url) => {
+              onUploadComplete={(url, file) => {
+                console.log('Logo upload completed:', { url, fileName: file.name })
                 setFormData({ ...formData, logoUrl: url })
               }}
               onUploadError={(error) => {
+                console.error('Logo upload error:', error)
                 setError(`로고 업로드 실패: ${error}`)
               }}
               maxFiles={1}

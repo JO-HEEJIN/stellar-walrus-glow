@@ -10,7 +10,7 @@ const updateBrandSchema = z.object({
   nameCn: z.string().max(100).optional().nullable(),
   slug: z.string().min(1, 'Slug is required').max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only').optional(),
   description: z.string().max(500).optional().nullable(),
-  logoUrl: z.string().url().optional().nullable(),
+  logoUrl: z.string().url().optional().nullable().or(z.literal('')),
   isActive: z.boolean().optional(),
 })
 
@@ -159,7 +159,16 @@ export async function PUT(
 
     // Parse and validate request body
     const body = await request.json()
-    const data = updateBrandSchema.parse(body)
+    
+    // Clean up empty strings to null
+    const cleanedBody = {
+      ...body,
+      nameCn: body.nameCn || null,
+      description: body.description || null,
+      logoUrl: body.logoUrl || null,
+    }
+    
+    const data = updateBrandSchema.parse(cleanedBody)
 
     // If slug is being updated, check for uniqueness
     if (data.slug && data.slug !== existingBrand.slug) {

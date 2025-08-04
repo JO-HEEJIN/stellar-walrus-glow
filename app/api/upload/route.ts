@@ -164,7 +164,16 @@ export async function POST(request: NextRequest) {
         stack: s3Error instanceof Error ? s3Error.stack : undefined,
         type: s3Error instanceof Error ? s3Error.constructor.name : typeof s3Error
       })
-      throw s3Error
+      
+      // Return more user-friendly error message
+      throw new BusinessError(
+        ErrorCodes.FILE_UPLOAD_FAILED,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { 
+          message: 'Image upload failed. Please try again.',
+          details: s3Error instanceof Error ? s3Error.message : 'Unknown error'
+        }
+      )
     }
   } catch (error) {
     console.error('Upload API error:', {
