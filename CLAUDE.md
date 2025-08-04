@@ -10,6 +10,14 @@
 6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
 7. Finally, add a review section to the [todo.md](http://todo.md/) file with a summary of the changes you made and any other relevant information.
 
+## Git Commit Rules
+
+**NEVER add Claude co-authoring in git commits. All commits should be authored solely by the user (Heejin).**
+
+- ❌ Do NOT include: "🤖 Generated with [Claude Code](https://claude.ai/code)"
+- ❌ Do NOT include: "Co-Authored-By: Claude <noreply@anthropic.com>" 
+- ✅ Use only clean, simple commit messages without any Claude attribution
+
 ## Security prompt
 
 Please check through all the code you just wrote and make sure it follows security best practices. make sure there are no sensitive information in the front and and there are no vulnerabilities that can be exploited

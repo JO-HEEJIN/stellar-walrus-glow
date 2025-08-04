@@ -98,7 +98,13 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
 
   // Start polling
   const startPolling = useCallback(() => {
-    if (!userId || pollingIntervalRef.current) return
+    if (!userId) return
+    
+    // Stop any existing polling first
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
 
     // Fetch immediately
     fetchNotifications()
