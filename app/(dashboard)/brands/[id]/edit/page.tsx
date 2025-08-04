@@ -227,6 +227,10 @@ export default function EditBrandPage({ params }: { params: { id: string } }) {
                 console.error('Logo upload error:', error)
                 setError(`로고 업로드 실패: ${error}`)
               }}
+              onImageRemove={(url) => {
+                console.log('Logo removed:', url)
+                setFormData({ ...formData, logoUrl: '' })
+              }}
               maxFiles={1}
               existingImages={formData.logoUrl ? [formData.logoUrl] : []}
               brandId={params.id}
@@ -237,6 +241,11 @@ export default function EditBrandPage({ params }: { params: { id: string } }) {
             {formData.logoUrl && (
               <div className="mt-2">
                 <p className="text-xs text-green-600">로고가 업로드되었습니다</p>
+              </div>
+            )}
+            {!formData.logoUrl && (
+              <div className="mt-2">
+                <p className="text-xs text-gray-500">로고를 업로드하세요 (선택사항)</p>
               </div>
             )}
           </div>

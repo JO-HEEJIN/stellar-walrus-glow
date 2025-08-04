@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 interface ImageUploadProps {
   onUploadComplete?: (url: string, file: File) => void
   onUploadError?: (error: string) => void
+  onImageRemove?: (url: string) => void
   maxFiles?: number
   existingImages?: string[]
   productId?: string
@@ -30,6 +31,7 @@ interface UploadingFile {
 export function ImageUpload({
   onUploadComplete,
   onUploadError,
+  onImageRemove,
   maxFiles = 5,
   existingImages = [],
   productId,
@@ -298,6 +300,15 @@ export function ImageUpload({
                   className="w-full h-24 object-cover rounded border"
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded" />
+                {onImageRemove && (
+                  <button
+                    onClick={() => onImageRemove(url)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    title="이미지 삭제"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
