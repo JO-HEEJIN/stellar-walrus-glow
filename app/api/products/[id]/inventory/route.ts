@@ -5,7 +5,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
 import { ProductStatus } from '@/types'
-import { notificationManager } from '../../websocket/route'
+import { notificationManager } from '../../../notifications/websocket/route'
 
 // Inventory update schema
 const inventoryUpdateSchema = z.object({

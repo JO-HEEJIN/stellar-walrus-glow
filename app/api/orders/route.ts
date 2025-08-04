@@ -6,7 +6,7 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 import { Product, MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { ProductStatus, Role } from '@/types'
 import { OrderStatus } from '@prisma/client'
-import { notificationManager } from './websocket/route'
+import { notificationManager } from '../notifications/websocket/route'
 // import { emailService, OrderEmailData } from '@/lib/email'
 
 // Order search schema

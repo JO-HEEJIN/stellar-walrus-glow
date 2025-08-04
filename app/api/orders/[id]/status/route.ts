@@ -5,7 +5,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Order } from '@/lib/domain/models'
 import { OrderStatus } from '@prisma/client'
-import { notificationManager } from '../../websocket/route'
+import { notificationManager } from '../../../notifications/websocket/route'
 
 // Status update schema
 const statusUpdateSchema = z.object({
