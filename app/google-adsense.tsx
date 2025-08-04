@@ -7,6 +7,7 @@ declare global {
     adsbygoogle: any[]
     __adsenseAutoAdsEnabled?: boolean
     __adsenseInitialized?: boolean
+    __adsensePageLevelAdsConfigured?: boolean
   }
 }
 
@@ -15,12 +16,25 @@ let adsenseInitializationInProgress = false
 
 export default function GoogleAdSense() {
   useEffect(() => {
-    // Comprehensive singleton check
+    // Most comprehensive singleton check
     if (window.__adsenseInitialized || 
         adsenseInitializationInProgress ||
-        window.__adsenseAutoAdsEnabled) {
-      console.log('AdSense already initialized or in progress, skipping')
+        window.__adsenseAutoAdsEnabled ||
+        window.__adsensePageLevelAdsConfigured) {
+      console.log('AdSense already initialized, skipping')
       return
+    }
+
+    // Check if any enable_page_level_ads already exists in the queue
+    if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
+      const hasPageLevelAds = window.adsbygoogle.some((item: any) => 
+        item && typeof item === 'object' && item.enable_page_level_ads === true
+      )
+      if (hasPageLevelAds) {
+        console.log('Page level ads already configured, skipping')
+        window.__adsensePageLevelAdsConfigured = true
+        return
+      }
     }
 
     // Mark initialization as in progress
@@ -31,10 +45,9 @@ export default function GoogleAdSense() {
     const existingScript = document.querySelector('script[src*="ca-pub-9558805716031898"]')
     if (existingScript) {
       // Script exists but auto ads not enabled yet
-      if (!window.__adsenseAutoAdsEnabled && window.adsbygoogle) {
+      if (!window.__adsenseAutoAdsEnabled && !window.__adsensePageLevelAdsConfigured && window.adsbygoogle) {
         try {
-          // Check if enable_page_level_ads is already in the queue
-          // adsbygoogle might not be an array initially
+          // Double check again before pushing
           const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
             window.adsbygoogle.some((item: any) => 
               item && typeof item === 'object' && item.enable_page_level_ads === true
@@ -46,6 +59,7 @@ export default function GoogleAdSense() {
               enable_page_level_ads: true
             })
             window.__adsenseAutoAdsEnabled = true
+            window.__adsensePageLevelAdsConfigured = true
             console.log('AdSense auto ads enabled (existing script)')
           }
         } catch (error) {
@@ -72,10 +86,9 @@ export default function GoogleAdSense() {
         // Initialize adsbygoogle array if not exists
         window.adsbygoogle = window.adsbygoogle || []
         
-        // Double-check before pushing to prevent duplicates
-        if (!window.__adsenseAutoAdsEnabled) {
+        // Triple-check before pushing to prevent duplicates
+        if (!window.__adsenseAutoAdsEnabled && !window.__adsensePageLevelAdsConfigured) {
           // Check if enable_page_level_ads is already in the queue
-          // adsbygoogle might not be an array initially
           const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
             window.adsbygoogle.some((item: any) => 
               item && typeof item === 'object' && item.enable_page_level_ads === true
@@ -87,7 +100,11 @@ export default function GoogleAdSense() {
               enable_page_level_ads: true
             })
             window.__adsenseAutoAdsEnabled = true
+            window.__adsensePageLevelAdsConfigured = true
             console.log('AdSense auto ads enabled (new script)')
+          } else {
+            window.__adsensePageLevelAdsConfigured = true
+            console.log('Page level ads already in queue, marking as configured')
           }
         }
       } catch (error) {

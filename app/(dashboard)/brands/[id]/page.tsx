@@ -87,7 +87,15 @@ export default function BrandDetailPage() {
       })
 
       if (!response.ok) {
-        throw new Error('상품 삭제에 실패했습니다')
+        const errorData = await response.json()
+        if (response.status === 409) {
+          throw new Error(errorData.message || '이 상품은 주문에서 사용 중이므로 삭제할 수 없습니다.')
+        } else if (response.status === 403) {
+          throw new Error('상품 삭제 권한이 없습니다.')
+        } else if (response.status === 404) {
+          throw new Error('상품을 찾을 수 없습니다.')
+        }
+        throw new Error(errorData.message || '상품 삭제에 실패했습니다')
       }
 
       // Remove from local state
@@ -95,7 +103,7 @@ export default function BrandDetailPage() {
       alert('상품이 삭제되었습니다.')
     } catch (error) {
       console.error('Product deletion error:', error)
-      alert('상품 삭제에 실패했습니다.')
+      alert(error instanceof Error ? error.message : '상품 삭제에 실패했습니다.')
     }
   }
 

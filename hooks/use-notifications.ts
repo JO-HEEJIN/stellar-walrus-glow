@@ -104,6 +104,7 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current)
       pollingIntervalRef.current = null
+      console.log('Cleared existing polling interval before starting new one')
     }
 
     // Fetch immediately
@@ -112,12 +113,13 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
     // Set up polling interval
     pollingIntervalRef.current = setInterval(fetchNotifications, POLLING_INTERVAL)
     
-    console.log(`Started notification polling every ${POLLING_INTERVAL/1000}s`)
+    console.log(`Started notification polling every ${POLLING_INTERVAL/1000}s (interval ID: ${pollingIntervalRef.current})`)
   }, [userId, fetchNotifications])
 
   // Stop polling
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
+      console.log(`Stopping notification polling (interval ID: ${pollingIntervalRef.current})`)
       clearInterval(pollingIntervalRef.current)
       pollingIntervalRef.current = null
       console.log('Stopped notification polling')
