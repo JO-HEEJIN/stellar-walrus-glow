@@ -12,7 +12,8 @@ interface ImageUploadProps {
   maxFiles?: number
   existingImages?: string[]
   productId?: string
-  imageType?: 'thumbnail' | 'gallery' | 'detail'
+  brandId?: string
+  imageType?: 'thumbnail' | 'gallery' | 'detail' | 'brand'
   accept?: string
   maxSize?: number // in MB
   disabled?: boolean
@@ -32,6 +33,7 @@ export function ImageUpload({
   maxFiles = 5,
   existingImages = [],
   productId,
+  brandId,
   imageType = 'gallery',
   accept = 'image/*',
   maxSize = 5,
@@ -102,6 +104,7 @@ export function ImageUpload({
       const formData = new FormData()
       formData.append('file', file)
       if (productId) formData.append('productId', productId)
+      if (brandId) formData.append('brandId', brandId)
       formData.append('imageType', imageType)
 
       // Create XMLHttpRequest for progress tracking

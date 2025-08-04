@@ -54,7 +54,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const productId = formData.get('productId') as string
-    const imageType = formData.get('imageType') as string || 'product' // product, thumbnail, detail
+    const brandId = formData.get('brandId') as string
+    const imageType = formData.get('imageType') as string || 'product' // product, thumbnail, detail, brand
 
     if (!file) {
       throw new BusinessError(
@@ -94,18 +95,27 @@ export async function POST(request: NextRequest) {
       size: file.size,
       type: file.type,
       imageType,
-      productId
+      productId,
+      brandId
     })
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Generate S3 key
+    // Generate S3 key based on type
+    let s3KeyPrefix = 'products'
+    let entityId = productId
+    
+    if (imageType === 'brand' || brandId) {
+      s3KeyPrefix = 'brands'
+      entityId = brandId || 'logo'
+    }
+    
     const s3Key = generateS3Key(
-      `products/${imageType}`,
+      `${s3KeyPrefix}/${imageType}`,
       file.name,
-      productId
+      entityId
     )
     
     console.log('Generated S3 key:', s3Key)
@@ -130,6 +140,7 @@ export async function POST(request: NextRequest) {
         {
           uploadedBy: userInfo.username,
           productId: productId || 'none',
+          brandId: brandId || 'none',
           imageType,
         }
       )
