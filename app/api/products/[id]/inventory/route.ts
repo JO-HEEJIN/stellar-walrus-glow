@@ -5,6 +5,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Product } from '@/lib/domain/models'
 import { ProductStatus } from '@/types'
+import { notificationManager } from '../../websocket/route'
 
 // Inventory update schema
 const inventoryUpdateSchema = z.object({
@@ -147,6 +148,23 @@ export async function PATCH(
         }
       })
     })
+
+    // Check if inventory is low and send alert
+    const LOW_STOCK_THRESHOLD = 10 // You can make this configurable per product
+    if (result.newInventory <= LOW_STOCK_THRESHOLD && result.newInventory > 0) {
+      try {
+        notificationManager.sendInventoryAlert(
+          result.product.id,
+          result.product.nameKo || result.product.nameCn || 'Unknown Product',
+          result.newInventory,
+          LOW_STOCK_THRESHOLD
+        )
+        console.log(`📦 Low stock alert sent for product ${result.product.nameKo}: ${result.newInventory} remaining`)
+      } catch (notificationError) {
+        console.error('Failed to send inventory alert:', notificationError)
+        // Don't fail the entire request if notification fails
+      }
+    }
 
     return NextResponse.json({
       data: result,

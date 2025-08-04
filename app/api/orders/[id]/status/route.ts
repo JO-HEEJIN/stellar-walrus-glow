@@ -5,6 +5,7 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { Order } from '@/lib/domain/models'
 import { OrderStatus } from '@prisma/client'
+import { notificationManager } from '../../websocket/route'
 
 // Status update schema
 const statusUpdateSchema = z.object({
@@ -254,8 +255,22 @@ export async function PATCH(
       })
     })
 
-    // TODO: Send actual notifications (email/SMS)
-    // For now, we're just returning a mock notification status
+    // Send real-time notification via WebSocket
+    try {
+      // Send notification to the customer
+      notificationManager.sendOrderNotification(
+        result.order.orderNumber,
+        data.status,
+        [result.order.user.email]
+      )
+      
+      console.log(`Real-time notification sent for order ${result.order.orderNumber} status change to ${data.status}`)
+    } catch (notificationError) {
+      console.error('Failed to send real-time notification:', notificationError)
+      // Don't fail the entire request if notification fails
+    }
+
+    // TODO: Send additional notifications (email/SMS)
     if (result.order.status === OrderStatus.SHIPPED) {
       console.log(`Would send shipping notification to ${result.order.user.email} with tracking: ${data.trackingNumber}`)
     } else if (result.order.status === OrderStatus.CANCELLED) {

@@ -6,6 +6,7 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 import { Product, MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { ProductStatus, Role } from '@/types'
 import { OrderStatus } from '@prisma/client'
+import { notificationManager } from './websocket/route'
 // import { emailService, OrderEmailData } from '@/lib/email'
 
 // Order search schema
@@ -468,6 +469,18 @@ export async function POST(request: NextRequest) {
         timeout: 30000, // 30 seconds timeout for international latency
       })
     })
+
+    // Send real-time notification for new order
+    try {
+      notificationManager.sendNewOrderNotification(
+        result.orderNumber,
+        result.user.email
+      )
+      console.log(`📧 Real-time notification sent for new order: ${result.orderNumber}`)
+    } catch (notificationError) {
+      console.error('Failed to send new order notification:', notificationError)
+      // Don't fail the entire request if notification fails
+    }
 
     // TODO: Send email notifications (disabled for now)
     console.log(`📧 Order created: ${result.orderNumber} for ${result.user.email}`)

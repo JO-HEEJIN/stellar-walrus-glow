@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CartButton from '@/components/cart/cart-button'
+import NotificationBell from '@/components/notifications/notification-bell'
 
 interface User {
   username: string
@@ -144,6 +145,9 @@ export default function DashboardLayout({
                     <CartButton />
                   </div>
                 )}
+                <div className="mr-3">
+                  <NotificationBell userId={user.email} userRole={user.role} />
+                </div>
                 <div className="mr-3 text-sm text-gray-600">
                   <div>{user.username}</div>
                   <div className="text-xs text-gray-500">{user.role}</div>
@@ -253,9 +257,12 @@ export default function DashboardLayout({
                   <CartButton />
                 </div>
               )}
-              <div className="mb-3">
-                <div className="text-base font-medium text-gray-800">{user.username}</div>
-                <div className="text-sm font-medium text-gray-500">{user.role}</div>
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <div className="text-base font-medium text-gray-800">{user.username}</div>
+                  <div className="text-sm font-medium text-gray-500">{user.role}</div>
+                </div>
+                <NotificationBell userId={user.email} userRole={user.role} />
               </div>
             </div>
             <div className="px-2">
