@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 interface Brand {
   id: string
@@ -74,6 +74,30 @@ export default function BrandDetailPage() {
 
     fetchBrandData()
   }, [brandId])
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!confirm(`정말 "${productName}" 상품을 삭제하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('상품 삭제에 실패했습니다')
+      }
+
+      // Remove from local state
+      setProducts(prev => prev.filter(p => p.id !== productId))
+      alert('상품이 삭제되었습니다.')
+    } catch (error) {
+      console.error('Product deletion error:', error)
+      alert('상품 삭제에 실패했습니다.')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -154,12 +178,18 @@ export default function BrandDetailPage() {
               </div>
             </div>
             <div className="flex space-x-2">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              <Link
+                href={`/brands/${brandId}/edit`}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block text-center"
+              >
                 브랜드 편집
-              </button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+              </Link>
+              <Link
+                href={`/products/new?brandId=${brandId}`}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 inline-block text-center"
+              >
                 상품 추가
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -224,9 +254,12 @@ export default function BrandDetailPage() {
             {products.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-gray-400 text-lg mb-4">상품이 없습니다</div>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <Link
+                  href={`/products/new?brandId=${brandId}`}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
+                >
                   첫 상품 추가하기
-                </button>
+                </Link>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -256,10 +289,16 @@ export default function BrandDetailPage() {
                         재고: {product.stock}개
                       </div>
                       <div className="mt-4 flex space-x-2">
-                        <button className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                        <Link
+                          href={`/products/${product.id}/edit`}
+                          className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 text-center inline-block"
+                        >
                           편집
-                        </button>
-                        <button className="flex-1 bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">
+                        </Link>
+                        <button 
+                          onClick={() => handleDeleteProduct(product.id, product.name)}
+                          className="flex-1 bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
+                        >
                           삭제
                         </button>
                       </div>

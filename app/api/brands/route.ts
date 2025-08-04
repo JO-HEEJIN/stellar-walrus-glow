@@ -6,7 +6,7 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 
 export async function GET() {
   try {
-    // Get brands from database using read replica with product counts
+    // Try to get brands from database using read replica with product counts
     const brands = await withRetry(async () => {
       return await prismaRead.brand.findMany({
         include: {
