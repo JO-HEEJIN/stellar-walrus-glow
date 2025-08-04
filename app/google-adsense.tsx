@@ -2,71 +2,37 @@
 
 import { useEffect } from 'react'
 
+// 전역 상태로 AdSense 초기화 추적
+if (typeof window !== 'undefined') {
+  (window as any).__ADSENSE_INITIALIZED = false
+}
+
 declare global {
   interface Window {
     adsbygoogle: any[]
-    __adsenseAutoAdsEnabled?: boolean
-    __adsenseInitialized?: boolean
-    __adsensePageLevelAdsConfigured?: boolean
+    __ADSENSE_INITIALIZED?: boolean
   }
 }
 
-// Global singleton to prevent multiple initializations
-let adsenseInitializationInProgress = false
-
 export default function GoogleAdSense() {
   useEffect(() => {
-    // Most comprehensive singleton check
-    if (window.__adsenseInitialized || 
-        adsenseInitializationInProgress ||
-        window.__adsenseAutoAdsEnabled ||
-        window.__adsensePageLevelAdsConfigured) {
-      console.log('AdSense already initialized, skipping')
+    // 이미 초기화되었으면 아무것도 하지 않음
+    if (typeof window !== 'undefined' && window.__ADSENSE_INITIALIZED) {
+      console.log('AdSense already initialized globally, skipping')
       return
     }
 
-    // Check if any enable_page_level_ads already exists in the queue
-    if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
-      const hasPageLevelAds = window.adsbygoogle.some((item: any) => 
-        item && typeof item === 'object' && item.enable_page_level_ads === true
-      )
-      if (hasPageLevelAds) {
-        console.log('Page level ads already configured, skipping')
-        window.__adsensePageLevelAdsConfigured = true
-        return
-      }
+    // 전역적으로 초기화 상태 설정
+    if (typeof window !== 'undefined') {
+      window.__ADSENSE_INITIALIZED = true
     }
 
-    // Mark initialization as in progress
-    adsenseInitializationInProgress = true
-    window.__adsenseInitialized = true
+    console.log('Initializing AdSense for the first time')
 
-    // Check if script already exists
+    // AdSense 스크립트가 이미 있는지 확인
     const existingScript = document.querySelector('script[src*="ca-pub-9558805716031898"]')
     if (existingScript) {
-      // Script exists but auto ads not enabled yet
-      if (!window.__adsenseAutoAdsEnabled && !window.__adsensePageLevelAdsConfigured && window.adsbygoogle) {
-        try {
-          // Double check again before pushing
-          const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
-            window.adsbygoogle.some((item: any) => 
-              item && typeof item === 'object' && item.enable_page_level_ads === true
-            )
-          
-          if (!hasPageLevelAds) {
-            window.adsbygoogle.push({
-              google_ad_client: 'ca-pub-9558805716031898',
-              enable_page_level_ads: true
-            })
-            window.__adsenseAutoAdsEnabled = true
-            window.__adsensePageLevelAdsConfigured = true
-            console.log('AdSense auto ads enabled (existing script)')
-          }
-        } catch (error) {
-          console.error('AdSense auto ads error:', error)
-        }
-      }
-      adsenseInitializationInProgress = false
+      console.log('AdSense script already exists, skipping script loading')
       return
     }
 
@@ -80,43 +46,25 @@ export default function GoogleAdSense() {
     const preloadLinks = document.querySelectorAll('link[href*="adsbygoogle.js"]')
     preloadLinks.forEach(link => link.remove())
     
-    // Load script and enable auto ads
+    // Load script and enable auto ads - 단 한 번만
     script.onload = () => {
       try {
         // Initialize adsbygoogle array if not exists
         window.adsbygoogle = window.adsbygoogle || []
         
-        // Triple-check before pushing to prevent duplicates
-        if (!window.__adsenseAutoAdsEnabled && !window.__adsensePageLevelAdsConfigured) {
-          // Check if enable_page_level_ads is already in the queue
-          const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
-            window.adsbygoogle.some((item: any) => 
-              item && typeof item === 'object' && item.enable_page_level_ads === true
-            )
-          
-          if (!hasPageLevelAds) {
-            window.adsbygoogle.push({
-              google_ad_client: 'ca-pub-9558805716031898',
-              enable_page_level_ads: true
-            })
-            window.__adsenseAutoAdsEnabled = true
-            window.__adsensePageLevelAdsConfigured = true
-            console.log('AdSense auto ads enabled (new script)')
-          } else {
-            window.__adsensePageLevelAdsConfigured = true
-            console.log('Page level ads already in queue, marking as configured')
-          }
-        }
+        // 한 번만 실행되도록 단순화
+        window.adsbygoogle.push({
+          google_ad_client: 'ca-pub-9558805716031898',
+          enable_page_level_ads: true
+        })
+        console.log('AdSense auto ads enabled (single initialization)')
       } catch (error) {
         console.error('AdSense auto ads error:', error)
-      } finally {
-        adsenseInitializationInProgress = false
       }
     }
     
     script.onerror = () => {
       console.error('Failed to load AdSense script')
-      adsenseInitializationInProgress = false
     }
     
     document.head.appendChild(script)

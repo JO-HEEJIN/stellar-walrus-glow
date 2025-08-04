@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { checkAuthStatus } from '@/lib/auth-utils'
 
 interface Brand {
   id: string
@@ -80,6 +81,14 @@ export default function BrandDetailPage() {
       return
     }
 
+    // 인증 상태 확인
+    const authStatus = checkAuthStatus()
+    if (!authStatus.isAuthenticated) {
+      alert('로그인이 필요합니다. 다시 로그인해주세요.')
+      window.location.href = '/auth/signin'
+      return
+    }
+
     try {
       const response = await fetch(`/api/products/${productId}`, {
         method: 'DELETE',
@@ -88,7 +97,9 @@ export default function BrandDetailPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        if (response.status === 409) {
+        if (response.status === 401) {
+          throw new Error('로그인이 필요합니다. 다시 로그인해주세요.')
+        } else if (response.status === 409) {
           throw new Error(errorData.message || '이 상품은 주문에서 사용 중이므로 삭제할 수 없습니다.')
         } else if (response.status === 403) {
           throw new Error('상품 삭제 권한이 없습니다.')

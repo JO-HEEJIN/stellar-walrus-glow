@@ -98,7 +98,10 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
 
   // Start polling
   const startPolling = useCallback(() => {
-    if (!userId) return
+    if (!userId) {
+      console.log('No userId provided, cannot start polling')
+      return
+    }
     
     // Stop any existing polling first
     if (pollingIntervalRef.current) {
@@ -182,25 +185,33 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
   // Start/stop polling when userId changes
   useEffect(() => {
     if (userId) {
+      console.log('userId changed, starting polling for:', userId)
       startPolling()
     } else {
+      console.log('No userId, stopping polling')
       stopPolling()
     }
 
     return () => {
+      console.log('Cleanup: stopping polling')
       stopPolling()
     }
-  }, [userId, startPolling, stopPolling])
+  }, [userId]) // startPolling과 stopPolling 제거
 
   // Handle page visibility changes to pause/resume polling
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        console.log('Page hidden, stopping polling')
         stopPolling()
       } else if (userId) {
+        console.log('Page visible, checking if polling needed')
         // Only restart if not already polling
         if (!pollingIntervalRef.current) {
+          console.log('No active polling, restarting')
           startPolling()
+        } else {
+          console.log('Polling already active, skipping restart')
         }
       }
     }
@@ -210,7 +221,7 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [userId, startPolling, stopPolling])
+  }, [userId]) // startPolling과 stopPolling 제거
 
   return {
     notifications,
