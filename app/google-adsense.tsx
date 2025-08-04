@@ -5,13 +5,32 @@ import { useEffect } from 'react'
 declare global {
   interface Window {
     adsbygoogle: any[]
+    __adsenseAutoAdsEnabled?: boolean
   }
 }
 
 export default function GoogleAdSense() {
   useEffect(() => {
+    // Check if auto ads already enabled
+    if (window.__adsenseAutoAdsEnabled) {
+      return
+    }
+
     // Check if script already exists
     if (document.querySelector('script[src*="ca-pub-9558805716031898"]')) {
+      // Script exists but auto ads not enabled yet
+      if (!window.__adsenseAutoAdsEnabled && window.adsbygoogle) {
+        try {
+          window.adsbygoogle.push({
+            google_ad_client: 'ca-pub-9558805716031898',
+            enable_page_level_ads: true
+          })
+          window.__adsenseAutoAdsEnabled = true
+          console.log('AdSense auto ads enabled (existing script)')
+        } catch (error) {
+          console.error('AdSense auto ads error:', error)
+        }
+      }
       return
     }
 
@@ -32,12 +51,14 @@ export default function GoogleAdSense() {
         window.adsbygoogle = window.adsbygoogle || []
         
         // Enable auto ads for page level ads
-        window.adsbygoogle.push({
-          google_ad_client: 'ca-pub-9558805716031898',
-          enable_page_level_ads: true
-        })
-        
-        console.log('AdSense auto ads enabled')
+        if (!window.__adsenseAutoAdsEnabled) {
+          window.adsbygoogle.push({
+            google_ad_client: 'ca-pub-9558805716031898',
+            enable_page_level_ads: true
+          })
+          window.__adsenseAutoAdsEnabled = true
+          console.log('AdSense auto ads enabled')
+        }
       } catch (error) {
         console.error('AdSense auto ads error:', error)
       }

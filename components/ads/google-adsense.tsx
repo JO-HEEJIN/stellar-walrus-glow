@@ -86,30 +86,5 @@ export default function GoogleAdsense({
   )
 }
 
-// 자동 광고용 컴포넌트 (AdSense 인증 포함)
-export function GoogleAutoAds({ adClient }: { adClient: string }) {
-  return (
-    <>
-      {/* Google AdSense Verification & Auto Ads */}
-      <Script
-        id="google-adsense-verification"
-        async
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9558805716031898"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
-      <Script
-        id="google-auto-ads"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (adsbygoogle = window.adsbygoogle || []).push({
-              google_ad_client: "${adClient}",
-              enable_page_level_ads: true
-            });
-          `,
-        }}
-      />
-    </>
-  )
-}
+// 자동 광고용 컴포넌트는 더 이상 사용하지 않음 (app/google-adsense.tsx에서 처리)
+// export function GoogleAutoAds는 제거됨
