@@ -194,7 +194,7 @@ export default function EditBrandPage({ params }: { params: { id: string } }) {
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="예: nike"
-              pattern="[a-z0-9-]+"
+              pattern="[a-z0-9\-]+"
               title="소문자, 숫자, 하이픈만 사용 가능합니다"
             />
             <p className="text-sm text-gray-500 mt-1">소문자, 숫자, 하이픈만 사용 가능합니다</p>

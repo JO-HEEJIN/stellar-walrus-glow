@@ -83,10 +83,10 @@ export async function GET() {
 // Create brand schema
 const createBrandSchema = z.object({
   nameKo: z.string().min(1, 'Korean name is required').max(100),
-  nameCn: z.string().max(100).optional(),
+  nameCn: z.string().max(100).optional().nullable(),
   slug: z.string().min(1, 'Slug is required').max(100).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
-  description: z.string().max(500).optional(),
-  logoUrl: z.string().url().optional().nullable(),
+  description: z.string().max(500).optional().nullable(),
+  logoUrl: z.string().url().optional().nullable().or(z.literal('')),
   isActive: z.boolean().default(true),
 })
 
@@ -125,7 +125,16 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json()
-    const data = createBrandSchema.parse(body)
+    
+    // Clean up empty strings to null
+    const cleanedBody = {
+      ...body,
+      nameCn: body.nameCn || null,
+      description: body.description || null,
+      logoUrl: body.logoUrl || null,
+    }
+    
+    const data = createBrandSchema.parse(cleanedBody)
 
     // Check if slug already exists
     try {

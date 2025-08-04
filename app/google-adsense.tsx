@@ -18,8 +18,7 @@ export default function GoogleAdSense() {
     // Comprehensive singleton check
     if (window.__adsenseInitialized || 
         adsenseInitializationInProgress ||
-        window.__adsenseAutoAdsEnabled || 
-        document.querySelector('script[data-adsense-loaded="true"]')) {
+        window.__adsenseAutoAdsEnabled) {
       console.log('AdSense already initialized or in progress, skipping')
       return
     }
@@ -31,16 +30,15 @@ export default function GoogleAdSense() {
     // Check if script already exists
     const existingScript = document.querySelector('script[src*="ca-pub-9558805716031898"]')
     if (existingScript) {
-      // Mark script as loaded
-      existingScript.setAttribute('data-adsense-loaded', 'true')
-      
       // Script exists but auto ads not enabled yet
       if (!window.__adsenseAutoAdsEnabled && window.adsbygoogle) {
         try {
           // Check if enable_page_level_ads is already in the queue
-          const hasPageLevelAds = window.adsbygoogle.some((item: any) => 
-            item && typeof item === 'object' && item.enable_page_level_ads === true
-          )
+          // adsbygoogle might not be an array initially
+          const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
+            window.adsbygoogle.some((item: any) => 
+              item && typeof item === 'object' && item.enable_page_level_ads === true
+            )
           
           if (!hasPageLevelAds) {
             window.adsbygoogle.push({
@@ -63,7 +61,6 @@ export default function GoogleAdSense() {
     script.async = true
     script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9558805716031898'
     script.crossOrigin = 'anonymous'
-    script.setAttribute('data-adsense-loaded', 'true')
     
     // Remove any existing preload links to avoid conflicts
     const preloadLinks = document.querySelectorAll('link[href*="adsbygoogle.js"]')
@@ -78,9 +75,11 @@ export default function GoogleAdSense() {
         // Double-check before pushing to prevent duplicates
         if (!window.__adsenseAutoAdsEnabled) {
           // Check if enable_page_level_ads is already in the queue
-          const hasPageLevelAds = window.adsbygoogle.some((item: any) => 
-            item && typeof item === 'object' && item.enable_page_level_ads === true
-          )
+          // adsbygoogle might not be an array initially
+          const hasPageLevelAds = Array.isArray(window.adsbygoogle) && 
+            window.adsbygoogle.some((item: any) => 
+              item && typeof item === 'object' && item.enable_page_level_ads === true
+            )
           
           if (!hasPageLevelAds) {
             window.adsbygoogle.push({

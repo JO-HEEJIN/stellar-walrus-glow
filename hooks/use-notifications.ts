@@ -196,7 +196,10 @@ export function useNotifications(userId?: string, userRole?: string): UseNotific
       if (document.hidden) {
         stopPolling()
       } else if (userId) {
-        startPolling()
+        // Only restart if not already polling
+        if (!pollingIntervalRef.current) {
+          startPolling()
+        }
       }
     }
 
