@@ -6,6 +6,7 @@ import { StatsCard } from '@/components/dashboard/stats-card'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { OrderStatusChart } from '@/components/dashboard/order-status-chart'
 import { TopProductsTable } from '@/components/dashboard/top-products-table'
+import { BestsellerProducts } from '@/components/products/bestseller-products'
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -126,6 +127,17 @@ export default function DashboardPage() {
             {dailyRevenue && dailyRevenue.length > 0 && (
               <RevenueChart data={dailyRevenue} title="최근 7일 매출 추이" />
             )}
+
+            {/* Bestseller Products Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">베스트셀러 상품 🔥</h3>
+                <a href="/products/bestsellers" className="text-sm text-blue-600 hover:text-blue-800">
+                  전체보기 →
+                </a>
+              </div>
+              <BestsellerProducts period="30days" limit={5} compact />
+            </div>
 
             {/* Order Status and Top Products */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

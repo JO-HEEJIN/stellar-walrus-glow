@@ -132,11 +132,13 @@ export default function BrandsPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       {brand.logoUrl ? (
-                        <img 
-                          src={brand.logoUrl} 
-                          alt={brand.nameKo} 
-                          className="h-12 w-12 rounded-lg object-cover"
-                        />
+                        <div className="h-12 w-12 rounded-lg border overflow-hidden bg-gray-50 flex items-center justify-center">
+                          <img 
+                            src={brand.logoUrl} 
+                            alt={brand.nameKo} 
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
                       ) : (
                         <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
                           <span className="text-gray-400 text-lg">🏢</span>

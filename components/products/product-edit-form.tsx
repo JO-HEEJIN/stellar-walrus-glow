@@ -423,11 +423,13 @@ export default function ProductEditForm({ productId, onSuccess }: ProductEditFor
           <div className="flex items-start space-x-4">
             {thumbnailImage ? (
               <div className="relative">
-                <img
-                  src={thumbnailImage.url}
-                  alt="Thumbnail"
-                  className="h-32 w-32 object-cover rounded-lg border"
-                />
+                <div className="h-32 w-32 rounded-lg border overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={thumbnailImage.url}
+                    alt="Thumbnail"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(0, 'thumbnail')}
@@ -463,11 +465,13 @@ export default function ProductEditForm({ productId, onSuccess }: ProductEditFor
           <div className="grid grid-cols-4 gap-4">
             {uploadedImages.map((image, index) => (
               <div key={index} className="relative">
-                <img
-                  src={image.url}
-                  alt={`Product ${index + 1}`}
-                  className="h-32 w-32 object-cover rounded-lg border"
-                />
+                <div className="h-32 w-32 rounded-lg border overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={image.url}
+                    alt={`Product ${index + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => handleRemoveImage(index, 'product')}

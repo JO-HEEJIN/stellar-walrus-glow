@@ -167,11 +167,13 @@ export default function ProductList({ userRole }: ProductListProps) {
               {/* Product Image */}
               <div className="aspect-square relative bg-gray-100">
                 {product.thumbnailImage ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
                   <img
                     src={product.thumbnailImage}
                     alt={product.nameKo}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain"
                   />
+                </div>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <ImageOff className="h-12 w-12 text-gray-400" />

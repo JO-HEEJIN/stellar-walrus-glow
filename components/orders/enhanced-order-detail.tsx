@@ -412,11 +412,13 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
                 {order.items.map((item: any) => (
                   <div key={item.id} className="flex items-center space-x-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                     {item.product?.thumbnailImage && (
-                      <img
-                        src={item.product.thumbnailImage}
-                        alt={item.product.nameKo}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
+                      <div className="w-16 h-16 rounded-lg border overflow-hidden bg-gray-50 flex items-center justify-center">
+                        <img
+                          src={item.product.thumbnailImage}
+                          alt={item.product.nameKo}
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
                     )}
                     
                     <div className="flex-1">

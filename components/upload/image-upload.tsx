@@ -294,11 +294,13 @@ export function ImageUpload({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {existingImages.map((url, index) => (
               <div key={index} className="relative group">
-                <img
-                  src={url}
-                  alt={`Image ${index + 1}`}
-                  className="w-full h-24 object-cover rounded border"
-                />
+                <div className="w-full h-24 rounded border overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={url}
+                    alt={`Image ${index + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded" />
                 {onImageRemove && (
                   <button

@@ -338,11 +338,13 @@ export function ProductFormWithImages({
                   {thumbnailImage ? (
                     <div className="space-y-3">
                       <div className="relative inline-block">
-                        <img
-                          src={thumbnailImage}
-                          alt="Thumbnail"
-                          className="w-32 h-32 object-cover rounded border"
-                        />
+                        <div className="w-32 h-32 rounded border overflow-hidden bg-gray-50 flex items-center justify-center">
+                          <img
+                            src={thumbnailImage}
+                            alt="Thumbnail"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
                         <Button
                           type="button"
                           size="sm"
@@ -387,11 +389,13 @@ export function ProductFormWithImages({
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         {productImages.map((url, index) => (
                           <div key={index} className="relative group">
-                            <img
-                              src={url}
-                              alt={`Gallery ${index + 1}`}
-                              className="w-full h-24 object-cover rounded border"
-                            />
+                            <div className="w-full h-24 rounded border overflow-hidden bg-gray-50 flex items-center justify-center">
+                              <img
+                                src={url}
+                                alt={`Gallery ${index + 1}`}
+                                className="max-w-full max-h-full object-contain"
+                              />
+                            </div>
                             <Button
                               type="button"
                               size="sm"
