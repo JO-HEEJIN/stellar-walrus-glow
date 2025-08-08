@@ -18,6 +18,10 @@
 - ❌ Do NOT include: "Co-Authored-By: Claude <noreply@anthropic.com>" 
 - ✅ Use only clean, simple commit messages without any Claude attribution
 
+## Git User Configuration
+- user.name: "JO-HEEJIN"
+- user.email: "midmost44@gmail.com"
+
 ## Security prompt
 
 Please check through all the code you just wrote and make sure it follows security best practices. make sure there are no sensitive information in the front and and there are no vulnerabilities that can be exploited

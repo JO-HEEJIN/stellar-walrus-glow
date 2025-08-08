@@ -261,7 +261,7 @@ export async function PATCH(
         result.order.id,
         result.order.orderNumber,
         data.status,
-        result.order.user.email
+        result.order.user.email || ''
       )
       
       console.log(`Notification sent for order ${result.order.orderNumber} status change to ${data.status}`)

@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
       createNewOrderNotification(
         result.id,
         result.orderNumber,
-        result.user.email
+        result.user.email || ''
       )
       console.log(`📧 Notification sent for new order: ${result.orderNumber}`)
     } catch (notificationError) {

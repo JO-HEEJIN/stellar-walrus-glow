@@ -56,7 +56,9 @@ export function BestsellerProducts({
       const response = await fetch(`/api/products/bestsellers?period=${period}&limit=${limit}`)
       
       if (!response.ok) {
-        throw new Error('베스트셀러 데이터를 불러오는데 실패했습니다')
+        const errorData = await response.json().catch(() => null)
+        const errorMessage = errorData?.error?.message || `베스트셀러 데이터를 불러오는데 실패했습니다 (${response.status})`
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
