@@ -4,10 +4,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/layout/footer'
 
+const CATEGORIES = ['Clubs', 'Balls', 'Apparel', 'Shoes', 'Accessories']
+
 // Helper function to generate a random product
 const createProduct = (id: number) => ({
   id,
-  brand: `Brand ${String.fromCharCode(65 + (id % 5))}`,
+    brand: `Brand ${String.fromCharCode(65 + (id % 5))}`,
+  category: CATEGORIES[id % CATEGORIES.length],
   name: `Premium Golf Clubs Set ${id + 1}`,
   price: (Math.random() * 500 + 200).toFixed(2),
   originalPrice: (Math.random() * 200 + 700).toFixed(2),
@@ -22,28 +25,74 @@ export default function HomePage() {
     Array.from({ length: 12 }, (_, i) => createProduct(i))
   )
   const [activeFilters, setActiveFilters] = useState<string[]>(['All'])
+  const [searchTerm, setSearchTerm] = useState('')
   const [activeNav, setActiveNav] = useState('All')
   const [activeSort, setActiveSort] = useState('Recommended')
   const [loading, setLoading] = useState(false)
   const loader = useRef(null)
+  const [filteredProducts, setFilteredProducts] = useState(products)
+
+
+
+    useEffect(() => {
+    let tempProducts = [...products];
+
+    // Filter by active navigation category
+    if (activeNav !== 'All') {
+      tempProducts = tempProducts.filter(p => p.category === activeNav);
+    }
+
+    // Filter by active brands
+    if (!activeFilters.includes('All')) {
+      tempProducts = tempProducts.filter(p => activeFilters.includes(p.brand));
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      tempProducts = tempProducts.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.brand.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort products
+    switch (activeSort) {
+      case 'Newest':
+        tempProducts.sort((a, b) => b.id - a.id);
+        break;
+      case 'Price: Low to High':
+        tempProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        break;
+      case 'Price: High to Low':
+        tempProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        break;
+      case 'Recommended':
+      default:
+        tempProducts.sort((a, b) => a.id - b.id); // Default sort by id
+        break;
+    }
+
+    setFilteredProducts(tempProducts);
+  }, [products, activeNav, activeFilters, searchTerm, activeSort]);
 
   const handleFilterClick = (filter: string) => {
-    if (filter === 'All') {
-      setActiveFilters(['All'])
-    } else {
-      setActiveFilters(prev =>
-        prev.includes(filter)
-          ? prev.filter(f => f !== filter && f !== 'All')
-          : [...prev.filter(f => f !== 'All'), filter]
-      )
-    }
-  }
+    setActiveFilters(prev => {
+      if (filter === 'All') {
+        return ['All'];
+      }
+      const newFilters = prev.filter(f => f !== 'All');
+      if (newFilters.includes(filter)) {
+        const remainingFilters = newFilters.filter(f => f !== filter);
+        return remainingFilters.length === 0 ? ['All'] : remainingFilters;
+      } else {
+        return [...newFilters, filter];
+      }
+    });
+  };
 
-  useEffect(() => {
-    if (activeFilters.length === 0) {
-      setActiveFilters(['All'])
-    }
-  }, [activeFilters])
+
+
+
 
   const loadMoreProducts = () => {
     setLoading(true)
@@ -84,10 +133,7 @@ export default function HomePage() {
   }
 
   const handleSearch = () => {
-    const input = document.querySelector('.search-input') as HTMLInputElement
-    if (input && input.value) {
-      alert(`Searching for: ${input.value}`)
-    }
+    console.log('Searching for:', searchTerm)
   }
 
   const BRANDS = ['All', 'Titleist', 'Callaway', 'TaylorMade', 'Ping', 'Cobra']
@@ -114,32 +160,28 @@ export default function HomePage() {
         </div>
         <div className="header-main">
           <div className="header-main-inner">
-            <div className="logo">GOLF B2B</div>
+            <Link href="/" className="logo">GOLF B2B</Link>
             <div className="search-bar">
-              <input type="text" className="search-input" placeholder="Search for products, brands..." />
+              <input type="text" className="search-input" placeholder="Search for products, brands..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               <button className="search-button" onClick={handleSearch}>[ICON]</button>
             </div>
             <div className="header-icons">
-              <div className="header-icon">[ICON]<span>Wishlist</span></div>
-              <div className="header-icon">[ICON]<span>Cart</span><span className="icon-badge">3</span></div>
-              <div className="header-icon">[ICON]<span>Quotes</span></div>
-              <div className="header-icon">[ICON]<span>My Account</span></div>
+              <Link href="/dashboard/wishlist" className="header-icon">[ICON]<span>Wishlist</span></Link>
+              <Link href="/dashboard/cart" className="header-icon">[ICON]<span>Cart</span><span className="icon-badge">3</span></Link>
+              <Link href="/dashboard/quotes" className="header-icon">[ICON]<span>Quotes</span></Link>
+              <Link href="/dashboard" className="header-icon">[ICON]<span>My Account</span></Link>
             </div>
           </div>
         </div>
         <nav className="nav-container">
           <div className="nav-inner">
-            <div className="nav-category">
-              {NAV_ITEMS.map(item => (
-                <div
-                  key={item}
-                  className={`nav-item ${activeNav === item ? 'active' : ''}`}
-                  onClick={() => setActiveNav(item)}
-                >
-                  {item}
-                </div>
+            <ul className="nav-category">
+              {NAV_ITEMS.map(nav => (
+                <li key={nav} className={`main-nav-item ${activeNav === nav ? 'active' : ''}`}>
+                  <button onClick={() => setActiveNav(nav)}>{nav}</button>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </nav>
       </header>
@@ -166,13 +208,13 @@ export default function HomePage() {
         <div className="filter-bar">
           <div className="filter-inner">
             {BRANDS.map(brand => (
-              <div
+              <button
                 key={brand}
-                className={`filter-chip ${activeFilters.includes(brand) ? 'active' : ''}`}
+                className={`filter-button ${activeFilters.includes(brand) ? 'active' : ''}`}
                 onClick={() => handleFilterClick(brand)}
               >
                 {brand} {brand !== 'All' && <span className="filter-count">{Math.floor(Math.random() * 50)}</span>}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -205,7 +247,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="product-grid">
-            {products.map(product => (
+            {filteredProducts.map(product => (
               <div className="product-card" key={product.id}>
                 <div className="product-image-container">
                   <img src={product.image} alt={product.name} className="product-image" />
