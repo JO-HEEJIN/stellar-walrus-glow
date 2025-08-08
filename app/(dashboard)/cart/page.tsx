@@ -5,20 +5,43 @@ import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { MIN_ORDER_AMOUNT } from '@/lib/domain/models'
-import { Trash2 } from 'lucide-react'
+import { Trash2, User, Phone, MapPin, FileText } from 'lucide-react'
 
 export default function CartPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [showShippingForm, setShowShippingForm] = useState(false)
   const { items, updateQuantity, removeItem, clearCart, getTotalAmount } = useCartStore()
   const totalAmount = getTotalAmount()
+  
+  // 배송 정보 상태
+  const [shippingInfo, setShippingInfo] = useState({
+    name: '',
+    phone: '',
+    zipCode: '',
+    address: '',
+    addressDetail: '',
+    memo: ''
+  })
 
-  const handleCheckout = async () => {
+  const handleProceedToShipping = () => {
     if (items.length === 0) return
     
     // Check minimum order amount
     if (totalAmount < MIN_ORDER_AMOUNT) {
       alert(`최소 주문 금액은 ${formatPrice(MIN_ORDER_AMOUNT)}입니다. 현재 금액: ${formatPrice(totalAmount)}`)
+      return
+    }
+    
+    setShowShippingForm(true)
+  }
+
+  const handleCheckout = async () => {
+    if (items.length === 0) return
+    
+    // 배송 정보 유효성 검사
+    if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address) {
+      alert('필수 배송 정보를 모두 입력해주세요.')
       return
     }
 
@@ -35,15 +58,9 @@ export default function CartPage() {
             productId: item.productId,
             quantity: item.quantity,
           })),
-          shippingAddress: {
-            // In a real app, this would come from a form
-            name: '홍길동',
-            phone: '010-1234-5678',
-            address: '서울시 강남구 테헤란로 123',
-            addressDetail: '456호',
-            zipCode: '06234',
-          },
+          shippingAddress: shippingInfo,
           paymentMethod: 'CARD',
+          memo: shippingInfo.memo,
         }),
       })
 
@@ -142,6 +159,7 @@ export default function CartPage() {
           </div>
 
           <div>
+            {/* 주문 요약 */}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">주문 요약</h2>
               <div className="space-y-2">
@@ -178,14 +196,116 @@ export default function CartPage() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleCheckout}
-                disabled={loading || items.length === 0 || totalAmount < MIN_ORDER_AMOUNT}
-                className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? '처리중...' : '주문하기'}
-              </button>
+              
+              {!showShippingForm ? (
+                <button
+                  onClick={handleProceedToShipping}
+                  disabled={loading || items.length === 0 || totalAmount < MIN_ORDER_AMOUNT}
+                  className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  배송 정보 입력
+                </button>
+              ) : (
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading || !shippingInfo.name || !shippingInfo.phone || !shippingInfo.address}
+                  className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? '처리중...' : '주문하기'}
+                </button>
+              )}
             </div>
+            
+            {/* 배송 정보 입력 폼 */}
+            {showShippingForm && (
+              <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 mt-4">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">배송 정보</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                      <User className="w-4 h-4 mr-1" />
+                      받는 분 *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingInfo.name}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="성함을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                      <Phone className="w-4 h-4 mr-1" />
+                      연락처 *
+                    </label>
+                    <input
+                      type="tel"
+                      value={shippingInfo.phone}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="010-0000-0000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      우편번호
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingInfo.zipCode}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, zipCode: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="00000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      주소 *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingInfo.address}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="주소를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-1 block">
+                      상세 주소
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingInfo.addressDetail}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, addressDetail: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="동/호수 등 상세 주소"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+                      <FileText className="w-4 h-4 mr-1" />
+                      배송 메모
+                    </label>
+                    <textarea
+                      value={shippingInfo.memo}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, memo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      rows={3}
+                      placeholder="배송 시 요청사항을 입력하세요"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

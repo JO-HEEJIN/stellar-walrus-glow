@@ -72,6 +72,14 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
     trackingNumber: '',
   })
   const [updating, setUpdating] = useState(false)
+  const [editingShipping, setEditingShipping] = useState(false)
+  const [shippingForm, setShippingForm] = useState({
+    name: '',
+    phone: '',
+    zipCode: '',
+    address: '',
+    addressDetail: '',
+  })
 
   useEffect(() => {
     fetchOrderDetails()
@@ -86,6 +94,18 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
       })
     }
   }, [order, isEditing])
+
+  useEffect(() => {
+    if (order && editingShipping) {
+      setShippingForm({
+        name: order.shippingAddress?.name || '',
+        phone: order.shippingAddress?.phone || '',
+        zipCode: order.shippingAddress?.zipCode || '',
+        address: order.shippingAddress?.address || '',
+        addressDetail: order.shippingAddress?.addressDetail || '',
+      })
+    }
+  }, [order, editingShipping])
 
   const fetchOrderDetails = async () => {
     try {
@@ -137,6 +157,36 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
       router.replace(newUrl.pathname + newUrl.search)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '상태 변경에 실패했습니다')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleShippingUpdate = async () => {
+    if (!shippingForm.name || !shippingForm.phone || !shippingForm.address) {
+      toast.error('필수 배송 정보를 모두 입력해주세요')
+      return
+    }
+
+    try {
+      setUpdating(true)
+      const response = await fetch(`/api/orders/${orderId}/shipping`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(shippingForm),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || '배송 정보 변경에 실패했습니다')
+      }
+
+      toast.success('배송 정보가 성공적으로 변경되었습니다')
+      await fetchOrderDetails()
+      setEditingShipping(false)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '배송 정보 변경에 실패했습니다')
     } finally {
       setUpdating(false)
     }
@@ -528,41 +578,131 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
 
             {/* Shipping Address */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">배송 정보</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">배송 정보</h3>
+                {userRole === 'MASTER_ADMIN' && order.status === 'PENDING' && !editingShipping && (
+                  <button
+                    onClick={() => setEditingShipping(true)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    수정
+                  </button>
+                )}
+              </div>
               
-              <dl className="space-y-3">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <User className="h-4 w-4 mr-2" />
-                    받는분
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {order.shippingAddress?.name || '-'}
-                  </dd>
+              {!editingShipping ? (
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      받는분
+                    </dt>
+                    <dd className="text-sm text-gray-900 mt-1">
+                      {order.shippingAddress?.name || '-'}
+                    </dd>
+                  </div>
+                  
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 flex items-center">
+                      <Phone className="h-4 w-4 mr-2" />
+                      연락처
+                    </dt>
+                    <dd className="text-sm text-gray-900 mt-1">
+                      {order.shippingAddress?.phone || '-'}
+                    </dd>
+                  </div>
+                  
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 flex items-center">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      배송주소
+                    </dt>
+                    <dd className="text-sm text-gray-900 mt-1">
+                      {order.shippingAddress?.zipCode && `(${order.shippingAddress.zipCode}) `}
+                      {order.shippingAddress?.address}
+                      {order.shippingAddress?.addressDetail && `, ${order.shippingAddress.addressDetail}`}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      받는 분 *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingForm.name}
+                      onChange={(e) => setShippingForm({ ...shippingForm, name: e.target.value })}
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      연락처 *
+                    </label>
+                    <input
+                      type="tel"
+                      value={shippingForm.phone}
+                      onChange={(e) => setShippingForm({ ...shippingForm, phone: e.target.value })}
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      우편번호
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingForm.zipCode}
+                      onChange={(e) => setShippingForm({ ...shippingForm, zipCode: e.target.value })}
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      주소 *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingForm.address}
+                      onChange={(e) => setShippingForm({ ...shippingForm, address: e.target.value })}
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      상세 주소
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingForm.addressDetail}
+                      onChange={(e) => setShippingForm({ ...shippingForm, addressDetail: e.target.value })}
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <button
+                      onClick={() => setEditingShipping(false)}
+                      className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleShippingUpdate}
+                      disabled={updating}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {updating ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
                 </div>
-                
-                <div>
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <Phone className="h-4 w-4 mr-2" />
-                    연락처
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {order.shippingAddress?.phone || '-'}
-                  </dd>
-                </div>
-                
-                <div>
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    배송주소
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">
-                    {order.shippingAddress?.zipCode && `(${order.shippingAddress.zipCode}) `}
-                    {order.shippingAddress?.address}
-                    {order.shippingAddress?.addressDetail && `, ${order.shippingAddress.addressDetail}`}
-                  </dd>
-                </div>
-              </dl>
+              )}
             </div>
           </div>
         </div>
