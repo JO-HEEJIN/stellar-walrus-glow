@@ -285,6 +285,14 @@ export async function PATCH(
   }
 }
 
+// PUT: Update order status (same as PATCH for compatibility)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  return PATCH(request, { params })
+}
+
 // Helper function to get valid transitions
 function getValidTransitions(currentStatus: OrderStatus): OrderStatus[] {
   const transitions: Record<OrderStatus, OrderStatus[]> = {

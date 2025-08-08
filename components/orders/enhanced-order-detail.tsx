@@ -116,7 +116,7 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
     try {
       setUpdating(true)
       const response = await fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(statusForm),
