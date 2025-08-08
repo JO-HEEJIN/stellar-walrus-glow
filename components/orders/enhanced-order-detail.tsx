@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { formatPrice, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import PostcodeSearch from '@/components/common/postcode-search'
 
 const statusColors = {
   PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -190,6 +191,14 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
     } finally {
       setUpdating(false)
     }
+  }
+
+  const handleAddressSelect = (data: { zipCode: string; address: string }) => {
+    setShippingForm(prev => ({
+      ...prev,
+      zipCode: data.zipCode,
+      address: data.address
+    }))
   }
 
   const getValidTransitions = (currentStatus: string): string[] => {
@@ -652,25 +661,28 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      우편번호
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingForm.zipCode}
-                      onChange={(e) => setShippingForm({ ...shippingForm, zipCode: e.target.value })}
-                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       주소 *
                     </label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={shippingForm.zipCode}
+                        readOnly
+                        className="w-24 px-2 py-1 text-xs border border-gray-300 rounded-md bg-gray-50"
+                        placeholder="우편번호"
+                      />
+                      <PostcodeSearch 
+                        onAddressSelect={handleAddressSelect}
+                        buttonText="검색"
+                        buttonClassName="px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      />
+                    </div>
                     <input
                       type="text"
                       value={shippingForm.address}
-                      onChange={(e) => setShippingForm({ ...shippingForm, address: e.target.value })}
-                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      readOnly
+                      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md bg-gray-50 mb-2"
+                      placeholder="우편번호 검색을 통해 주소를 선택하세요"
                     />
                   </div>
                   

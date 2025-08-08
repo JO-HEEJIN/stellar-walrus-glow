@@ -6,6 +6,7 @@ import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { MIN_ORDER_AMOUNT } from '@/lib/domain/models'
 import { Trash2, User, Phone, MapPin, FileText } from 'lucide-react'
+import PostcodeSearch from '@/components/common/postcode-search'
 
 export default function CartPage() {
   const router = useRouter()
@@ -34,6 +35,14 @@ export default function CartPage() {
     }
     
     setShowShippingForm(true)
+  }
+
+  const handleAddressSelect = (data: { zipCode: string; address: string }) => {
+    setShippingInfo(prev => ({
+      ...prev,
+      zipCode: data.zipCode,
+      address: data.address
+    }))
   }
 
   const handleCheckout = async () => {
@@ -252,28 +261,28 @@ export default function CartPage() {
                   <div>
                     <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
                       <MapPin className="w-4 h-4 mr-1" />
-                      우편번호
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingInfo.zipCode}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, zipCode: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="00000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <MapPin className="w-4 h-4 mr-1" />
                       주소 *
                     </label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={shippingInfo.zipCode}
+                        readOnly
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                        placeholder="우편번호"
+                      />
+                      <PostcodeSearch 
+                        onAddressSelect={handleAddressSelect}
+                        buttonText="우편번호 검색"
+                        buttonClassName="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      />
+                    </div>
                     <input
                       type="text"
                       value={shippingInfo.address}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="주소를 입력하세요"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 mb-2"
+                      placeholder="우편번호 검색을 통해 주소를 선택하세요"
                     />
                   </div>
                   

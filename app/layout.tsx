@@ -70,6 +70,13 @@ export default function RootLayout({
         
         {/* Google AdSense - Auto Ads */}
         <GoogleAdSense />
+        
+        {/* Daum 우편번호 API */}
+        <Script
+          src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+          strategy="lazyOnload"
+        />
+        
         {children}
       </body>
     </html>
