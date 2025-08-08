@@ -40,15 +40,6 @@ export async function PATCH(
       )
     }
 
-    // Only MASTER_ADMIN can update shipping address
-    if (userInfo.role !== 'MASTER_ADMIN') {
-      throw new BusinessError(
-        ErrorCodes.AUTHORIZATION_INSUFFICIENT_PERMISSIONS,
-        HttpStatus.FORBIDDEN,
-        { message: 'Only master admins can update shipping addresses' }
-      )
-    }
-
     // Parse and validate request body
     const body = await request.json()
     const data = shippingUpdateSchema.parse(body)
@@ -68,6 +59,23 @@ export async function PATCH(
           throw new BusinessError(
             ErrorCodes.ORDER_NOT_FOUND,
             HttpStatus.NOT_FOUND
+          )
+        }
+
+        // Check permissions - order owner or admin can update
+        const userEmail = userInfo.username === 'momo' ? 'master@kfashion.com' : 
+                          userInfo.username === 'kf001' ? 'kf001@kfashion.com' :
+                          userInfo.username === 'kf002' ? 'brand@kfashion.com' :
+                          `${userInfo.username}@kfashion.com`
+
+        const isOrderOwner = order.user.email === userEmail
+        const isAdmin = userInfo.role === 'MASTER_ADMIN'
+        
+        if (!isOrderOwner && !isAdmin) {
+          throw new BusinessError(
+            ErrorCodes.AUTHORIZATION_INSUFFICIENT_PERMISSIONS,
+            HttpStatus.FORBIDDEN,
+            { message: 'Can only update your own order shipping address' }
           )
         }
 

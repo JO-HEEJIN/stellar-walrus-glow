@@ -580,7 +580,7 @@ export default function EnhancedOrderDetail({ orderId, userRole }: EnhancedOrder
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">배송 정보</h3>
-                {userRole === 'MASTER_ADMIN' && order.status === 'PENDING' && !editingShipping && (
+                {order.status === 'PENDING' && !editingShipping && (
                   <button
                     onClick={() => setEditingShipping(true)}
                     className="text-sm text-blue-600 hover:text-blue-800"
