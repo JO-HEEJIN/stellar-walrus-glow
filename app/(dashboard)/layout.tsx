@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CartButton from '@/components/cart/cart-button'
 import NotificationBell from '@/components/notifications/notification-bell'
+import { STORES } from '@/lib/config/stores'
 
 interface User {
   username: string
@@ -276,6 +277,24 @@ export default function DashboardLayout({
           </div>
         </div>
       </nav>
+
+      {/* Store Navigation */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-12 space-x-6 overflow-x-auto">
+            {STORES.map((store) => (
+              <Link
+                key={store.id}
+                href={store.path}
+                className="inline-flex items-center whitespace-nowrap border-b-2 border-transparent px-1 py-3 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors duration-200"
+              >
+                <span className="mr-2">{store.icon}</span>
+                {store.nameKo}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Main content */}
       <main>{children}</main>

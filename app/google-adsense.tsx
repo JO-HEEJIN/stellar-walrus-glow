@@ -30,16 +30,16 @@ export default function GoogleAdSense() {
       let autoAdsEnabled = false;
       
       window.adsbygoogle = window.adsbygoogle || [];
-      window.adsbygoogle.push = function(...args: any[]) {
+      window.adsbygoogle.push = function(...args: any[]): number {
         // enable_page_level_ads가 이미 설정되었는지 체크
         if (args[0]?.enable_page_level_ads && autoAdsEnabled) {
           console.warn('Blocked duplicate enable_page_level_ads call');
-          return;
+          return 0;
         }
         if (args[0]?.enable_page_level_ads) {
           autoAdsEnabled = true;
         }
-        return originalPush.apply(window.adsbygoogle, args);
+        return originalPush.apply(window.adsbygoogle, args) || 0;
       };
     }
 
