@@ -1,157 +1,244 @@
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/layout/footer'
 
+// Helper function to generate a random product
+const createProduct = (id: number) => ({
+  id,
+  brand: `Brand ${String.fromCharCode(65 + (id % 5))}`,
+  name: `Premium Golf Clubs Set ${id + 1}`,
+  price: (Math.random() * 500 + 200).toFixed(2),
+  originalPrice: (Math.random() * 200 + 700).toFixed(2),
+  discount: `${Math.floor(Math.random() * 20) + 10}%`,
+  moq: Math.floor(Math.random() * 5) + 1,
+  isNew: Math.random() > 0.8,
+  image: `https://via.placeholder.com/280x340?text=Product+${id + 1}`,
+})
+
 export default function HomePage() {
+  const [products, setProducts] = useState(() =>
+    Array.from({ length: 12 }, (_, i) => createProduct(i))
+  )
+  const [activeFilters, setActiveFilters] = useState<string[]>(['All'])
+  const [activeNav, setActiveNav] = useState('All')
+  const [activeSort, setActiveSort] = useState('Recommended')
+  const [loading, setLoading] = useState(false)
+  const loader = useRef(null)
+
+  const handleFilterClick = (filter: string) => {
+    if (filter === 'All') {
+      setActiveFilters(['All'])
+    } else {
+      setActiveFilters(prev =>
+        prev.includes(filter)
+          ? prev.filter(f => f !== filter && f !== 'All')
+          : [...prev.filter(f => f !== 'All'), filter]
+      )
+    }
+  }
+
+  useEffect(() => {
+    if (activeFilters.length === 0) {
+      setActiveFilters(['All'])
+    }
+  }, [activeFilters])
+
+  const loadMoreProducts = () => {
+    setLoading(true)
+    setTimeout(() => {
+      const newProducts = Array.from({ length: 8 }, (_, i) =>
+        createProduct(products.length + i)
+      )
+      setProducts(prev => [...prev, ...newProducts])
+      setLoading(false)
+    }, 1000)
+  }
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && !loading) {
+          loadMoreProducts()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+
+    const currentLoader = loader.current
+    if (currentLoader) {
+      observer.observe(currentLoader)
+    }
+
+    return () => {
+      if (currentLoader) {
+        observer.unobserve(currentLoader)
+      }
+    }
+  }, [loader, loading, products.length, loadMoreProducts])
+
+  const handleQuickAction = (e: React.MouseEvent, action: string) => {
+    e.stopPropagation()
+    alert(`${action} clicked!`)
+  }
+
+  const handleSearch = () => {
+    const input = document.querySelector('.search-input') as HTMLInputElement
+    if (input && input.value) {
+      alert(`Searching for: ${input.value}`)
+    }
+  }
+
+  const BRANDS = ['All', 'Titleist', 'Callaway', 'TaylorMade', 'Ping', 'Cobra']
+  const NAV_ITEMS = ['All', 'Clubs', 'Balls', 'Apparel', 'Shoes', 'Accessories']
+  const SORT_OPTIONS = ['Recommended', 'Newest', 'Price: Low to High', 'Price: High to Low']
+
   return (
     <>
-      {/* Hero Section */}
-      <main className="bg-gradient-to-br from-blue-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              NIA INTERNATIONAL
-            </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
-              한국 패션의 우수성을 세계에 알리는 B2B 도매 플랫폼<br />
-              Premium Korean Fashion B2B Wholesale Platform
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link
-                href="/products"
-                className="rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
-              >
-                제품 카탈로그
-              </Link>
-              <Link href="/brands" className="text-sm font-semibold leading-6 text-gray-900 hover:text-blue-600 transition-colors">
-                브랜드 보기 <span aria-hidden="true">→</span>
-              </Link>
+      <div className="App">
+      <header>
+        <div className="header-top">
+          <div className="header-top-inner">
+            <div className="header-top-left">
+              <a href="#">About Us</a>
+              <a href="#">B2B Information</a>
+              <a href="#">Contact</a>
             </div>
-            <div className="mt-6 flex items-center justify-center gap-x-6">
-              <Link
-                href="/login"
-                className="text-sm font-semibold leading-6 text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                로그인
-              </Link>
-              <Link href="/about" className="text-sm font-semibold leading-6 text-gray-600 hover:text-blue-600 transition-colors">
-                회사소개
-              </Link>
+            <div className="header-top-right">
+              <a href="#">Help</a>
+              <span>|</span>
+              <a href="#">Language: EN ▾</a>
             </div>
           </div>
         </div>
+        <div className="header-main">
+          <div className="header-main-inner">
+            <div className="logo">GOLF B2B</div>
+            <div className="search-bar">
+              <input type="text" className="search-input" placeholder="Search for products, brands..." />
+              <button className="search-button" onClick={handleSearch}>[ICON]</button>
+            </div>
+            <div className="header-icons">
+              <div className="header-icon">[ICON]<span>Wishlist</span></div>
+              <div className="header-icon">[ICON]<span>Cart</span><span className="icon-badge">3</span></div>
+              <div className="header-icon">[ICON]<span>Quotes</span></div>
+              <div className="header-icon">[ICON]<span>My Account</span></div>
+            </div>
+          </div>
+        </div>
+        <nav className="nav-container">
+          <div className="nav-inner">
+            <div className="nav-category">
+              {NAV_ITEMS.map(item => (
+                <div
+                  key={item}
+                  className={`nav-item ${activeNav === item ? 'active' : ''}`}
+                  onClick={() => setActiveNav(item)}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <main>
+        <div className="b2b-info-bar">
+          <div className="b2b-info-inner">
+            <div className="b2b-info-item">
+              <span className="b2b-info-label">Minimum Order:</span>
+              <span className="b2b-info-value">$500</span>
+            </div>
+            <div className="b2b-info-item">
+              <span className="b2b-info-label">Est. Delivery:</span>
+              <span className="b2b-info-value">3-5 Business Days</span>
+            </div>
+            <div className="b2b-info-item">
+              <span className="b2b-info-label">Payment Methods:</span>
+              <span className="b2b-info-value">Net 30/60, Credit Card</span>
+            </div>
+            <button className="bulk-order-btn" onClick={() => alert('Bulk Order Inquiry clicked!')}>Bulk Order Inquiry</button>
+          </div>
+        </div>
+
+        <div className="filter-bar">
+          <div className="filter-inner">
+            {BRANDS.map(brand => (
+              <div
+                key={brand}
+                className={`filter-chip ${activeFilters.includes(brand) ? 'active' : ''}`}
+                onClick={() => handleFilterClick(brand)}
+              >
+                {brand} {brand !== 'All' && <span className="filter-count">{Math.floor(Math.random() * 50)}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="banner-section">
+          <div className="banner-container">
+            <div className="banner-content">
+              <div className="banner-label">Exclusive B2B Offer</div>
+              <h1 className="banner-title">2024 Season Kick-off Deals</h1>
+              <p className="banner-desc">Stock up for the new season with up to 30% off on select brands. Limited time only.</p>
+              <div className="banner-button">Shop Now</div>
+            </div>
+          </div>
+        </div>
+
+        <section className="recommend-section">
+          <div className="section-header">
+            <h2 className="section-title">🔥 Recommended for You</h2>
+            <div className="view-more">View All <span>→</span></div>
+          </div>
+          <div className="sort-options">
+            {SORT_OPTIONS.map(option => (
+              <div
+                key={option}
+                className={`sort-option ${activeSort === option ? 'active' : ''}`}
+                onClick={() => setActiveSort(option)}
+              >
+                {option}
+              </div>
+            ))}
+          </div>
+          <div className="product-grid">
+            {products.map(product => (
+              <div className="product-card" key={product.id}>
+                <div className="product-image-container">
+                  <img src={product.image} alt={product.name} className="product-image" />
+                  {product.isNew && <div className="product-badge">NEW</div>}
+                  <div className="quick-actions">
+                    <div className="quick-action-btn" onClick={(e) => handleQuickAction(e, 'Add to Cart')}>🛒</div>
+                    <div className="quick-action-btn" onClick={(e) => handleQuickAction(e, 'Add to Wishlist')}>❤️</div>
+                  </div>
+                </div>
+                <div className="product-info">
+                  <div className="product-brand">{product.brand}</div>
+                  <div className="product-name">{product.name}</div>
+                  <div className="product-price-area">
+                    <span className="product-discount">{product.discount}</span>
+                    <span className="product-price">${product.price}</span>
+                    <span className="product-original-price">${product.originalPrice}</span>
+                  </div>
+                  <div className="product-moq">MOQ: {product.moq}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div ref={loader} style={{ height: '50px', margin: '20px 0' }}>
+            {loading && <p style={{ textAlign: 'center' }}>Loading more products...</p>}
+          </div>
+        </section>
       </main>
 
-      {/* Features Section */}
-      <section className="py-24 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              왜 NIA INTERNATIONAL을 선택해야 할까요?
-            </h2>
-            <p className="mt-4 text-lg text-gray-600">
-              전문적이고 안전한 B2B 도매 거래 플랫폼
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">검증된 브랜드</h3>
-              <p className="text-gray-600">
-                엄격한 심사를 통과한 500+ 한국 패션 브랜드와 안전한 거래를 보장합니다.
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">글로벌 네트워크</h3>
-              <p className="text-gray-600">
-                50개국 이상 3,000+ 활성 바이어와 연결되어 전 세계 시장 진출을 지원합니다.
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">빠른 거래</h3>
-              <p className="text-gray-600">
-                실시간 재고 확인과 자동화된 주문 처리로 빠르고 효율적인 거래가 가능합니다.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Statistics Section */}
-      <section className="py-24 bg-gray-50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              NIA INTERNATIONAL 성과
-            </h2>
-            <p className="mt-4 text-lg text-gray-600">
-              숫자로 보는 우리의 성장
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600">등록 브랜드</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">10,000+</div>
-              <div className="text-gray-600">상품 수</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">50+</div>
-              <div className="text-gray-600">수출 국가</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">3,000+</div>
-              <div className="text-gray-600">활성 바이어</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 bg-blue-600">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl mb-4">
-            지금 시작하세요
-          </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            NIA INTERNATIONAL과 함께 글로벌 패션 시장에서 성공하세요
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/login"
-              className="rounded-md bg-white px-6 py-3 text-sm font-semibold text-blue-600 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors"
-            >
-              로그인하기
-            </Link>
-            <Link
-              href="/contact"
-              className="rounded-md border border-white px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors"
-            >
-              문의하기
-            </Link>
-          </div>
-        </div>
-      </section>
-
+      <div className="floating-buttons">
+        <div className="floating-btn"><a href="#top">↑</a></div>
+        <div className="floating-btn primary" onClick={() => alert('Quick Quote clicked!')}>⚡️</div>
+      </div>
+      </div>
       <Footer />
     </>
   )
