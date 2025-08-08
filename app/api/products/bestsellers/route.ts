@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     const orderItemWhere: any = {
       order: {
         status: {
-          notIn: ['CANCELLED', 'REFUNDED']
+          notIn: ['CANCELLED']
         },
         ...(startDate && {
           createdAt: {

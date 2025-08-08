@@ -25,6 +25,22 @@ export default function GoogleAdSense() {
     // 전역적으로 초기화 상태 설정
     if (typeof window !== 'undefined') {
       window.__ADSENSE_INITIALIZED = true
+      // 추가 안전장치: 함수 자체를 덮어쓰기
+      const originalPush = window.adsbygoogle?.push || function() {};
+      let autoAdsEnabled = false;
+      
+      window.adsbygoogle = window.adsbygoogle || [];
+      window.adsbygoogle.push = function(...args: any[]) {
+        // enable_page_level_ads가 이미 설정되었는지 체크
+        if (args[0]?.enable_page_level_ads && autoAdsEnabled) {
+          console.warn('Blocked duplicate enable_page_level_ads call');
+          return;
+        }
+        if (args[0]?.enable_page_level_ads) {
+          autoAdsEnabled = true;
+        }
+        return originalPush.apply(window.adsbygoogle, args);
+      };
     }
 
     console.log('Initializing AdSense for the first time')
@@ -52,7 +68,7 @@ export default function GoogleAdSense() {
         // Initialize adsbygoogle array if not exists
         window.adsbygoogle = window.adsbygoogle || []
         
-        // 한 번만 실행되도록 단순화
+        // 한 번만 실행되도록 단순화 - 이미 push 함수가 보호되어 있음
         window.adsbygoogle.push({
           google_ad_client: 'ca-pub-9558805716031898',
           enable_page_level_ads: true
