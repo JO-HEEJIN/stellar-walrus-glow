@@ -174,10 +174,6 @@ export const DOMAIN_CONFIG = {
   current: process.env.NODE_ENV === 'production' ? 'wholesale' : 'wholesale'
 }
 
-export function getStoreBySlug(slug: string): Store | undefined {
-  return STORES.find(store => store.slug === slug)
-}
-
 export function getNavigationItemBySlug(slug: string): NavigationItem | undefined {
   return NAVIGATION_ITEMS.find(item => item.slug === slug)
 }
