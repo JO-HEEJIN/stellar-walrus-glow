@@ -97,8 +97,12 @@ export function BrandProductList({ brandId, brandSlug, searchParams }: BrandProd
       const response = await fetch(`/api/products?${queryParams.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.data.products || []);
-        setTotalCount(data.data.totalCount || 0);
+        setProducts(data.data?.products || []);
+        setTotalCount(data.data?.totalCount || 0);
+      } else {
+        console.error('Failed to fetch products:', response.status, response.statusText);
+        setProducts([]);
+        setTotalCount(0);
       }
     } catch (error) {
       console.error('Error fetching products:', error);

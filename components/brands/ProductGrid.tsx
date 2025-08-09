@@ -38,6 +38,12 @@ interface QuickActionState {
 export function ProductGrid({ products, viewMode, loading }: ProductGridProps) {
   const [quickActions, setQuickActions] = useState<QuickActionState>({});
 
+  // Add error boundary for development
+  if (!products) {
+    console.error('ProductGrid: products prop is undefined');
+    return <div>Error: No products data</div>;
+  }
+
   const handleWishlistToggle = (productId: string) => {
     setQuickActions(prev => ({
       ...prev,

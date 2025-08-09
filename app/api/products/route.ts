@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
       price: Number(product.basePrice),
       discountPrice: product.discountPrice ? Number(product.discountPrice) : undefined,
       discountRate: product.discountRate,
-      imageUrl: product.thumbnailImage || '/placeholder.svg',
+      imageUrl: product.thumbnailImage || 'https://picsum.photos/280/340?random=' + product.id,
       minOrderQty: product.minOrderQty,
       isNew: product.isNew,
       isBestSeller: product.isBestSeller,

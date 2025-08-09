@@ -29,18 +29,12 @@ export function BrandNavigation({ currentSection, brandSlug }: BrandNavigationPr
     if (item.key !== currentSection) {
       // Keep only view preferences when switching sections
       const view = params.get('view');
-      // Create new URLSearchParams to clear all
-      const newParams = new URLSearchParams();
-      if (view) newParams.set('view', view);
-      // Copy back to original params
-      for (const [key, value] of newParams) {
-        params.set(key, value);
-      }
-      // Clear all other params
-      for (const key of Array.from(params.keys())) {
-        if (key !== 'view') {
-          params.delete(key);
-        }
+      // Clear params more safely
+      const keysToDelete = Array.from(params.keys()).filter(key => key !== 'view');
+      keysToDelete.forEach(key => params.delete(key));
+      
+      if (view) {
+        params.set('view', view);
       }
     }
 

@@ -52,12 +52,22 @@ const nextConfig = {
     ]
   },
   
-  // Configure external images from S3
+  // Configure external images from S3 and placeholder services
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '*.s3.*.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
         pathname: '/**',
       },
     ],
