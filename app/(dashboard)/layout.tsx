@@ -121,7 +121,7 @@ export default function DashboardLayout({
                         분석
                       </Link>
                       <Link
-                        href="/brands"
+                        href="/admin-brands"
                         className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       >
                         브랜드 관리
@@ -233,7 +233,7 @@ export default function DashboardLayout({
                   분석
                 </Link>
                 <Link
-                  href="/brands"
+                  href="/admin-brands"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 >
