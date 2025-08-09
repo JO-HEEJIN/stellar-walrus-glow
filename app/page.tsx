@@ -292,15 +292,28 @@ export default function HomePage() {
     setCartCount(cartItems.reduce((total: number, item: any) => total + item.quantity, 0));
   }, []);
 
-  // 필터 변경시 상품 다시 가져오기
+  // 필터 변경시 상품 다시 가져오기 또는 브랜드 페이지로 이동
   const handleFilterChange = async (filterName: string) => {
     setActiveFilter(filterName);
+    
+    // 주요 브랜드들의 경우 브랜드 페이지로 이동
+    const brandSlugMap: { [key: string]: string } = {
+      'MALBON GOLF': 'malbon-golf',
+      'SOUTHCAPE': 'southcape',
+      'St.Andrews': 'st-andrews',
+      'G/FORE': 'g-fore'
+    };
+
+    if (brandSlugMap[filterName]) {
+      router.push(`/brands/${brandSlugMap[filterName]}`);
+      return;
+    }
     
     try {
       setLoading(true);
       let url = '/api/products?limit=8';
       
-      if (filterName !== '전체') {
+      if (filterName !== '전체' && filterName !== '全部') {
         // 브랜드로 필터링
         const selectedBrand = brands.find(brand => brand.nameKo === filterName);
         if (selectedBrand) {
