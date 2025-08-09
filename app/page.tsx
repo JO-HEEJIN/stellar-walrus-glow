@@ -800,6 +800,7 @@ function ProductCard({ product, onQuickAction }: {
   product: any;
   onQuickAction: (productId: string, action: 'wishlist' | 'cart') => void;
 }) {
+  const router = useRouter();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const handleWishlistClick = (e: React.MouseEvent) => {
@@ -811,6 +812,10 @@ function ProductCard({ product, onQuickAction }: {
   const handleCartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onQuickAction(product.id, 'cart');
+  };
+
+  const handleProductClick = () => {
+    router.push(`/products/${product.id}`);
   };
 
   // API 응답과 mock 데이터 모두 처리
@@ -835,7 +840,7 @@ function ProductCard({ product, onQuickAction }: {
   }
 
   return (
-    <div className="cursor-pointer transition-transform hover:-translate-y-1 group">
+    <div onClick={handleProductClick} className="cursor-pointer transition-transform hover:-translate-y-1 group">
       <div className="relative pb-[120%] bg-gray-100 rounded-lg overflow-hidden mb-3">
         <Image
           src={imageUrl}
