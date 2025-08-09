@@ -10,7 +10,11 @@ export default function HomePage() {
   const [activeNav, setActiveNav] = useState('추천');
   const [activeSort, setActiveSort] = useState('추천순');
   const [products, setProducts] = useState<any[]>([]);
+  const [bestBrandProducts, setBestBrandProducts] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
   const [cartCount, setCartCount] = useState(3);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Mock product data - 실제로는 API에서 가져옴
   const mockProducts = [
@@ -104,7 +108,7 @@ export default function HomePage() {
     }
   ];
 
-  const bestBrandProducts = [
+  const mockBestBrandProducts = [
     {
       id: 9,
       brand: 'DESCENTE GOLF',
@@ -151,31 +155,280 @@ export default function HomePage() {
     }
   ];
 
+  // 브랜드 데이터로 필터 칩 생성
   const filterChips = [
     { name: '전체', count: null },
-    { name: '타이틀리스트', count: 128 },
-    { name: '캘러웨이', count: 95 },
-    { name: '말본골프', count: 87 },
-    { name: 'PXG', count: 64 },
-    { name: 'G/FORE', count: 52 },
-    { name: '와이드앵글', count: 73 },
-    { name: '빈폴골프', count: 81 },
-    { name: '먼싱웨어', count: 69 }
+    ...brands.slice(0, 8).map(brand => ({
+      name: brand.nameKo,
+      count: brand.productCount
+    }))
   ];
 
   const navItems = ['추천', '브랜드', '신상품', '베스트', '남성', '여성', '아우터', '상의', '하의', '액세서리', '세일'];
   const sortOptions = ['추천순', '신상품순', '판매량순', '낮은가격순', '높은가격순'];
 
+  // 실제 API에서 데이터 가져오기
   useEffect(() => {
-    setProducts(mockProducts);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // 브랜드 목록 가져오기
+        const brandsResponse = await fetch('/api/brands');
+        if (brandsResponse.ok) {
+          const brandsData = await brandsResponse.json();
+          setBrands(brandsData.data || []);
+        }
+
+        // 추천 상품 가져오기 (sort=recommended)
+        const recommendedResponse = await fetch('/api/products?limit=8&sort=recommended');
+        if (recommendedResponse.ok) {
+          const recommendedData = await recommendedResponse.json();
+          setProducts(recommendedData.data?.products || mockProducts.slice(0, 8));
+        } else {
+          setProducts(mockProducts.slice(0, 8));
+        }
+
+        // 베스트 브랜드 상품 가져오기 (sort=sales)
+        const bestResponse = await fetch('/api/products?limit=4&sort=sales');
+        if (bestResponse.ok) {
+          const bestData = await bestResponse.json();
+          setBestBrandProducts(bestData.data?.products || mockBestBrandProducts.slice(0, 4));
+        } else {
+          setBestBrandProducts(mockBestBrandProducts.slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback to mock data
+        setProducts(mockProducts.slice(0, 8));
+        setBestBrandProducts(mockBestBrandProducts.slice(0, 4));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    
+    // 로컬스토리지에서 장바구니 개수 불러오기
+    const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+    setCartCount(cartItems.reduce((total: number, item: any) => total + item.quantity, 0));
   }, []);
 
-  const handleQuickAction = (productId: number, action: 'wishlist' | 'cart') => {
+  // 필터 변경시 상품 다시 가져오기
+  const handleFilterChange = async (filterName: string) => {
+    setActiveFilter(filterName);
+    
+    try {
+      setLoading(true);
+      let url = '/api/products?limit=8';
+      
+      if (filterName !== '전체') {
+        // 브랜드로 필터링
+        const selectedBrand = brands.find(brand => brand.nameKo === filterName);
+        if (selectedBrand) {
+          url += `&brandId=${selectedBrand.id}`;
+        }
+      }
+      
+      // 정렬 옵션 추가
+      const sortMap: { [key: string]: string } = {
+        '추천순': 'recommended',
+        '신상품순': 'newest',
+        '판매량순': 'sales',
+        '낮은가격순': 'price-low',
+        '높은가격순': 'price-high'
+      };
+      if (sortMap[activeSort]) {
+        url += `&sort=${sortMap[activeSort]}`;
+      }
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.data?.products || []);
+      }
+    } catch (error) {
+      console.error('Error filtering products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 정렬 변경시 상품 다시 가져오기
+  const handleSortChange = async (sortOption: string) => {
+    setActiveSort(sortOption);
+    
+    try {
+      setLoading(true);
+      let url = '/api/products?limit=8';
+      
+      if (activeFilter !== '전체') {
+        const selectedBrand = brands.find(brand => brand.nameKo === activeFilter);
+        if (selectedBrand) {
+          url += `&brandId=${selectedBrand.id}`;
+        }
+      }
+      
+      const sortMap: { [key: string]: string } = {
+        '추천순': 'recommended',
+        '신상품순': 'newest',
+        '판매량순': 'sales',
+        '낮은가격순': 'price-low',
+        '높은가격순': 'price-high'
+      };
+      if (sortMap[sortOption]) {
+        url += `&sort=${sortMap[sortOption]}`;
+      }
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.data?.products || []);
+      }
+    } catch (error) {
+      console.error('Error sorting products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 검색 기능
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/products?limit=8&search=${encodeURIComponent(searchTerm)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.data?.products || []);
+        setActiveFilter('전체'); // 검색시 필터 초기화
+      }
+    } catch (error) {
+      console.error('Error searching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enter 키로 검색
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // 네비게이션 변경시 상품 가져오기
+  const handleNavChange = async (navItem: string) => {
+    setActiveNav(navItem);
+    
+    try {
+      setLoading(true);
+      let url = '/api/products?limit=8';
+      
+      // 네비게이션에 따른 필터링
+      switch (navItem) {
+        case '추천':
+          url += '&sort=recommended';
+          break;
+        case '신상품':
+          url += '&sort=newest';
+          break;
+        case '베스트':
+          url += '&sort=sales';
+          break;
+        case '남성':
+          url += '&category=men';
+          break;
+        case '여성':
+          url += '&category=women';
+          break;
+        case '아우터':
+          url += '&category=outer';
+          break;
+        case '상의':
+          url += '&category=top';
+          break;
+        case '하의':
+          url += '&category=bottom';
+          break;
+        case '액세서리':
+          url += '&category=accessories';
+          break;
+        case '세일':
+          url += '&category=sale';
+          break;
+        case '브랜드':
+          // 브랜드 페이지로 이동하거나 브랜드 목록 표시
+          window.location.href = '/brands';
+          return;
+      }
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.data?.products || []);
+        setActiveFilter('전체'); // 네비게이션 변경시 필터 초기화
+      }
+    } catch (error) {
+      console.error('Error loading navigation products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickAction = async (productId: string, action: 'wishlist' | 'cart') => {
     if (action === 'wishlist') {
-      alert('관심상품에 추가되었습니다.');
+      try {
+        const response = await fetch(`/api/products/${productId}/wishlist`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          alert('관심상품에 추가되었습니다.');
+        } else if (response.status === 401) {
+          alert('로그인이 필요합니다.');
+          // 로그인 페이지로 리다이렉트
+          window.location.href = '/login';
+        } else {
+          alert('관심상품 추가 중 오류가 발생했습니다.');
+        }
+      } catch (error) {
+        console.error('Wishlist error:', error);
+        alert('관심상품 추가 중 오류가 발생했습니다.');
+      }
     } else if (action === 'cart') {
-      alert('장바구니에 추가되었습니다.');
-      setCartCount(prev => prev + 1);
+      // 임시로 로컬스토리지에 장바구니 추가 (나중에 실제 API로 교체)
+      try {
+        const product = [...products, ...bestBrandProducts].find(p => p.id === productId);
+        if (product) {
+          const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
+          const existingItem = cartItems.find((item: any) => item.productId === productId);
+          
+          if (existingItem) {
+            existingItem.quantity += 1;
+          } else {
+            cartItems.push({
+              id: `${productId}-default`,
+              productId,
+              name: product.name,
+              brand: product.brand,
+              price: product.price,
+              image: product.image,
+              quantity: 1,
+              moq: product.moq
+            });
+          }
+          
+          localStorage.setItem('cart', JSON.stringify(cartItems));
+          setCartCount(cartItems.reduce((total: number, item: any) => total + item.quantity, 0));
+          alert('장바구니에 추가되었습니다.');
+        }
+      } catch (error) {
+        console.error('Cart error:', error);
+        alert('장바구니 추가 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -211,8 +464,14 @@ export default function HomePage() {
               type="text"
               placeholder="브랜드명, 상품명, SKU 검색"
               className="w-full h-10 px-4 pr-10 border-2 border-black rounded-full text-sm outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
             />
-            <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-lg">
+            <button 
+              onClick={handleSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-lg hover:scale-110 transition-transform"
+            >
               🔍
             </button>
           </div>
@@ -250,12 +509,12 @@ export default function HomePage() {
             {navItems.map((item) => (
               <div
                 key={item}
-                onClick={() => setActiveNav(item)}
+                onClick={() => handleNavChange(item)}
                 className={`text-sm font-medium cursor-pointer py-1 border-b-2 transition-all ${
                   activeNav === item
                     ? 'border-black font-bold'
                     : 'border-transparent hover:border-black'
-                }`}
+                } ${loading ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 {item}
               </div>
@@ -292,12 +551,13 @@ export default function HomePage() {
             {filterChips.map((chip) => (
               <button
                 key={chip.name}
-                onClick={() => setActiveFilter(chip.name)}
+                onClick={() => handleFilterChange(chip.name)}
+                disabled={loading}
                 className={`px-4 py-2 rounded-full text-sm border transition-all flex items-center gap-1 ${
                   activeFilter === chip.name
                     ? 'bg-black text-white border-black'
                     : 'bg-white text-black border-gray-300 hover:bg-gray-100'
-                }`}
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {chip.name}
                 {chip.count && (
@@ -344,12 +604,12 @@ export default function HomePage() {
             {sortOptions.map((option, index) => (
               <React.Fragment key={option}>
                 <span
-                  onClick={() => setActiveSort(option)}
-                  className={`text-sm cursor-pointer ${
+                  onClick={() => handleSortChange(option)}
+                  className={`text-sm cursor-pointer transition-colors ${
                     activeSort === option
                       ? 'text-black font-bold'
                       : 'text-gray-500 hover:text-black'
-                  }`}
+                  } ${loading ? 'opacity-50 pointer-events-none' : ''}`}
                 >
                   {option}
                 </span>
@@ -362,13 +622,31 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-4 gap-5 mb-10">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onQuickAction={handleQuickAction}
-            />
-          ))}
+          {loading ? (
+            // 로딩 스켈레톤
+            Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-80 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))
+          ) : products.length > 0 ? (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onQuickAction={handleQuickAction}
+              />
+            ))
+          ) : (
+            <div className="col-span-4 text-center py-20">
+              <div className="text-4xl mb-4">🔍</div>
+              <div className="text-lg font-medium text-gray-900 mb-2">상품이 없습니다</div>
+              <div className="text-sm text-gray-500">다른 브랜드나 조건을 선택해보세요.</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -419,7 +697,7 @@ export default function HomePage() {
 // Product Card Component
 function ProductCard({ product, onQuickAction }: { 
   product: any;
-  onQuickAction: (productId: number, action: 'wishlist' | 'cart') => void;
+  onQuickAction: (productId: string, action: 'wishlist' | 'cart') => void;
 }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
@@ -434,23 +712,44 @@ function ProductCard({ product, onQuickAction }: {
     onQuickAction(product.id, 'cart');
   };
 
+  // API 응답과 mock 데이터 모두 처리
+  const imageUrl = product.imageUrl || product.image || 'https://picsum.photos/300/400?random=' + product.id;
+  const brandName = product.brandName || product.brand || '';
+  const productName = product.nameKo || product.name || '';
+  const price = product.discountPrice || product.price || 0;
+  const originalPrice = product.price || product.originalPrice || 0;
+  const discountRate = product.discountRate || product.discount || 0;
+  const minOrderQty = product.minOrderQty || product.moq || 1;
+
+  // 배지 결정 로직
+  let badge = null;
+  if (product.badge) {
+    badge = product.badge;
+  } else if (product.isNew) {
+    badge = 'NEW';
+  } else if (product.isBestSeller) {
+    badge = 'BEST';
+  } else if (discountRate >= 30) {
+    badge = 'HOT';
+  }
+
   return (
     <div className="cursor-pointer transition-transform hover:-translate-y-1 group">
       <div className="relative pb-[120%] bg-gray-100 rounded-lg overflow-hidden mb-3">
         <Image
-          src={product.image}
-          alt={product.name}
+          src={imageUrl}
+          alt={productName}
           fill
           className="object-cover"
         />
-        {product.badge && (
+        {badge && (
           <span className={`absolute top-2 left-2 px-2 py-1 text-white text-xs font-bold rounded ${
-            product.badge === 'NEW' ? 'bg-green-500' :
-            product.badge === 'BEST' ? 'bg-blue-500' :
-            product.badge === 'HOT' ? 'bg-red-500' :
-            product.badge === 'SALE' ? 'bg-purple-500' : 'bg-red-500'
+            badge === 'NEW' ? 'bg-green-500' :
+            badge === 'BEST' ? 'bg-blue-500' :
+            badge === 'HOT' ? 'bg-red-500' :
+            badge === 'SALE' ? 'bg-purple-500' : 'bg-red-500'
           }`}>
-            {product.badge}
+            {badge}
           </span>
         )}
         
@@ -476,15 +775,19 @@ function ProductCard({ product, onQuickAction }: {
       </div>
       
       <div>
-        <div className="text-sm font-bold mb-1">{product.brand}</div>
-        <div className="text-sm mb-2 line-clamp-2 leading-snug">{product.name}</div>
+        <div className="text-sm font-bold mb-1">{brandName}</div>
+        <div className="text-sm mb-2 line-clamp-2 leading-snug">{productName}</div>
         <div className="flex items-center gap-2">
-          <span className="text-red-500 font-bold">{product.discount}%</span>
-          <span className="text-base font-bold">₩{product.price.toLocaleString()}</span>
-          <span className="text-sm text-gray-500 line-through">₩{product.originalPrice.toLocaleString()}</span>
+          {discountRate > 0 && (
+            <span className="text-red-500 font-bold">{discountRate}%</span>
+          )}
+          <span className="text-base font-bold">₩{price.toLocaleString()}</span>
+          {discountRate > 0 && originalPrice > price && (
+            <span className="text-sm text-gray-500 line-through">₩{originalPrice.toLocaleString()}</span>
+          )}
         </div>
         <span className="inline-block mt-1.5 px-2 py-1 bg-gray-100 rounded text-xs text-gray-600">
-          최소주문: {product.moq}개
+          최소주문: {minOrderQty}개
         </span>
       </div>
     </div>
