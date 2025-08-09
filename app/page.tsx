@@ -17,6 +17,68 @@ export default function HomePage() {
   const [cartCount, setCartCount] = useState(3);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [language, setLanguage] = useState<'ko' | 'zh'>('ko');
+
+  // 언어별 텍스트
+  const texts = {
+    ko: {
+      login: '로그인',
+      register: '회원가입',
+      customerService: '고객센터',
+      brandInquiry: '브랜드 입점문의',
+      bulkOrder: '대량구매 문의',
+      orderShipping: '주문배송',
+      search: '브랜드명, 상품명, SKU 검색',
+      wishlist: '관심상품',
+      cart: '장바구니',
+      quote: '견적서',
+      myPage: '마이페이지',
+      minOrder: '최소 주문',
+      expectedShipping: '예상 배송',
+      paymentMethod: '결제 수단',
+      bulkOrderExcel: '엑셀 대량주문',
+      todayRecommend: '오늘의 추천',
+      chineseBuyerPreferred: '중국 바이어 선호 상품',
+      bestBrand: '베스트 브랜드',
+      thisMonthPopular: '이번 달 인기 브랜드',
+      viewAll: '전체보기',
+      bannerTitle: '2025 S/S 신상품 사전예약',
+      bannerSubtitle: '최대 35% 할인 + 추가 5% 대량구매 할인',
+      orderNow: '지금 주문하기'
+    },
+    zh: {
+      login: '登录',
+      register: '注册',
+      customerService: '客服中心',
+      brandInquiry: '品牌入驻咨询',
+      bulkOrder: '大宗采购咨询',
+      orderShipping: '订单配送',
+      search: '品牌名、商品名、SKU搜索',
+      wishlist: '收藏商品',
+      cart: '购物车',
+      quote: '报价单',
+      myPage: '我的页面',
+      minOrder: '最小订单',
+      expectedShipping: '预计配送',
+      paymentMethod: '支付方式',
+      bulkOrderExcel: 'Excel大宗订单',
+      todayRecommend: '今日推荐',
+      chineseBuyerPreferred: '中国买家首选商品',
+      bestBrand: '最佳品牌',
+      thisMonthPopular: '本月热门品牌',
+      viewAll: '查看全部',
+      bannerTitle: '2025 S/S 新品预售',
+      bannerSubtitle: '最高35%折扣 + 额外5%批量采购折扣',
+      orderNow: '立即订购'
+    }
+  };
+
+  const t = texts[language];
+
+  const handleLanguageChange = (lang: 'ko' | 'zh') => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
 
   // Mock product data - 실제로는 API에서 가져옴
   const mockProducts = [
@@ -168,6 +230,14 @@ export default function HomePage() {
 
   const navItems = ['추천', '브랜드', '신상품', '베스트', '남성', '여성', '아우터', '상의', '하의', '액세서리', '세일'];
   const sortOptions = ['추천순', '신상품순', '판매량순', '낮은가격순', '높은가격순'];
+
+  // 언어 설정 로드
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as 'ko' | 'zh' | null;
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
 
   // 실제 API에서 데이터 가져오기
   useEffect(() => {
@@ -440,16 +510,26 @@ export default function HomePage() {
       <div className="bg-black text-white py-2 text-xs">
         <div className="max-w-[1280px] mx-auto px-5 flex justify-between items-center">
           <div className="flex gap-5">
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">고객센터</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">브랜드 입점문의</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">대량구매 문의</Link>
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">{t.customerService}</Link>
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">{t.brandInquiry}</Link>
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">{t.bulkOrder}</Link>
           </div>
           <div className="flex gap-4 items-center">
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">로그인</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">회원가입</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">주문배송</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">🇰🇷 KOR</Link>
-            <Link href="#" className="text-gray-400 hover:text-white transition-colors">🇨🇳 中文</Link>
+            <Link href="/login" className="text-gray-400 hover:text-white transition-colors">{t.login}</Link>
+            <Link href="/register" className="text-gray-400 hover:text-white transition-colors">{t.register}</Link>
+            <Link href="#" className="text-gray-400 hover:text-white transition-colors">{t.orderShipping}</Link>
+            <button 
+              onClick={() => handleLanguageChange('ko')}
+              className={`text-gray-400 hover:text-white transition-colors ${language === 'ko' ? 'text-white font-bold' : ''}`}
+            >
+              🇰🇷 KOR
+            </button>
+            <button 
+              onClick={() => handleLanguageChange('zh')}
+              className={`text-gray-400 hover:text-white transition-colors ${language === 'zh' ? 'text-white font-bold' : ''}`}
+            >
+              🇨🇳 中文
+            </button>
           </div>
         </div>
       </div>
@@ -464,7 +544,7 @@ export default function HomePage() {
           <div className="flex-1 max-w-[500px] relative">
             <input
               type="text"
-              placeholder="브랜드명, 상품명, SKU 검색"
+              placeholder={t.search}
               className="w-full h-10 px-4 pr-10 border-2 border-black rounded-full text-sm outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -481,7 +561,7 @@ export default function HomePage() {
           <div className="flex gap-6 ml-auto items-center">
             <div className="flex flex-col items-center gap-1 cursor-pointer">
               <span>❤️</span>
-              <span className="text-xs">관심상품</span>
+              <span className="text-xs">{t.wishlist}</span>
             </div>
             <div className="flex flex-col items-center gap-1 cursor-pointer relative">
               <div className="relative">
@@ -490,15 +570,15 @@ export default function HomePage() {
                   {cartCount}
                 </span>
               </div>
-              <span className="text-xs">장바구니</span>
+              <span className="text-xs">{t.cart}</span>
             </div>
             <div className="flex flex-col items-center gap-1 cursor-pointer">
               <span>📋</span>
-              <span className="text-xs">견적서</span>
+              <span className="text-xs">{t.quote}</span>
             </div>
             <div className="flex flex-col items-center gap-1 cursor-pointer">
               <span>👤</span>
-              <span className="text-xs">마이페이지</span>
+              <span className="text-xs">{t.myPage}</span>
             </div>
           </div>
         </div>
@@ -529,19 +609,19 @@ export default function HomePage() {
       <div className="bg-blue-50 border-b border-blue-200 py-3">
         <div className="max-w-[1280px] mx-auto px-5 flex justify-between items-center">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">최소 주문:</span>
+            <span className="text-gray-600">{t.minOrder}:</span>
             <span className="font-bold">₩300,000</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">예상 배송:</span>
+            <span className="text-gray-600">{t.expectedShipping}:</span>
             <span className="font-bold">3-5일 (EMS)</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">결제 수단:</span>
-            <span className="font-bold">위챗페이 · 알리페이 · 계좌이체</span>
+            <span className="text-gray-600">{t.paymentMethod}:</span>
+            <span className="font-bold">{language === 'ko' ? '위챗페이 · 알리페이 · 계좌이체' : '微信支付 · 支付宝 · 银行转账'}</span>
           </div>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors">
-            📊 엑셀 대량주문
+            📊 {t.bulkOrderExcel}
           </button>
         </div>
       </div>
@@ -583,13 +663,13 @@ export default function HomePage() {
               🔥 HOT DEAL
             </span>
             <h2 className="text-4xl font-black leading-tight mb-4">
-              2025 S/S<br />신상품 사전예약
+              {t.bannerTitle}
             </h2>
             <p className="text-lg opacity-90 mb-6">
-              최대 35% 할인 + 추가 5% 대량구매 할인
+              {t.bannerSubtitle}
             </p>
             <button className="inline-block px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform cursor-pointer">
-              지금 주문하기 →
+              {t.orderNow} →
             </button>
           </div>
         </div>
@@ -599,8 +679,8 @@ export default function HomePage() {
       <div className="max-w-[1280px] mx-auto my-10 px-5">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-2xl font-bold flex items-center gap-3">
-            오늘의 추천
-            <span className="text-sm font-normal text-gray-600">중국 바이어 선호 상품</span>
+            {t.todayRecommend}
+            <span className="text-sm font-normal text-gray-600">{t.chineseBuyerPreferred}</span>
           </h2>
           <div className="flex gap-4">
             {sortOptions.map((option, index) => (
@@ -656,11 +736,11 @@ export default function HomePage() {
       <div className="max-w-[1280px] mx-auto my-10 px-5">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-2xl font-bold flex items-center gap-3">
-            베스트 브랜드
-            <span className="text-sm font-normal text-gray-600">이번 달 인기 브랜드</span>
+            {t.bestBrand}
+            <span className="text-sm font-normal text-gray-600">{t.thisMonthPopular}</span>
           </h2>
           <span className="text-sm text-gray-600 hover:text-black cursor-pointer">
-            전체보기 →
+            {t.viewAll} →
           </span>
         </div>
 
