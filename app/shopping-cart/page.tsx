@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore, CartItem } from '@/lib/stores/cart';
 
-export default function CartPage() {
+export default function ShoppingCartPage() {
   const router = useRouter();
   const { items, updateQuantity, removeItem, clearCart } = useCartStore();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);

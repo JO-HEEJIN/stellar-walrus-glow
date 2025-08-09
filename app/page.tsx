@@ -575,7 +575,7 @@ export default function HomePage() {
               <span>❤️</span>
               <span className="text-xs">{t.wishlist}</span>
             </div>
-            <div onClick={() => router.push('/cart')} className="flex flex-col items-center gap-1 cursor-pointer relative">
+            <div onClick={() => router.push('/shopping-cart')} className="flex flex-col items-center gap-1 cursor-pointer relative">
               <div className="relative">
                 <span>🛒</span>
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
