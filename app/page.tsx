@@ -5,19 +5,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/layout/footer';
+import { useCartStore } from '@/lib/stores/cart';
 
 export default function HomePage() {
   const router = useRouter();
+  const { addItem, getTotalItems } = useCartStore();
   const [activeFilter, setActiveFilter] = useState('전체');
   const [activeNav, setActiveNav] = useState('추천');
   const [activeSort, setActiveSort] = useState('추천순');
   const [products, setProducts] = useState<any[]>([]);
   const [bestBrandProducts, setBestBrandProducts] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [cartCount, setCartCount] = useState(3);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState<'ko' | 'zh'>('ko');
+  const cartCount = getTotalItems();
 
   // 언어별 텍스트
   const texts = {
@@ -286,10 +288,6 @@ export default function HomePage() {
     };
 
     fetchData();
-    
-    // 로컬스토리지에서 장바구니 개수 불러오기
-    const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCartCount(cartItems.reduce((total: number, item: any) => total + item.quantity, 0));
   }, []);
 
   // 필터 변경시 상품 다시 가져오기 또는 브랜드 페이지로 이동
@@ -490,30 +488,25 @@ export default function HomePage() {
         alert('관심상품 추가 중 오류가 발생했습니다.');
       }
     } else if (action === 'cart') {
-      // 임시로 로컬스토리지에 장바구니 추가 (나중에 실제 API로 교체)
       try {
         const product = [...products, ...bestBrandProducts].find(p => p.id === productId);
         if (product) {
-          const cartItems = JSON.parse(localStorage.getItem('cart') || '[]');
-          const existingItem = cartItems.find((item: any) => item.productId === productId);
+          // API 응답과 mock 데이터 모두 처리
+          const brandName = product.brandName || product.brand || '';
+          const productName = product.nameKo || product.name || '';
+          const price = product.discountPrice || product.price || 0;
+          const imageUrl = product.imageUrl || product.image || '';
           
-          if (existingItem) {
-            existingItem.quantity += 1;
-          } else {
-            cartItems.push({
-              id: `${productId}-default`,
-              productId,
-              name: product.name,
-              brand: product.brand,
-              price: product.price,
-              image: product.image,
-              quantity: 1,
-              moq: product.moq
-            });
-          }
+          addItem({
+            id: `${productId}-default`,
+            productId,
+            name: productName,
+            brandName: brandName,
+            price: price,
+            imageUrl: imageUrl,
+            quantity: 1
+          });
           
-          localStorage.setItem('cart', JSON.stringify(cartItems));
-          setCartCount(cartItems.reduce((total: number, item: any) => total + item.quantity, 0));
           alert('장바구니에 추가되었습니다.');
         }
       } catch (error) {
@@ -582,7 +575,7 @@ export default function HomePage() {
               <span>❤️</span>
               <span className="text-xs">{t.wishlist}</span>
             </div>
-            <div className="flex flex-col items-center gap-1 cursor-pointer relative">
+            <div onClick={() => router.push('/cart')} className="flex flex-col items-center gap-1 cursor-pointer relative">
               <div className="relative">
                 <span>🛒</span>
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">

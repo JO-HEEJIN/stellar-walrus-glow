@@ -935,7 +935,34 @@ export default async function ProductDetailPage({
             {/* 액션 버튼 */}
             <div className="action-buttons">
               <button className="btn btn-wishlist">{product.isWishlisted ? '💖' : '❤️'} 관심상품</button>
-              <button className="btn btn-cart">장바구니 담기</button>
+              <button className="btn btn-cart" onClick={() => {
+                const quantityInput = document.querySelector('.quantity-input') as HTMLInputElement;
+                const selectedColor = document.querySelector('.color-option.selected')?.getAttribute('title') || undefined;
+                const selectedSize = document.querySelector('.size-option.selected')?.textContent || undefined;
+                const quantity = parseInt(quantityInput?.value || '${product.minOrderQuantity}');
+                
+                // Zustand store를 사용하여 장바구니에 추가
+                if (typeof window !== 'undefined') {
+                  const { useCartStore } = require('@/lib/stores/cart');
+                  const addItem = useCartStore.getState().addItem;
+                  
+                  const itemId = `${product.id}-${selectedColor || 'default'}-${selectedSize || 'default'}`;
+                  
+                  addItem({
+                    id: itemId,
+                    productId: product.id,
+                    name: product.name,
+                    brandName: product.brandName,
+                    price: product.discountPrice,
+                    imageUrl: product.images[0]?.url || '/placeholder.svg',
+                    color: selectedColor,
+                    size: selectedSize,
+                    quantity: quantity
+                  });
+                  
+                  alert('장바구니에 추가되었습니다.');
+                }
+              }}>장바구니 담기</button>
               <button className="btn btn-buy">바로 구매하기</button>
             </div>
 
