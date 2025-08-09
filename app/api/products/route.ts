@@ -13,9 +13,16 @@ const searchSchema = z.object({
   search: z.string().optional(),
   brandId: z.string().optional(),
   categoryId: z.string().optional(),
+  category: z.string().optional(), // For brand page filtering
   status: z.enum(['ACTIVE', 'INACTIVE', 'OUT_OF_STOCK']).optional(),
   sortBy: z.enum(['createdAt', 'basePrice', 'nameKo', 'inventory', 'sku']).default('createdAt'),
+  sort: z.enum(['recommended', 'newest', 'sales', 'price-low', 'price-high', 'discount']).optional(),
   order: z.enum(['asc', 'desc']).default('desc'),
+  priceMin: z.coerce.number().min(0).optional(),
+  priceMax: z.coerce.number().min(0).optional(),
+  colors: z.string().optional(), // Comma-separated color IDs
+  sizes: z.string().optional(), // Comma-separated size IDs
+  moq: z.string().optional(), // MOQ range filter
 })
 
 /**
@@ -119,10 +126,117 @@ export async function GET(request: NextRequest) {
     if (query.categoryId) where.categoryId = query.categoryId
     if (query.status) where.status = query.status
 
+    // Brand page category filtering
+    if (query.category) {
+      switch (query.category) {
+        case 'new':
+          where.isNew = true
+          break
+        case 'best':
+          where.isBestSeller = true
+          break
+        case 'men':
+          where.category = { name: { contains: '남성' } }
+          break
+        case 'women':
+          where.category = { name: { contains: '여성' } }
+          break
+        case 'accessories':
+          where.category = { name: { contains: '액세서리' } }
+          break
+        case 'sale':
+          where.discountRate = { gt: 0 }
+          break
+      }
+    }
+
+    // Price range filtering
+    if (query.priceMin || query.priceMax) {
+      where.basePrice = {}
+      if (query.priceMin) where.basePrice.gte = query.priceMin
+      if (query.priceMax) where.basePrice.lte = query.priceMax
+    }
+
+    // Color filtering
+    if (query.colors) {
+      const colorIds = query.colors.split(',').filter(Boolean)
+      if (colorIds.length > 0) {
+        where.colors = {
+          some: {
+            name: { in: colorIds }
+          }
+        }
+      }
+    }
+
+    // Size filtering
+    if (query.sizes) {
+      const sizeIds = query.sizes.split(',').filter(Boolean)
+      if (sizeIds.length > 0) {
+        where.sizes = {
+          some: {
+            name: { in: sizeIds }
+          }
+        }
+      }
+    }
+
+    // MOQ filtering
+    if (query.moq) {
+      switch (query.moq) {
+        case 'under-5':
+          where.minOrderQty = { lte: 5 }
+          break
+        case 'under-10':
+          where.minOrderQty = { lte: 10 }
+          break
+        case 'under-20':
+          where.minOrderQty = { lte: 20 }
+          break
+        case 'over-20':
+          where.minOrderQty = { gt: 20 }
+          break
+      }
+    }
+
     // Count total items using read replica
     const totalItems = await withRetry(async () => {
       return await prismaRead.product.count({ where })
     })
+
+    // Build orderBy clause
+    let orderBy: any = {}
+    
+    if (query.sort) {
+      switch (query.sort) {
+        case 'recommended':
+          orderBy = [
+            { isBestSeller: 'desc' },
+            { soldCount: 'desc' },
+            { rating: 'desc' }
+          ]
+          break
+        case 'newest':
+          orderBy = { createdAt: 'desc' }
+          break
+        case 'sales':
+          orderBy = { soldCount: 'desc' }
+          break
+        case 'price-low':
+          orderBy = { basePrice: 'asc' }
+          break
+        case 'price-high':
+          orderBy = { basePrice: 'desc' }
+          break
+        case 'discount':
+          orderBy = { discountRate: 'desc' }
+          break
+        default:
+          orderBy = { createdAt: 'desc' }
+      }
+    } else {
+      orderBy = { [query.sortBy]: query.order }
+    }
 
     // Fetch products using read replica
     const products = await withRetry(async () => {
@@ -135,15 +249,43 @@ export async function GET(request: NextRequest) {
           category: {
             select: { id: true, name: true },
           },
+          colors: {
+            select: { id: true, name: true, code: true }
+          },
+          sizes: {
+            select: { id: true, name: true }
+          }
         },
-        orderBy: { [query.sortBy]: query.order },
+        orderBy,
         skip: (query.page - 1) * query.limit,
         take: query.limit,
       })
     })
 
+    // Format products for brand page
+    const formattedProducts = products.map(product => ({
+      id: product.id,
+      sku: product.sku,
+      name: product.nameKo,
+      nameKo: product.nameKo,
+      category: product.category?.name || '',
+      price: Number(product.basePrice),
+      discountPrice: product.discountPrice ? Number(product.discountPrice) : undefined,
+      discountRate: product.discountRate,
+      imageUrl: product.thumbnailImage || '/placeholder.svg',
+      minOrderQty: product.minOrderQty,
+      isNew: product.isNew,
+      isBestSeller: product.isBestSeller,
+      colors: product.colors?.map(c => c.name) || [],
+      sizes: product.sizes?.map(s => s.name) || [],
+      stock: product.inventory
+    }))
+
     return NextResponse.json({
-      data: products,
+      data: {
+        products: formattedProducts,
+        totalCount: totalItems
+      },
       meta: {
         page: query.page,
         limit: query.limit,
