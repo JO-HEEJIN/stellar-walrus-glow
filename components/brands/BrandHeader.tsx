@@ -53,7 +53,7 @@ export function BrandHeader({ brand }: BrandHeaderProps) {
               />
             ) : (
               <div className="text-2xl font-black text-black">
-                {brand.name}
+                {brand.name.toUpperCase()}
               </div>
             )}
           </div>

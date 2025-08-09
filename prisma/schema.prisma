@@ -20,13 +20,13 @@ model User {
   updatedAt     DateTime   @default(now()) @updatedAt
   accounts      Account[]
   auditLogs     AuditLog[]
+  carts         Cart?
   orders        Order[]
+  questions     Question[]
+  reviews       Review[]
   sessions      Session[]
   brand         Brand?     @relation(fields: [brandId], references: [id])
-  reviews       Review[]
-  questions     Question[]
   wishlists     Wishlist[]
-  carts         Cart[]
 
   @@index([email])
   @@index([status])
@@ -80,45 +80,45 @@ model Brand {
 }
 
 model Product {
-  id             String          @id @default(cuid())
-  brandId        String
-  sku            String          @unique(map: "sku")
-  nameKo         String
-  nameCn         String?
-  descriptionKo  String?         @db.Text
-  descriptionCn  String?         @db.Text
-  categoryId     String?
-  status         ProductStatus   @default(ACTIVE)
-  basePrice      Decimal         @db.Decimal(10, 2)
-  discountPrice  Decimal?        @db.Decimal(10, 2)
-  discountRate   Int             @default(0)
-  inventory      Int             @default(0)
-  minOrderQty    Int             @default(10)
-  thumbnailImage String?
-  images         Json?
-  options        Json?
-  features       Json?
-  material       String?
-  careInstructions String?       @db.Text
-  tags           Json?
-  isNew          Boolean         @default(false)
-  isBestSeller   Boolean         @default(false)
-  soldCount      Int             @default(0)
-  viewCount      Int             @default(0)
-  rating         Decimal         @default(0) @db.Decimal(2, 1)
-  reviewCount    Int             @default(0)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @default(now()) @updatedAt
-  orderItems     OrderItem[]
-  brand          Brand           @relation(fields: [brandId], references: [id])
-  category       Category?       @relation(fields: [categoryId], references: [id])
-  colors         ProductColor[]
-  sizes          ProductSize[]
-  bulkPricing    BulkPricing[]
-  reviews        Review[]
-  questions      Question[]
-  wishlists      Wishlist[]
-  cartItems      CartItem[]
+  id               String         @id @default(cuid())
+  brandId          String
+  sku              String         @unique(map: "sku")
+  nameKo           String
+  nameCn           String?
+  descriptionKo    String?        @db.Text
+  descriptionCn    String?        @db.Text
+  categoryId       String?
+  status           ProductStatus  @default(ACTIVE)
+  basePrice        Decimal        @db.Decimal(10, 2)
+  inventory        Int            @default(0)
+  thumbnailImage   String?
+  images           Json?
+  options          Json?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now()) @updatedAt
+  careInstructions String?        @db.Text
+  discountPrice    Decimal?       @db.Decimal(10, 2)
+  discountRate     Int            @default(0)
+  features         Json?
+  isBestSeller     Boolean        @default(false)
+  isNew            Boolean        @default(false)
+  material         String?
+  minOrderQty      Int            @default(10)
+  rating           Decimal        @default(0.0) @db.Decimal(2, 1)
+  reviewCount      Int            @default(0)
+  soldCount        Int            @default(0)
+  tags             Json?
+  viewCount        Int            @default(0)
+  bulkPricing      BulkPricing[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  brand            Brand          @relation(fields: [brandId], references: [id])
+  category         Category?      @relation(fields: [categoryId], references: [id])
+  colors           ProductColor[]
+  sizes            ProductSize[]
+  questions        Question[]
+  reviews          Review[]
+  wishlists        Wishlist[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -195,54 +195,27 @@ model AuditLog {
   @@index([createdAt])
 }
 
-enum Role {
-  MASTER_ADMIN
-  BRAND_ADMIN
-  BUYER
-}
-
-enum Status {
-  ACTIVE
-  SUSPENDED
-  DELETED
-}
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-}
-
-enum OrderStatus {
-  PENDING
-  PAID
-  PREPARING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
 model ProductColor {
-  id         String   @id @default(cuid())
-  productId  String
-  name       String
-  code       String
-  available  Boolean  @default(true)
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  code      String
+  available Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
 
 model ProductSize {
-  id         String   @id @default(cuid())
-  productId  String
-  name       String
-  available  Boolean  @default(true)
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  available Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
 }
@@ -278,17 +251,17 @@ model Review {
 }
 
 model Question {
-  id        String    @id @default(cuid())
-  productId String
-  userId    String
-  content   String    @db.Text
-  answer    String?   @db.Text
+  id         String    @id @default(cuid())
+  productId  String
+  userId     String
+  content    String    @db.Text
+  answer     String?   @db.Text
   answeredAt DateTime?
   answeredBy String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id])
 
   @@index([productId])
   @@index([userId])
@@ -299,8 +272,8 @@ model Wishlist {
   userId    String
   productId String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId])
@@ -309,15 +282,13 @@ model Wishlist {
 
 model Cart {
   id        String     @id @default(cuid())
-  userId    String?
-  sessionId String?
+  userId    String?    @unique
+  sessionId String?    @unique
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now()) @updatedAt
-  items     CartItem[]
   user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
 
-  @@unique([userId])
-  @@unique([sessionId])
   @@index([userId])
   @@index([sessionId])
 }
@@ -336,4 +307,31 @@ model CartItem {
 
   @@index([cartId])
   @@index([productId])
+}
+
+enum Role {
+  MASTER_ADMIN
+  BRAND_ADMIN
+  BUYER
+}
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }

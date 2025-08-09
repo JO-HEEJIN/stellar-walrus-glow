@@ -111,8 +111,15 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
 
       <div className="max-w-[1280px] mx-auto px-5 pb-16">
         {/* Brand Story Section */}
-        {currentSection === 'story' && brand.story && (
-          <BrandStory story={brand.story} />
+        {currentSection === 'story' && (
+          brand.story ? (
+            <BrandStory story={brand.story} />
+          ) : (
+            <div className="bg-gray-50 p-10 rounded-xl mt-8 mb-10 text-center">
+              <h2 className="text-xl font-bold mb-5">브랜드 스토리</h2>
+              <p className="text-gray-600">브랜드 스토리가 준비 중입니다.</p>
+            </div>
+          )
         )}
 
         {/* Products Section */}

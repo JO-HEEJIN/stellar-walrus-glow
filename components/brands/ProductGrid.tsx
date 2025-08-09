@@ -4,12 +4,14 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
+import { useCartStore } from '@/lib/stores/cart';
 
 interface Product {
   id: string;
   sku: string;
   name: string;
   nameKo: string;
+  brandName: string;
   category: string;
   price: number;
   discountPrice?: number;
@@ -44,26 +46,68 @@ export function ProductGrid({ products, viewMode, loading }: ProductGridProps) {
     return <div>Error: No products data</div>;
   }
 
-  const handleWishlistToggle = (productId: string) => {
-    setQuickActions(prev => ({
-      ...prev,
-      [productId]: {
-        ...prev[productId],
-        wishlisted: !prev[productId]?.wishlisted
-      }
-    }));
-
+  const handleWishlistToggle = async (productId: string) => {
     const isWishlisted = quickActions[productId]?.wishlisted;
-    if (!isWishlisted) {
-      alert('관심상품에 추가되었습니다.');
+    
+    try {
+      const method = isWishlisted ? 'DELETE' : 'POST';
+      const response = await fetch(`/api/products/${productId}/wishlist`, {
+        method,
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        setQuickActions(prev => ({
+          ...prev,
+          [productId]: {
+            ...prev[productId],
+            wishlisted: !isWishlisted
+          }
+        }));
+        
+        if (!isWishlisted) {
+          alert('관심상품에 추가되었습니다.');
+        } else {
+          alert('관심상품에서 제거되었습니다.');
+        }
+      } else if (response.status === 401) {
+        alert('로그인이 필요합니다.');
+        window.location.href = '/auth/login';
+      } else {
+        alert('오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Wishlist error:', error);
+      alert('오류가 발생했습니다.');
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    alert(`${product.nameKo}이(가) 장바구니에 추가되었습니다.`);
+  const handleAddToCart = async (product: Product) => {
+    try {
+      // Zustand cart store 사용
+      const { addItem } = useCartStore.getState();
+      
+      addItem({
+        id: `${product.id}-default-default`,
+        productId: product.id,
+        name: product.nameKo,
+        brandName: product.brandName,
+        price: product.discountPrice || product.price,
+        imageUrl: product.imageUrl,
+        color: product.colors[0] || undefined,
+        size: product.sizes[0] || undefined,
+        quantity: product.minOrderQty
+      });
+      
+      alert(`${product.nameKo}이(가) 장바구니에 추가되었습니다.`);
+    } catch (error) {
+      console.error('Cart error:', error);
+      alert('장바구니 추가 중 오류가 발생했습니다.');
+    }
   };
 
   const handleAddToQuote = (product: Product) => {
+    // TODO: 견적서 기능 구현
     alert(`${product.nameKo}이(가) 견적서에 추가되었습니다.`);
   };
 

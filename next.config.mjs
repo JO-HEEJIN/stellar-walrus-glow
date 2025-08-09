@@ -62,6 +62,16 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'k-fashion-products-711082721767.s3.us-east-2.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'picsum.photos',
         pathname: '/**',
       },
