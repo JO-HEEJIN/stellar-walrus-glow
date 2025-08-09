@@ -41,7 +41,34 @@ export async function GET(
       include: {
         brand: true,
         category: true,
-      },
+        colors: {
+          orderBy: { order: 'asc' }
+        },
+        sizes: {
+          orderBy: { order: 'asc' }
+        },
+        bulkPricing: {
+          orderBy: { minQuantity: 'asc' }
+        },
+        reviews: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true
+              }
+            }
+          }
+        },
+        _count: {
+          select: {
+            reviews: true,
+            questions: true
+          }
+        }
+      }
     })
 
     if (!product) {
@@ -51,7 +78,140 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ data: product })
+    // Increment view count
+    await prisma.product.update({
+      where: { id: params.id },
+      data: { viewCount: { increment: 1 } }
+    })
+
+    // Check if user has wishlisted this product
+    let isWishlisted = false;
+    
+    // Get session token from cookie for session-based auth
+    const authToken = request.cookies.get('auth-token')?.value;
+    if (authToken) {
+      try {
+        const jwt = await import('jsonwebtoken');
+        const decoded = jwt.verify(authToken, process.env.JWT_SECRET || 'your-secret-key') as any;
+        
+        const user = await prisma.user.findFirst({
+          where: { email: `${decoded.username}@kfashion.com` }
+        });
+        
+        if (user) {
+          const wishlist = await prisma.wishlist.findUnique({
+            where: {
+              userId_productId: {
+                userId: user.id,
+                productId: params.id
+              }
+            }
+          });
+          isWishlisted = !!wishlist;
+        }
+      } catch (error) {
+        // JWT verification failed, user not authenticated
+      }
+    }
+
+    // Get related products
+    const relatedProducts = await prisma.product.findMany({
+      where: {
+        AND: [
+          { brandId: product.brandId },
+          { id: { not: product.id } },
+          { status: 'ACTIVE' }
+        ]
+      },
+      take: 5,
+      select: {
+        id: true,
+        nameKo: true,
+        basePrice: true,
+        discountPrice: true,
+        thumbnailImage: true,
+        brand: {
+          select: {
+            nameKo: true
+          }
+        }
+      }
+    })
+
+    // Format response
+    const formattedProduct = {
+      id: product.id,
+      sku: product.sku,
+      brandId: product.brandId,
+      brandName: product.brand.nameKo,
+      name: product.nameKo,
+      description: product.descriptionKo,
+      price: Number(product.basePrice),
+      discountPrice: product.discountPrice ? Number(product.discountPrice) : Number(product.basePrice),
+      discountRate: product.discountRate,
+      rating: Number(product.rating),
+      reviewCount: product._count.reviews,
+      soldCount: product.soldCount,
+      colors: product.colors.map(color => ({
+        id: color.id,
+        name: color.name,
+        code: color.code,
+        available: color.available
+      })),
+      sizes: product.sizes.map(size => ({
+        id: size.id,
+        name: size.name,
+        available: size.available
+      })),
+      images: product.images ? 
+        (Array.isArray(product.images) ? 
+          product.images
+            .filter((url): url is string => typeof url === 'string')
+            .map((url: string, index: number) => ({
+              id: String(index + 1),
+              url,
+              alt: `${product.nameKo} ${index + 1}`,
+              order: index + 1
+            })) : []
+        ) : [{
+          id: '1',
+          url: product.thumbnailImage || '/placeholder.svg',
+          alt: product.nameKo,
+          order: 1
+        }],
+      bulkPricing: product.bulkPricing.map(bp => ({
+        minQuantity: bp.minQuantity,
+        maxQuantity: bp.maxQuantity,
+        pricePerUnit: Number(bp.pricePerUnit),
+        discountRate: bp.discountRate
+      })),
+      minOrderQuantity: product.minOrderQty,
+      features: product.features ? (Array.isArray(product.features) ? product.features : []) : [],
+      material: product.material,
+      careInstructions: product.careInstructions,
+      category: product.category ? product.category.name.split('/') : [],
+      tags: product.tags ? (Array.isArray(product.tags) ? product.tags : []) : [],
+      isNew: product.isNew,
+      isBestSeller: product.isBestSeller,
+      stock: product.inventory,
+      isWishlisted
+    }
+
+    const formattedRelatedProducts = relatedProducts.map(p => ({
+      id: p.id,
+      brandName: p.brand.nameKo,
+      name: p.nameKo,
+      price: Number(p.basePrice),
+      discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
+      imageUrl: p.thumbnailImage || '/placeholder.svg'
+    }))
+
+    return NextResponse.json({ 
+      data: {
+        product: formattedProduct,
+        relatedProducts: formattedRelatedProducts
+      }
+    })
   } catch (error) {
     return createErrorResponse(error as Error, request.url)
   }

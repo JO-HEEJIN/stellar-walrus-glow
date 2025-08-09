@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
 import { ShoppingCart, ImageOff } from 'lucide-react'
@@ -165,27 +166,31 @@ export default function ProductList({ userRole }: ProductListProps) {
             // Product card
             (<div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               {/* Product Image */}
-              <div className="aspect-square relative bg-gray-100">
-                {product.thumbnailImage ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                  <img
-                    src={product.thumbnailImage}
-                    alt={product.nameKo}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageOff className="h-12 w-12 text-gray-400" />
+              <Link href={`/products/${product.id}`}>
+                <div className="aspect-square relative bg-gray-100 cursor-pointer">
+                  {product.thumbnailImage ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <img
+                      src={product.thumbnailImage}
+                      alt={product.nameKo}
+                      className="max-w-full max-h-full object-contain"
+                    />
                   </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageOff className="h-12 w-12 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+              </Link>
               
               {/* Product Info */}
               <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {product.nameKo}
-                </h3>
+                <Link href={`/products/${product.id}`}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1 hover:underline cursor-pointer">
+                    {product.nameKo}
+                  </h3>
+                </Link>
                 {product.brand && (
                   <p className="text-sm text-gray-600 mb-2">
                     {product.brand.nameKo}
@@ -224,9 +229,12 @@ export default function ProductList({ userRole }: ProductListProps) {
                       onClick={() => {
                         if (product.inventory > 0) {
                           addItem({
+                            id: product.id,
                             productId: product.id,
-                            productName: product.nameKo,
-                            price: Number(product.basePrice)
+                            name: product.nameKo,
+                            brandName: product.brand?.nameKo || '',
+                            price: Number(product.basePrice),
+                            imageUrl: product.thumbnailImage || '/placeholder.svg'
                           })
                         }
                       }}

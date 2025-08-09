@@ -3,321 +3,165 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/stores/cart'
-import { formatPrice } from '@/lib/utils'
-import { MIN_ORDER_AMOUNT } from '@/lib/domain/models'
-import { Trash2, User, Phone, MapPin, FileText } from 'lucide-react'
-import PostcodeSearch from '@/components/common/postcode-search'
+import { CartHeader } from '@/components/cart/CartHeader'
+import { CartSelectionBar } from '@/components/cart/CartSelectionBar'
+import { CartBrandGroup } from '@/components/cart/CartBrandGroup'
+import { CartSidebar } from '@/components/cart/CartSidebar'
+import { CartEmpty } from '@/components/cart/CartEmpty'
 
 export default function CartPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [showShippingForm, setShowShippingForm] = useState(false)
-  const { items, updateQuantity, removeItem, clearCart, getTotalAmount } = useCartStore()
-  const totalAmount = getTotalAmount()
+  const { items, updateQuantity, removeItem, clearCart } = useCartStore()
+  const [selectedItems, setSelectedItems] = useState<string[]>([])
   
-  // 배송 정보 상태
-  const [shippingInfo, setShippingInfo] = useState({
-    name: '',
-    phone: '',
-    zipCode: '',
-    address: '',
-    addressDetail: '',
-    memo: ''
+  // 컴포넌트 마운트시 모든 아이템을 선택 상태로 초기화
+  useState(() => {
+    if (items.length > 0) {
+      setSelectedItems(items.map(item => item.id))
+    }
   })
 
-  const handleProceedToShipping = () => {
-    if (items.length === 0) return
+  // 브랜드별로 아이템 그룹화
+  const groupedByBrand = items.reduce((groups, item) => {
+    const brand = item.brandName || '기타';
+    if (!groups[brand]) {
+      groups[brand] = [];
+    }
+    groups[brand].push(item);
+    return groups;
+  }, {} as Record<string, typeof items>)
+
+  // 선택된 아이템들의 총액과 개수 계산
+  const selectedTotal = items
+    .filter(item => selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  
+  const selectedCount = selectedItems.length
+  const totalItems = items.length
+  const allSelected = totalItems > 0 && selectedItems.length === totalItems
+
+  // 전체 선택/해제
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setSelectedItems(items.map(item => item.id))
+    } else {
+      setSelectedItems([])
+    }
+  }
+
+  // 개별 아이템 선택/해제
+  const handleItemSelect = (itemId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedItems(prev => [...prev, itemId])
+    } else {
+      setSelectedItems(prev => prev.filter(id => id !== itemId))
+    }
+  }
+
+  // 브랜드 전체 선택/해제
+  const handleBrandSelect = (brandName: string, selected: boolean) => {
+    const brandItems = groupedByBrand[brandName] || []
+    const brandItemIds = brandItems.map(item => item.id)
     
-    // Check minimum order amount
-    if (totalAmount < MIN_ORDER_AMOUNT) {
-      alert(`최소 주문 금액은 ${formatPrice(MIN_ORDER_AMOUNT)}입니다. 현재 금액: ${formatPrice(totalAmount)}`)
+    if (selected) {
+      setSelectedItems(prev => [...new Set([...prev, ...brandItemIds])])
+    } else {
+      setSelectedItems(prev => prev.filter(id => !brandItemIds.includes(id)))
+    }
+  }
+
+  // 선택 삭제
+  const handleDeleteSelected = () => {
+    if (selectedItems.length === 0) {
+      alert('삭제할 상품을 선택해주세요.')
       return
     }
     
-    setShowShippingForm(true)
+    if (confirm(`선택한 ${selectedItems.length}개 상품을 삭제하시겠습니까?`)) {
+      selectedItems.forEach(itemId => removeItem(itemId))
+      setSelectedItems([])
+    }
   }
 
-  const handleAddressSelect = (data: { zipCode: string; address: string }) => {
-    setShippingInfo(prev => ({
-      ...prev,
-      zipCode: data.zipCode,
-      address: data.address
-    }))
+  // 품절 삭제 (현재는 기본 구현)
+  const handleDeleteOutOfStock = () => {
+    alert('품절 상품이 없습니다.')
   }
 
-  const handleCheckout = async () => {
-    if (items.length === 0) return
-    
-    // 배송 정보 유효성 검사
-    if (!shippingInfo.name || !shippingInfo.phone || !shippingInfo.address) {
-      alert('필수 배송 정보를 모두 입력해주세요.')
-      return
+  // 수량 변경
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    updateQuantity(itemId, quantity)
+  }
+
+  // 아이템 제거
+  const handleRemoveItem = (itemId: string) => {
+    if (confirm('해당 상품을 삭제하시겠습니까?')) {
+      removeItem(itemId)
+      setSelectedItems(prev => prev.filter(id => id !== itemId))
     }
+  }
 
-    setLoading(true)
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          items: items.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-          shippingAddress: shippingInfo,
-          paymentMethod: 'CARD',
-          memo: shippingInfo.memo,
-        }),
-      })
+  // 결제 페이지로 이동
+  const handleCheckout = () => {
+    router.push('/checkout')
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Order creation failed:', errorData)
-        
-        // Handle specific error messages
-        if (response.status === 422 && errorData.error?.message?.includes('최소 주문 금액')) {
-          alert(errorData.error.message)
-        } else {
-          alert(errorData.error?.message || '주문 처리 중 오류가 발생했습니다.')
-        }
-        return
-      }
-
-      const result = await response.json()
-      clearCart()
-      alert(`주문이 완료되었습니다. 주문번호: ${result.data.order.orderNumber}`)
-      router.push('/orders')
-    } catch (error) {
-      console.error('Order error:', error)
-      alert(error instanceof Error ? error.message : '주문 처리 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CartHeader currentStep={1} />
+        <div className="max-w-7xl mx-auto px-4">
+          <CartEmpty />
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-8">장바구니</h1>
-
-      {items.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">장바구니가 비어있습니다.</p>
-          <button
-            onClick={() => router.push('/products')}
-            className="text-primary hover:text-primary/90"
-          >
-            상품 보러가기 →
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-screen bg-gray-50">
+      <CartHeader currentStep={1} />
+      
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* 장바구니 콘텐츠 */}
           <div className="lg:col-span-2">
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-              <ul className="divide-y divide-gray-200">
-                {items.map((item) => (
-                  <li key={item.productId} className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {item.productName}
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                          {formatPrice(item.price)} / 개
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                            className="text-gray-400 hover:text-gray-500"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 0)}
-                            className="w-16 text-center border-gray-300 rounded-md"
-                            min="1"
-                          />
-                          <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            className="text-gray-400 hover:text-gray-500"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <div className="text-sm font-medium text-gray-900 w-24 text-right">
-                          {formatPrice(item.price * item.quantity)}
-                        </div>
-                        <button
-                          onClick={() => removeItem(item.productId)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            <div className="bg-white rounded-lg p-5">
+              {/* 선택 바 */}
+              <CartSelectionBar
+                totalItems={totalItems}
+                selectedItems={selectedCount}
+                allSelected={allSelected}
+                onSelectAll={handleSelectAll}
+                onDeleteSelected={handleDeleteSelected}
+                onDeleteOutOfStock={handleDeleteOutOfStock}
+              />
+
+              {/* 브랜드별 그룹 */}
+              {Object.entries(groupedByBrand).map(([brandName, brandItems]) => (
+                <CartBrandGroup
+                  key={brandName}
+                  brandName={brandName}
+                  items={brandItems}
+                  selectedItems={selectedItems}
+                  onItemSelect={handleItemSelect}
+                  onBrandSelect={handleBrandSelect}
+                  onQuantityChange={handleQuantityChange}
+                  onRemoveItem={handleRemoveItem}
+                />
+              ))}
             </div>
           </div>
 
-          <div>
-            {/* 주문 요약 */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">주문 요약</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">상품 금액</span>
-                  <span className="text-gray-900">{formatPrice(totalAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">배송비</span>
-                  <span className="text-gray-900">무료</span>
-                </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between">
-                    <span className="text-base font-medium text-gray-900">총 금액</span>
-                    <span className="text-base font-medium text-gray-900">
-                      {formatPrice(totalAmount)}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* 최소 주문 금액 안내 */}
-                {totalAmount < MIN_ORDER_AMOUNT && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <div className="flex">
-                      <div className="ml-3">
-                        <p className="text-sm text-yellow-800">
-                          최소 주문 금액: {formatPrice(MIN_ORDER_AMOUNT)}
-                        </p>
-                        <p className="text-sm text-yellow-700">
-                          {formatPrice(MIN_ORDER_AMOUNT - totalAmount)} 더 주문하시면 결제가 가능합니다.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {!showShippingForm ? (
-                <button
-                  onClick={handleProceedToShipping}
-                  disabled={loading || items.length === 0 || totalAmount < MIN_ORDER_AMOUNT}
-                  className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  배송 정보 입력
-                </button>
-              ) : (
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading || !shippingInfo.name || !shippingInfo.phone || !shippingInfo.address}
-                  className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? '처리중...' : '주문하기'}
-                </button>
-              )}
-            </div>
-            
-            {/* 배송 정보 입력 폼 */}
-            {showShippingForm && (
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 mt-4">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">배송 정보</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <User className="w-4 h-4 mr-1" />
-                      받는 분 *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingInfo.name}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="성함을 입력하세요"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <Phone className="w-4 h-4 mr-1" />
-                      연락처 *
-                    </label>
-                    <input
-                      type="tel"
-                      value={shippingInfo.phone}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="010-0000-0000"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      주소 *
-                    </label>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={shippingInfo.zipCode}
-                        readOnly
-                        className="w-32 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                        placeholder="우편번호"
-                      />
-                      <PostcodeSearch 
-                        onAddressSelect={handleAddressSelect}
-                        buttonText="우편번호 검색"
-                        buttonClassName="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={shippingInfo.address}
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 mb-2"
-                      placeholder="우편번호 검색을 통해 주소를 선택하세요"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1 block">
-                      상세 주소
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingInfo.addressDetail}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, addressDetail: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="동/호수 등 상세 주소"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
-                      <FileText className="w-4 h-4 mr-1" />
-                      배송 메모
-                    </label>
-                    <textarea
-                      value={shippingInfo.memo}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, memo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      rows={3}
-                      placeholder="배송 시 요청사항을 입력하세요"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* 사이드바 */}
+          <div className="lg:col-span-1">
+            <CartSidebar
+              selectedTotal={selectedTotal}
+              selectedCount={selectedCount}
+              onCheckout={handleCheckout}
+            />
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

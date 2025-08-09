@@ -23,6 +23,10 @@ model User {
   orders        Order[]
   sessions      Session[]
   brand         Brand?     @relation(fields: [brandId], references: [id])
+  reviews       Review[]
+  questions     Question[]
+  wishlists     Wishlist[]
+  carts         Cart[]
 
   @@index([email])
   @@index([status])
@@ -76,30 +80,52 @@ model Brand {
 }
 
 model Product {
-  id             String        @id @default(cuid())
+  id             String          @id @default(cuid())
   brandId        String
-  sku            String        @unique(map: "sku")
+  sku            String          @unique(map: "sku")
   nameKo         String
   nameCn         String?
-  descriptionKo  String?       @db.Text
-  descriptionCn  String?       @db.Text
+  descriptionKo  String?         @db.Text
+  descriptionCn  String?         @db.Text
   categoryId     String?
-  status         ProductStatus @default(ACTIVE)
-  basePrice      Decimal       @db.Decimal(10, 2)
-  inventory      Int           @default(0)
+  status         ProductStatus   @default(ACTIVE)
+  basePrice      Decimal         @db.Decimal(10, 2)
+  discountPrice  Decimal?        @db.Decimal(10, 2)
+  discountRate   Int             @default(0)
+  inventory      Int             @default(0)
+  minOrderQty    Int             @default(10)
   thumbnailImage String?
   images         Json?
   options        Json?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now()) @updatedAt
+  features       Json?
+  material       String?
+  careInstructions String?       @db.Text
+  tags           Json?
+  isNew          Boolean         @default(false)
+  isBestSeller   Boolean         @default(false)
+  soldCount      Int             @default(0)
+  viewCount      Int             @default(0)
+  rating         Decimal         @default(0) @db.Decimal(2, 1)
+  reviewCount    Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
   orderItems     OrderItem[]
-  brand          Brand         @relation(fields: [brandId], references: [id])
-  category       Category?     @relation(fields: [categoryId], references: [id])
+  brand          Brand           @relation(fields: [brandId], references: [id])
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  colors         ProductColor[]
+  sizes          ProductSize[]
+  bulkPricing    BulkPricing[]
+  reviews        Review[]
+  questions      Question[]
+  wishlists      Wishlist[]
+  cartItems      CartItem[]
 
   @@index([brandId])
   @@index([categoryId])
   @@index([status])
   @@index([sku])
+  @@index([isNew])
+  @@index([isBestSeller])
 }
 
 model Category {
@@ -194,4 +220,120 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+model ProductColor {
+  id         String   @id @default(cuid())
+  productId  String
+  name       String
+  code       String
+  available  Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductSize {
+  id         String   @id @default(cuid())
+  productId  String
+  name       String
+  available  Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model BulkPricing {
+  id           String   @id @default(cuid())
+  productId    String
+  minQuantity  Int
+  maxQuantity  Int?
+  pricePerUnit Decimal  @db.Decimal(10, 2)
+  discountRate Int
+  createdAt    DateTime @default(now())
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  title     String?
+  content   String   @db.Text
+  images    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model Question {
+  id        String    @id @default(cuid())
+  productId String
+  userId    String
+  content   String    @db.Text
+  answer    String?   @db.Text
+  answeredAt DateTime?
+  answeredBy String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?
+  sessionId String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  items     CartItem[]
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@unique([sessionId])
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  colorId   String?
+  sizeId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([cartId])
+  @@index([productId])
 }

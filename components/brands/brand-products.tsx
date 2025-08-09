@@ -19,10 +19,11 @@ interface Product {
 
 interface BrandProductsProps {
   brandId: string
+  brandName?: string
   userRole: string
 }
 
-export default function BrandProducts({ brandId, userRole }: BrandProductsProps) {
+export default function BrandProducts({ brandId, brandName, userRole }: BrandProductsProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -133,9 +134,12 @@ export default function BrandProducts({ brandId, userRole }: BrandProductsProps)
             {userRole === 'BUYER' && product.status === 'ACTIVE' && (
               <button
                 onClick={() => addItem({
+                  id: product.id,
                   productId: product.id,
-                  productName: product.nameKo,
-                  price: Number(product.basePrice)
+                  name: product.nameKo,
+                  brandName: brandName || '',
+                  price: Number(product.basePrice),
+                  imageUrl: '/placeholder.svg'
                 })}
                 className="mt-4 w-full inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               >

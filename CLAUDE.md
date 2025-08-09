@@ -22,6 +22,9 @@
 - user.name: "JO-HEEJIN"
 - user.email: "midmost44@gmail.com"
 
+## System Password
+- sudo password: 0000
+
 ## Security prompt
 
 Please check through all the code you just wrote and make sure it follows security best practices. make sure there are no sensitive information in the front and and there are no vulnerabilities that can be exploited
@@ -134,8 +137,11 @@ npm run prisma:studio    # Open Prisma Studio
 ✅ Product management UI (list, create, delete)  
 ✅ Order management UI with detail view  
 ✅ Shopping cart functionality  
-⏳ Database connection pending setup  
-⏳ Real data implementation pending  
+✅ Database connection with AWS Aurora MySQL implemented
+✅ Product detail page with real data implementation
+✅ Product colors, sizes, and bulk pricing functionality
+✅ Wishlist functionality with database integration
+⏳ Product reviews and Q&A pending
 ⏳ Image upload for products pending
 
 ## API Endpoints
