@@ -38,7 +38,49 @@ async function getBrands(): Promise<Brand[]> {
 }
 
 export default async function BrandsPage() {
-  const brands = await getBrands();
+  let brands = await getBrands();
+
+  // API에서 브랜드를 가져오지 못한 경우, 임시로 실제 브랜드 목록 표시
+  if (brands.length === 0) {
+    brands = [
+      {
+        id: 'malbon-golf',
+        nameKo: 'MALBON GOLF',
+        nameCn: '말본골프',
+        slug: 'malbon-golf',
+        description: '말본 골프(MALBON GOLF)는 패션 디자이너 스테판 말본과 에리카 말본 부부가 론칭한 스트릿 감성의 라이프스타일 골프 웨어 브랜드입니다.',
+        logoUrl: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=100&h=100&fit=crop',
+        productCount: 12
+      },
+      {
+        id: 'southcape',
+        nameKo: 'SOUTHCAPE',
+        nameCn: '사우스케이프',
+        slug: 'southcape',
+        description: '사우스케이프가 골프 & 리조트 분야의 새로운 이상향을 제시한 것과 같이 골프웨어 분야에서도 새로운 이정표를 제시합니다.',
+        logoUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=100&h=100&fit=crop',
+        productCount: 8
+      },
+      {
+        id: 'st-andrews',
+        nameKo: 'St.Andrews',
+        nameCn: '세인트앤드류스',
+        slug: 'st-andrews',
+        description: '스코틀랜드의 클래식함을 바탕으로 품격이 넘치는 라이프 스타일을 패션과 결합한 하이엔드 골프웨어',
+        logoUrl: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=100&h=100&fit=crop',
+        productCount: 15
+      },
+      {
+        id: 'g-fore',
+        nameKo: 'G/FORE',
+        nameCn: '지포어',
+        slug: 'g-fore',
+        description: '2011년 LA 런칭 후 글로벌 브랜드로 성장, "골프의 전통성을 존중하는 파괴적인 럭셔리"를 컨셉으로 젊은 감각과 모던한 디자인을 선보입니다.',
+        logoUrl: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=100&h=100&fit=crop',
+        productCount: 10
+      }
+    ];
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -53,27 +95,17 @@ export default async function BrandsPage() {
       </div>
 
       <div className="max-w-[1280px] mx-auto px-5 pb-16">
-        {brands.length > 0 ? (
-          <>
-            <div className="flex justify-between items-center mb-8">
-              <span className="text-sm text-gray-600">
-                총 {brands.length}개 브랜드
-              </span>
-            </div>
+        <div className="flex justify-between items-center mb-8">
+          <span className="text-sm text-gray-600">
+            총 {brands.length}개 브랜드
+          </span>
+        </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {brands.map((brand) => (
-                <BrandCard key={brand.id} brand={brand} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-4">🏪</div>
-            <div className="text-lg font-medium text-gray-900 mb-2">브랜드가 없습니다</div>
-            <div className="text-sm text-gray-500">곧 다양한 브랜드가 입점할 예정입니다.</div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {brands.map((brand) => (
+            <BrandCard key={brand.id} brand={brand} />
+          ))}
+        </div>
       </div>
     </div>
   );

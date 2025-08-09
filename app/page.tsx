@@ -80,151 +80,157 @@ export default function HomePage() {
     localStorage.setItem('language', lang);
   };
 
-  // Mock product data - 실제로는 API에서 가져옴
+  // Mock product data - 실제 브랜드 상품들로 업데이트
   const mockProducts = [
     {
       id: 1,
-      brand: 'TITLEIST',
-      name: '남성 투어 퍼포먼스 폴로 셔츠 (네이비)',
+      brand: 'MALBON GOLF',
+      name: '말본 시그니처 폴로셔츠 (네이비)',
       price: 89000,
       originalPrice: 128000,
       discount: 30,
       moq: 10,
       badge: 'NEW',
-      image: 'https://picsum.photos/300/400?random=1'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 2,
-      brand: 'CALLAWAY',
-      name: '프리미엄 스트레치 팬츠 (베이지)',
+      brand: 'SOUTHCAPE',
+      name: '사우스케이프 프리미엄 팬츠 (베이지)',
       price: 105000,
       originalPrice: 140000,
       discount: 25,
       moq: 5,
       badge: 'BEST',
-      image: 'https://picsum.photos/300/400?random=2'
+      image: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=300&h=400&fit=crop'
     },
     {
       id: 3,
-      brand: 'MALBON GOLF',
-      name: '윈드브레이커 자켓 (화이트)',
+      brand: 'St.Andrews',
+      name: '세인트앤드류스 클래식 자켓 (화이트)',
       price: 168000,
       originalPrice: 210000,
       discount: 20,
       moq: 3,
       badge: null,
-      image: 'https://picsum.photos/300/400?random=3'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 4,
-      brand: 'PXG',
-      name: '투어 캡 모자 (블랙)',
+      brand: 'G/FORE',
+      name: '지포어 투어 캡 모자 (블랙)',
       price: 42500,
       originalPrice: 50000,
       discount: 15,
       moq: 20,
       badge: 'HOT',
-      image: 'https://picsum.photos/300/400?random=4'
+      image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=300&h=400&fit=crop'
     },
     {
       id: 5,
-      brand: 'G/FORE',
-      name: '퀼팅 베스트 (네이비)',
+      brand: 'MALBON GOLF',
+      name: '말본 퀼팅 베스트 (네이비)',
       price: 156000,
       originalPrice: 240000,
       discount: 35,
       moq: 5,
       badge: null,
-      image: 'https://picsum.photos/300/400?random=5'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 6,
-      brand: '와이드앵글',
-      name: '여성 플리츠 스커트 (핑크)',
+      brand: 'SOUTHCAPE',
+      name: '사우스케이프 여성 스커트 (핑크)',
       price: 79000,
       originalPrice: 110000,
       discount: 28,
       moq: 10,
       badge: 'NEW',
-      image: 'https://picsum.photos/300/400?random=6'
+      image: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=300&h=400&fit=crop'
     },
     {
       id: 7,
-      brand: '빈폴골프',
-      name: '프리미엄 양피 장갑 (화이트)',
+      brand: 'St.Andrews',
+      name: '세인트앤드류스 프리미엄 글러브 (화이트)',
       price: 18000,
       originalPrice: 30000,
       discount: 40,
       moq: 30,
       badge: null,
-      image: 'https://picsum.photos/300/400?random=7'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 8,
-      brand: '먼싱웨어',
-      name: '캐디백 스탠드형 (올블랙)',
+      brand: 'G/FORE',
+      name: '지포어 캐디백 프리미엄 (올블랙)',
       price: 390000,
       originalPrice: 500000,
       discount: 22,
       moq: 2,
       badge: 'BEST',
-      image: 'https://picsum.photos/300/400?random=8'
+      image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=300&h=400&fit=crop'
     }
   ];
 
   const mockBestBrandProducts = [
     {
       id: 9,
-      brand: 'DESCENTE GOLF',
-      name: '프리미엄 쿨링 폴로셔츠',
+      brand: 'MALBON GOLF',
+      name: '말본 프리미엄 쿨링 폴로셔츠',
       price: 82500,
       originalPrice: 150000,
       discount: 45,
       moq: 8,
       badge: 'SALE',
-      image: 'https://picsum.photos/300/400?random=9'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 10,
-      brand: 'FOOTJOY',
-      name: '프로 SL 골프화 (화이트/네이비)',
+      brand: 'SOUTHCAPE',
+      name: '사우스케이프 프로 골프화 (화이트/네이비)',
       price: 205000,
       originalPrice: 250000,
       discount: 18,
       moq: 5,
       badge: null,
-      image: 'https://picsum.photos/300/400?random=10'
+      image: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=300&h=400&fit=crop'
     },
     {
       id: 11,
-      brand: 'J.LINDEBERG',
-      name: '브릿지 레더 벨트',
+      brand: 'St.Andrews',
+      name: '세인트앤드류스 클래식 레더 벨트',
       price: 84000,
       originalPrice: 120000,
       discount: 30,
       moq: 15,
       badge: 'HOT',
-      image: 'https://picsum.photos/300/400?random=11'
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=300&h=400&fit=crop'
     },
     {
       id: 12,
-      brand: 'NIKE GOLF',
-      name: '드라이핏 플렉스 쇼츠',
+      brand: 'G/FORE',
+      name: '지포어 퍼포먼스 쇼츠',
       price: 67500,
       originalPrice: 90000,
       discount: 25,
       moq: 12,
       badge: null,
-      image: 'https://picsum.photos/300/400?random=12'
+      image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?w=300&h=400&fit=crop'
     }
   ];
 
-  // 브랜드 데이터로 필터 칩 생성
+  // 실제 브랜드 데이터로 필터 칩 생성 (말본, 사우스케이프, 세인트앤드류스, 지포어 등)
   const filterChips = [
-    { name: '전체', count: null },
-    ...brands.slice(0, 8).map(brand => ({
-      name: brand.nameKo,
-      count: brand.productCount
+    { name: language === 'ko' ? '전체' : '全部', count: null },
+    // 우선 하드코딩된 주요 브랜드들 표시 (API가 작동할 때까지 임시)
+    { name: 'MALBON GOLF', count: 12 },
+    { name: 'SOUTHCAPE', count: 8 },
+    { name: 'St.Andrews', count: 15 },
+    { name: 'G/FORE', count: 10 },
+    // API에서 가져온 브랜드들도 추가
+    ...brands.slice(0, 4).map(brand => ({
+      name: brand.nameKo || brand.name,
+      count: brand.productCount || brand._count?.products || 0
     }))
   ];
 
