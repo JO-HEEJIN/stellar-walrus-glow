@@ -4,19 +4,216 @@ import { ProductDetail, RelatedProduct } from '@/types/product-detail';
 
 async function getProduct(id: string): Promise<{ product: ProductDetail; relatedProducts: RelatedProduct[] } | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/products/${id}`, {
-      cache: 'no-store'
-    });
+    // 서버사이드에서 직접 Prisma 사용 시도, 실패 시 mock 데이터 반환
+    try {
+      const { prisma } = await import('@/lib/prisma');
+      
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          brand: true,
+          category: true,
+          colors: {
+            orderBy: { order: 'asc' }
+          },
+          sizes: {
+            orderBy: { order: 'asc' }
+          },
+          bulkPricing: {
+            orderBy: { minQuantity: 'asc' }
+          },
+          _count: {
+            select: {
+              reviews: true
+            }
+          }
+        }
+      });
 
-    if (!response.ok) {
-      return null;
+      if (!product) {
+        return null;
+      }
+
+      // 관련 상품 조회
+      const relatedProducts = await prisma.product.findMany({
+        where: {
+          AND: [
+            { brandId: product.brandId },
+            { id: { not: product.id } },
+            { status: 'ACTIVE' }
+          ]
+        },
+        take: 5,
+        select: {
+          id: true,
+          nameKo: true,
+          basePrice: true,
+          discountPrice: true,
+          thumbnailImage: true,
+          brand: {
+            select: {
+              nameKo: true
+            }
+          }
+        }
+      });
+
+      // 데이터 포맷팅
+      const formattedProduct: ProductDetail = {
+        id: product.id,
+        sku: product.sku,
+        brandId: product.brandId,
+        brandName: product.brand.nameKo,
+        name: product.nameKo,
+        description: product.descriptionKo || '',
+        price: Number(product.basePrice),
+        discountPrice: product.discountPrice ? Number(product.discountPrice) : Number(product.basePrice),
+        discountRate: product.discountRate,
+        rating: Number(product.rating),
+        reviewCount: product._count.reviews,
+        soldCount: product.soldCount,
+        colors: product.colors.map(color => ({
+          id: color.id,
+          name: color.name,
+          code: color.code,
+          available: color.available
+        })),
+        sizes: product.sizes.map(size => ({
+          id: size.id,
+          name: size.name,
+          available: size.available
+        })),
+        images: product.images ? 
+          (Array.isArray(product.images) ? 
+            product.images
+              .filter((url): url is string => typeof url === 'string')
+              .map((url: string, index: number) => ({
+                id: String(index + 1),
+                url,
+                alt: `${product.nameKo} ${index + 1}`,
+                order: index + 1
+              })) : []
+          ) : [{
+            id: '1',
+            url: product.thumbnailImage || '/placeholder.svg',
+            alt: product.nameKo,
+            order: 1
+          }],
+        bulkPricing: product.bulkPricing.map(bp => ({
+          minQuantity: bp.minQuantity,
+          maxQuantity: bp.maxQuantity,
+          pricePerUnit: Number(bp.pricePerUnit),
+          discountRate: bp.discountRate
+        })),
+        minOrderQuantity: product.minOrderQty,
+        features: product.features ? (Array.isArray(product.features) ? product.features : []) : [],
+        material: product.material || '',
+        careInstructions: product.careInstructions || '',
+        category: product.category ? product.category.name.split('/') : [],
+        tags: product.tags ? (Array.isArray(product.tags) ? product.tags : []) : [],
+        isNew: product.isNew,
+        isBestSeller: product.isBestSeller,
+        stock: product.inventory,
+        isWishlisted: false
+      };
+
+      const formattedRelatedProducts: RelatedProduct[] = relatedProducts.map(p => ({
+        id: p.id,
+        brandName: p.brand.nameKo,
+        name: p.nameKo,
+        price: Number(p.basePrice),
+        discountPrice: p.discountPrice ? Number(p.discountPrice) : undefined,
+        imageUrl: p.thumbnailImage || '/placeholder.svg'
+      }));
+
+      return {
+        product: formattedProduct,
+        relatedProducts: formattedRelatedProducts
+      };
+
+    } catch (dbError) {
+      console.error('Database error, falling back to mock data:', dbError);
+      
+      // Mock 데이터 반환
+      const mockProduct: ProductDetail = {
+        id,
+        sku: `DEMO-${id}`,
+        brandId: 'demo-brand',
+        brandName: 'DEMO BRAND',
+        name: '데모 상품 - 골프 폴로셔츠',
+        description: '이 상품은 데모용 샘플 상품입니다. 실제 데이터베이스 연결 후 정확한 정보가 표시됩니다.',
+        price: 120000,
+        discountPrice: 89000,
+        discountRate: 26,
+        rating: 4.5,
+        reviewCount: 42,
+        soldCount: 156,
+        colors: [
+          { id: 'navy', name: '네이비', code: '#1a237e', available: true },
+          { id: 'white', name: '화이트', code: '#ffffff', available: true },
+          { id: 'black', name: '블랙', code: '#000000', available: false }
+        ],
+        sizes: [
+          { id: '90', name: '90', available: true },
+          { id: '95', name: '95', available: true },
+          { id: '100', name: '100', available: true },
+          { id: '105', name: '105', available: false }
+        ],
+        images: [
+          {
+            id: '1',
+            url: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=600&h=800&fit=crop',
+            alt: '메인 이미지',
+            order: 1
+          },
+          {
+            id: '2', 
+            url: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=600&h=800&fit=crop',
+            alt: '상세 이미지 1',
+            order: 2
+          }
+        ],
+        bulkPricing: [
+          { minQuantity: 10, maxQuantity: 29, pricePerUnit: 89000, discountRate: 0 },
+          { minQuantity: 30, maxQuantity: 99, pricePerUnit: 84550, discountRate: 5 },
+          { minQuantity: 100, maxQuantity: null, pricePerUnit: 80100, discountRate: 10 }
+        ],
+        minOrderQuantity: 10,
+        features: ['흡한속건', '자외선 차단', '4-way 스트레치'],
+        material: '폴리에스터 88%, 스판덱스 12%',
+        careInstructions: '찬물 세탁, 건조기 사용 금지',
+        category: ['남성', '상의', '폴로셔츠'],
+        tags: ['골프웨어', '폴로셔츠', '스포츠'],
+        isNew: true,
+        isBestSeller: false,
+        stock: 50,
+        isWishlisted: false
+      };
+
+      const mockRelatedProducts: RelatedProduct[] = [
+        {
+          id: 'demo-related-1',
+          brandName: 'DEMO BRAND',
+          name: '관련 상품 1',
+          price: 95000,
+          imageUrl: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=200&h=267&fit=crop'
+        },
+        {
+          id: 'demo-related-2', 
+          brandName: 'DEMO BRAND',
+          name: '관련 상품 2',
+          price: 78000,
+          discountPrice: 65000,
+          imageUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=200&h=267&fit=crop'
+        }
+      ];
+
+      return {
+        product: mockProduct,
+        relatedProducts: mockRelatedProducts
+      };
     }
 
-    const data = await response.json();
-    return {
-      product: data.data.product,
-      relatedProducts: data.data.relatedProducts
-    };
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
