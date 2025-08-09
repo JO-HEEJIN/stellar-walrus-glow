@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Footer from '@/components/layout/footer';
 
 export default function HomePage() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('전체');
   const [activeNav, setActiveNav] = useState('추천');
   const [activeSort, setActiveSort] = useState('추천순');
@@ -359,8 +361,8 @@ export default function HomePage() {
           url += '&category=sale';
           break;
         case '브랜드':
-          // 브랜드 페이지로 이동하거나 브랜드 목록 표시
-          window.location.href = '/brands';
+          // 브랜드 페이지로 이동
+          router.push('/brands');
           return;
       }
       
