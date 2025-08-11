@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ImageUpload } from '@/components/upload/image-upload'
+import ErrorBoundary from '@/components/error-boundary'
 import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -92,6 +93,10 @@ export function ProductFormWithImages({
       setValue('descriptionCn', initialData.descriptionCn || '')
       setValue('basePrice', initialData.basePrice || 0)
       setValue('inventory', initialData.inventory || 0)
+      
+      // Also update watched values
+      setWatchedBrandId(initialData.brandId || '')
+      setWatchedCategoryId(initialData.categoryId || '')
     }
   }, [initialData, setValue])
 
@@ -122,9 +127,26 @@ export function ProductFormWithImages({
     loadData()
   }, [])
 
-  // Watch form values for controlled components
-  const watchedBrandId = watch('brandId')
-  const watchedCategoryId = watch('categoryId')
+  // Watch form values for controlled components (with error handling)
+  const [watchedBrandId, setWatchedBrandId] = useState('')
+  const [watchedCategoryId, setWatchedCategoryId] = useState('')
+
+  // Use useEffect to safely watch form values
+  useEffect(() => {
+    try {
+      const subscription = watch((value, { name }) => {
+        if (name === 'brandId' && value.brandId !== undefined) {
+          setWatchedBrandId(value.brandId)
+        }
+        if (name === 'categoryId' && value.categoryId !== undefined) {
+          setWatchedCategoryId(value.categoryId || '')
+        }
+      })
+      return () => subscription.unsubscribe()
+    } catch (error) {
+      console.error('Form watch error:', error)
+    }
+  }, [watch])
 
   const handleThumbnailUpload = (url: string) => {
     setThumbnailImage(url)
@@ -226,7 +248,10 @@ export function ProductFormWithImages({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="brandId">브랜드 <span className="text-red-500">*</span></Label>
-                    <Select value={watchedBrandId} onValueChange={(value) => setValue('brandId', value)}>
+                    <Select value={watchedBrandId} onValueChange={(value) => {
+                      setValue('brandId', value)
+                      setWatchedBrandId(value)
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="브랜드를 선택하세요" />
                       </SelectTrigger>
@@ -245,7 +270,11 @@ export function ProductFormWithImages({
 
                   <div>
                     <Label htmlFor="categoryId">카테고리</Label>
-                    <Select value={watchedCategoryId || "none"} onValueChange={(value) => setValue('categoryId', value === "none" ? undefined : value)}>
+                    <Select value={watchedCategoryId || "none"} onValueChange={(value) => {
+                      const newValue = value === "none" ? undefined : value
+                      setValue('categoryId', newValue)
+                      setWatchedCategoryId(newValue || '')
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="카테고리 선택 (선택사항)" />
                       </SelectTrigger>
@@ -372,12 +401,14 @@ export function ProductFormWithImages({
                       </Badge>
                     </div>
                   ) : (
-                    <ImageUpload
-                      onUploadComplete={handleThumbnailUpload}
-                      maxFiles={1}
-                      imageType="thumbnail"
-                      productId={initialData?.id}
-                    />
+                    <ErrorBoundary fallback={<div className="p-4 text-center text-red-500 text-sm">이미지 업로드를 불러올 수 없습니다</div>}>
+                      <ImageUpload
+                        onUploadComplete={handleThumbnailUpload}
+                        maxFiles={1}
+                        imageType="thumbnail"
+                        productId={initialData?.id}
+                      />
+                    </ErrorBoundary>
                   )}
                 </div>
 
@@ -387,13 +418,15 @@ export function ProductFormWithImages({
                     추가 상품 이미지 (최대 5개)
                   </p>
                   
-                  <ImageUpload
-                    onUploadComplete={handleGalleryUpload}
-                    maxFiles={5}
-                    existingImages={productImages}
-                    imageType="gallery"
-                    productId={initialData?.id}
-                  />
+                  <ErrorBoundary fallback={<div className="p-4 text-center text-red-500 text-sm">이미지 업로드를 불러올 수 없습니다</div>}>
+                    <ImageUpload
+                      onUploadComplete={handleGalleryUpload}
+                      maxFiles={5}
+                      existingImages={productImages}
+                      imageType="gallery"
+                      productId={initialData?.id}
+                    />
+                  </ErrorBoundary>
 
                   {productImages.length > 0 && (
                     <div className="mt-4">

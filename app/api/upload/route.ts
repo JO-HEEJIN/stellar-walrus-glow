@@ -165,6 +165,24 @@ export async function POST(request: NextRequest) {
         type: s3Error instanceof Error ? s3Error.constructor.name : typeof s3Error
       })
       
+      // Fallback: Return mock URL if S3 is not available (for development/demo)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Using mock image URL fallback due to S3 unavailability')
+        const mockUrl = `https://images.unsplash.com/photo-${Date.now()}?w=800&h=800&fit=crop&crop=center`
+        
+        return NextResponse.json({
+          success: true,
+          data: {
+            url: mockUrl,
+            key: s3Key,
+            size: file.size,
+            type: file.type,
+            name: file.name,
+          },
+          warning: 'Using mock image URL - S3 upload not available'
+        })
+      }
+      
       // Return more user-friendly error message
       throw new BusinessError(
         ErrorCodes.FILE_UPLOAD_FAILED,

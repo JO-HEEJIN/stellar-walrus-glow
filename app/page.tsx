@@ -563,11 +563,19 @@ export default function HomePage() {
       {/* 메인 헤더 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-[1280px] mx-auto px-5 flex items-center h-15">
-          <div className="text-2xl font-black mr-10 cursor-pointer">
-            GOLF B2B
+          <div className="flex items-center gap-4">
+            <div className="text-2xl font-black cursor-pointer">
+              GOLF B2B
+            </div>
+            <button 
+              onClick={() => router.push('/products')}
+              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              관리
+            </button>
           </div>
           
-          <div className="flex-1 max-w-[500px] relative">
+          <div className="flex-1 max-w-[500px] relative ml-6">
             <input
               type="text"
               placeholder={t.search}
