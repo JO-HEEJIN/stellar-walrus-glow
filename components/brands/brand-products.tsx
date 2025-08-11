@@ -91,7 +91,7 @@ export default function BrandProducts({ brandId, brandName, userRole }: BrandPro
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((product) => (
+        {Array.isArray(products) && products.map((product) => (
           <div
             key={product.id}
             className="group relative rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md"

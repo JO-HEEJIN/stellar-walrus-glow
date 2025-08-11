@@ -235,8 +235,8 @@ export default function HomePage() {
     { name: 'St.Andrews', count: 15 },
     { name: 'G/FORE', count: 10 },
     // API에서 가져온 브랜드들도 추가 (brands가 배열인지 확인)
-    ...(Array.isArray(brands) ? brands.slice(0, 4).map(brand => ({
-      name: brand.nameKo || brand.name,
+    ...(Array.isArray(brands) && brands.length > 0 ? brands.slice(0, 4).map(brand => ({
+      name: brand.nameKo || brand.name || 'Unknown Brand',
       count: brand.productCount || brand._count?.products || 0
     })) : [])
   ];
@@ -325,7 +325,7 @@ export default function HomePage() {
       
       if (filterName !== '전체' && filterName !== '全部') {
         // 브랜드로 필터링
-        const selectedBrand = Array.isArray(brands) ? brands.find(brand => brand.nameKo === filterName) : null;
+        const selectedBrand = (Array.isArray(brands) && brands.length > 0) ? brands.find(brand => (brand.nameKo || brand.name) === filterName) : null;
         if (selectedBrand) {
           url += `&brandId=${selectedBrand.id}`;
         }
@@ -363,8 +363,8 @@ export default function HomePage() {
       setLoading(true);
       let url = '/api/products?limit=8';
       
-      if (activeFilter !== '전체') {
-        const selectedBrand = Array.isArray(brands) ? brands.find(brand => brand.nameKo === activeFilter) : null;
+      if (activeFilter !== '전체' && activeFilter !== '全部') {
+        const selectedBrand = (Array.isArray(brands) && brands.length > 0) ? brands.find(brand => (brand.nameKo || brand.name) === activeFilter) : null;
         if (selectedBrand) {
           url += `&brandId=${selectedBrand.id}`;
         }
@@ -748,7 +748,7 @@ export default function HomePage() {
                 <div className="h-4 bg-gray-200 rounded w-1/2"></div>
               </div>
             ))
-          ) : products.length > 0 ? (
+          ) : (Array.isArray(products) && products.length > 0) ? (
             products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -779,13 +779,19 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-4 gap-5">
-          {bestBrandProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onQuickAction={handleQuickAction}
-            />
-          ))}
+          {Array.isArray(bestBrandProducts) && bestBrandProducts.length > 0 ? (
+            bestBrandProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onQuickAction={handleQuickAction}
+              />
+            ))
+          ) : (
+            <div className="col-span-4 text-center py-10">
+              <div className="text-gray-500">베스트 브랜드 상품을 불러오는 중...</div>
+            </div>
+          )}
         </div>
       </div>
 

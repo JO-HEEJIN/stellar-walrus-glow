@@ -94,8 +94,8 @@ export function ProductGrid({ products, viewMode, loading }: ProductGridProps) {
         brandName: product.brandName,
         price: product.discountPrice || product.price,
         imageUrl: product.imageUrl,
-        color: product.colors[0] || undefined,
-        size: product.sizes[0] || undefined,
+        color: (Array.isArray(product.colors) && product.colors.length > 0) ? product.colors[0] : undefined,
+        size: (Array.isArray(product.sizes) && product.sizes.length > 0) ? product.sizes[0] : undefined,
         quantity: product.minOrderQty
       });
       
@@ -119,7 +119,7 @@ export function ProductGrid({ products, viewMode, loading }: ProductGridProps) {
     );
   }
 
-  if (products.length === 0) {
+  if (!Array.isArray(products) || products.length === 0) {
     return (
       <div className="text-center py-20">
         <div className="text-4xl mb-4">🔍</div>

@@ -18,14 +18,14 @@ export function BrandStory({ story }: BrandStoryProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Story Content */}
         <div className="text-sm leading-7 text-gray-600 space-y-4">
-          {story.content.split('\n').map((paragraph, index) => (
+          {story.content && story.content.split('\n').map((paragraph, index) => (
             <p key={index}>{paragraph}</p>
           ))}
         </div>
 
         {/* Story Highlights */}
         <div className="bg-white p-5 rounded-lg">
-          {story.highlights.map((highlight, index) => (
+          {Array.isArray(story.highlights) && story.highlights.map((highlight, index) => (
             <div key={index} className="flex items-center gap-3 mb-4 last:mb-0">
               <div className="w-10 h-10 bg-indigo-900 text-white rounded-full flex items-center justify-center text-xl">
                 {highlight.icon}

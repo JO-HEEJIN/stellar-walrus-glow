@@ -65,12 +65,12 @@ function ProductDetailPageContent({
         setRelatedProducts(relatedData || []);
         
         // Initialize UI state with product data
-        if (productData.colors && productData.colors.length > 0) {
+        if (Array.isArray(productData.colors) && productData.colors.length > 0) {
           const firstAvailableColor = productData.colors.find((c: any) => c.available);
           setSelectedColor(firstAvailableColor?.name || productData.colors[0]?.name || '');
         }
         
-        if (productData.sizes && productData.sizes.length > 0) {
+        if (Array.isArray(productData.sizes) && productData.sizes.length > 0) {
           const firstAvailableSize = productData.sizes.find((s: any) => s.available);
           setSelectedSize(firstAvailableSize?.name || productData.sizes[0]?.name || '');
         }
@@ -176,10 +176,12 @@ function ProductDetailPageContent({
     let finalPrice = product.discountPrice;
     
     // 대량구매 할인 적용
-    for (const bp of product.bulkPricing) {
-      if (qty >= bp.minQuantity && (!bp.maxQuantity || qty <= bp.maxQuantity)) {
-        finalPrice = bp.pricePerUnit;
-        break;
+    if (Array.isArray(product.bulkPricing)) {
+      for (const bp of product.bulkPricing) {
+        if (qty >= bp.minQuantity && (!bp.maxQuantity || qty <= bp.maxQuantity)) {
+          finalPrice = bp.pricePerUnit;
+          break;
+        }
       }
     }
     
@@ -288,7 +290,7 @@ function ProductDetailPageContent({
             
             {/* 썸네일 */}
             <div className="grid grid-cols-5 gap-2">
-              {product.images.slice(0, 5).map((image, index) => (
+              {Array.isArray(product.images) && product.images.slice(0, 5).map((image, index) => (
                 <button
                   key={image.id}
                   onClick={() => handleImageSelect(index)}
@@ -343,7 +345,7 @@ function ProductDetailPageContent({
             </div>
 
             {/* 대량구매 가격표 */}
-            {product.bulkPricing.length > 0 && (
+            {Array.isArray(product.bulkPricing) && product.bulkPricing.length > 0 && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">🎯 대량구매 할인</h3>
                 <div className="space-y-1 text-sm">
@@ -361,7 +363,7 @@ function ProductDetailPageContent({
             )}
 
             {/* 색상 선택 */}
-            {product.colors.length > 0 && (
+            {Array.isArray(product.colors) && product.colors.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-3">색상</h3>
                 <div className="flex space-x-3">
@@ -384,7 +386,7 @@ function ProductDetailPageContent({
             )}
 
             {/* 사이즈 선택 */}
-            {product.sizes.length > 0 && (
+            {Array.isArray(product.sizes) && product.sizes.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-3">사이즈</h3>
                 <div className="grid grid-cols-4 gap-2">
@@ -516,7 +518,7 @@ function ProductDetailPageContent({
                   )}
                 </div>
                 
-                {product.features.length > 0 && (
+                {Array.isArray(product.features) && product.features.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-3">주요 특징</h3>
                     <ul className="list-disc list-inside space-y-1">
@@ -593,7 +595,7 @@ function ProductDetailPageContent({
       </div>
 
       {/* 관련 상품 */}
-      {relatedProducts.length > 0 && (
+      {Array.isArray(relatedProducts) && relatedProducts.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold mb-6">함께 구매하면 좋은 상품</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

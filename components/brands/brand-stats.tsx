@@ -157,7 +157,7 @@ export default function BrandStats({ brandId }: BrandStatsProps) {
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {stats.recentOrders.map((order) => (
+                {Array.isArray(stats.recentOrders) && stats.recentOrders.map((order) => (
                   <li key={order.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -194,7 +194,7 @@ export default function BrandStats({ brandId }: BrandStatsProps) {
               </div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {stats.topProducts.map((product) => (
+                {Array.isArray(stats.topProducts) && stats.topProducts.map((product) => (
                   <li key={product.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
