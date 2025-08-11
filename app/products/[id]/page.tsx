@@ -1,94 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductDetail, RelatedProduct } from '@/types/product-detail';
 import { useCartStore } from '@/lib/stores/cart';
+import ErrorBoundary from '@/components/error-boundary';
 
-// Mock 데이터를 직접 사용 (클라이언트 컴포넌트에서는 Prisma 직접 호출 불가)
-function getMockProduct(id: string): { product: ProductDetail; relatedProducts: RelatedProduct[] } {
-  const mockProduct: ProductDetail = {
-    id,
-    sku: `DEMO-${id}`,
-    brandId: 'demo-brand',
-    brandName: 'DEMO BRAND',
-    name: '데모 상품 - 골프 폴로셔츠',
-    description: '이 상품은 데모용 샘플 상품입니다. 실제 데이터베이스 연결 후 정확한 정보가 표시됩니다.',
-    price: 120000,
-    discountPrice: 89000,
-    discountRate: 26,
-    rating: 4.5,
-    reviewCount: 42,
-    soldCount: 156,
-    colors: [
-      { id: 'navy', name: '네이비', code: '#1a237e', available: true },
-      { id: 'white', name: '화이트', code: '#ffffff', available: true },
-      { id: 'black', name: '블랙', code: '#000000', available: false }
-    ],
-    sizes: [
-      { id: '90', name: '90', available: true },
-      { id: '95', name: '95', available: true },
-      { id: '100', name: '100', available: true },
-      { id: '105', name: '105', available: false }
-    ],
-    images: [
-      {
-        id: '1',
-        url: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=600&h=800&fit=crop',
-        alt: '메인 이미지',
-        order: 1
-      },
-      {
-        id: '2', 
-        url: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=600&h=800&fit=crop',
-        alt: '상세 이미지 1',
-        order: 2
-      }
-    ],
-    bulkPricing: [
-      { minQuantity: 10, maxQuantity: 29, pricePerUnit: 89000, discountRate: 0 },
-      { minQuantity: 30, maxQuantity: 99, pricePerUnit: 84550, discountRate: 5 },
-      { minQuantity: 100, maxQuantity: null, pricePerUnit: 80100, discountRate: 10 }
-    ],
-    minOrderQuantity: 10,
-    features: ['흡한속건', '자외선 차단', '4-way 스트레치'],
-    material: '폴리에스터 88%, 스판덱스 12%',
-    careInstructions: '찬물 세탁, 건조기 사용 금지',
-    category: ['남성', '상의', '폴로셔츠'],
-    tags: ['골프웨어', '폴로셔츠', '스포츠'],
-    isNew: true,
-    isBestSeller: false,
-    stock: 50,
-    isWishlisted: false
-  };
-
-  const mockRelatedProducts: RelatedProduct[] = [
-    {
-      id: 'demo-related-1',
-      brandName: 'DEMO BRAND',
-      name: '관련 상품 1',
-      price: 95000,
-      imageUrl: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=200&h=267&fit=crop'
-    },
-    {
-      id: 'demo-related-2', 
-      brandName: 'DEMO BRAND',
-      name: '관련 상품 2',
-      price: 78000,
-      discountPrice: 65000,
-      imageUrl: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=200&h=267&fit=crop'
-    }
-  ];
-
-  return {
-    product: mockProduct,
-    relatedProducts: mockRelatedProducts
-  };
-}
-
-export default function ProductDetailPage({
+function ProductDetailPageContent({
   params,
 }: {
   params: { id: string };
@@ -96,19 +16,84 @@ export default function ProductDetailPage({
   const router = useRouter();
   const { addItem } = useCartStore();
   
-  // Get mock product data first
-  const { product, relatedProducts } = getMockProduct(params.id);
+  // State for API data
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Initialize state with product data
-  const [selectedColor, setSelectedColor] = useState<string>('네이비');
-  const [selectedSize, setSelectedSize] = useState<string>('100');
-  const [quantity, setQuantity] = useState<number>(product.minOrderQuantity);
+  // UI state
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(10);
   const [activeTab, setActiveTab] = useState<string>('description');
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const [isWishlisted, setIsWishlisted] = useState<boolean>(product.isWishlisted || false);
+  const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
+
+  // Fetch product data from API
+  useEffect(() => {
+    async function fetchProduct() {
+      try {
+        console.log('🔍 Fetching product details for ID:', params.id);
+        
+        const response = await fetch(`/api/products/${params.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies for authentication
+        });
+
+        console.log('📡 API Response status:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: { message: 'Failed to fetch product' } }));
+          console.error('❌ API Error:', errorData);
+          throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Product data received:', data);
+
+        if (!data.data || !data.data.product) {
+          throw new Error('Invalid product data received');
+        }
+
+        const { product: productData, relatedProducts: relatedData } = data.data;
+        
+        setProduct(productData);
+        setRelatedProducts(relatedData || []);
+        
+        // Initialize UI state with product data
+        if (productData.colors && productData.colors.length > 0) {
+          const firstAvailableColor = productData.colors.find((c: any) => c.available);
+          setSelectedColor(firstAvailableColor?.name || productData.colors[0]?.name || '');
+        }
+        
+        if (productData.sizes && productData.sizes.length > 0) {
+          const firstAvailableSize = productData.sizes.find((s: any) => s.available);
+          setSelectedSize(firstAvailableSize?.name || productData.sizes[0]?.name || '');
+        }
+        
+        setQuantity(productData.minOrderQuantity || 10);
+        setIsWishlisted(productData.isWishlisted || false);
+        
+        console.log('✅ Product state initialized successfully');
+      } catch (err: any) {
+        console.error('❌ Error fetching product:', err);
+        setError(err.message || 'Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProduct();
+  }, [params.id]);
 
   // 장바구니 담기
   const handleAddToCart = () => {
+    if (!product) return;
+    
     const itemId = `${product.id}-${selectedColor}-${selectedSize}`;
     
     addItem({
@@ -140,6 +125,8 @@ export default function ProductDetailPage({
 
   // 수량 변경 핸들러
   const handleQuantityChange = (newQuantity: number) => {
+    if (!product) return;
+    
     if (newQuantity < product.minOrderQuantity) {
       setQuantity(product.minOrderQuantity);
     } else {
@@ -164,6 +151,8 @@ export default function ProductDetailPage({
 
   // 수량별 가격 계산
   const calculateTotalPrice = (qty: number) => {
+    if (!product) return 0;
+    
     let finalPrice = product.discountPrice;
     
     // 대량구매 할인 적용
@@ -176,6 +165,76 @@ export default function ProductDetailPage({
     
     return finalPrice * qty;
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">상품 정보를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="text-6xl mb-4">😵</div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">상품을 불러올 수 없습니다</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <div className="space-x-4">
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  새로고침
+                </button>
+                <Link 
+                  href="/products" 
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  상품 목록으로
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Product not found
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🔍</div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">상품을 찾을 수 없습니다</h2>
+              <p className="text-gray-600 mb-4">요청하신 상품이 존재하지 않거나 삭제되었습니다.</p>
+              <Link 
+                href="/products" 
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                상품 목록으로 돌아가기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -544,5 +603,17 @@ export default function ProductDetailPage({
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return (
+    <ErrorBoundary>
+      <ProductDetailPageContent params={params} />
+    </ErrorBoundary>
   );
 }
