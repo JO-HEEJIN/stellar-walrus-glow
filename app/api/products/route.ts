@@ -5,6 +5,7 @@ import { prismaRead, prismaWrite, withRetry } from '@/lib/prisma-load-balanced'
 import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { ProductStatus } from '@/types'
+import { logger } from '@/lib/logger'
 
 // Search/filter schema
 const searchSchema = z.object({
@@ -435,7 +436,7 @@ export async function POST(request: NextRequest) {
         )
       }
     } catch (error) {
-      console.error('JWT verification error:', error)
+      logger.authFailure('JWT verification', 'Invalid or expired token', { error: error.message })
       throw new BusinessError(
         ErrorCodes.AUTHENTICATION_INVALID,
         HttpStatus.UNAUTHORIZED
@@ -446,9 +447,9 @@ export async function POST(request: NextRequest) {
     let body
     try {
       body = await request.json()
-      console.log('Product creation request body:', body)
+      logger.debug('Product creation request received', { hasBody: !!body })
     } catch (error) {
-      console.error('Failed to parse JSON body:', error)
+      logger.error('Failed to parse request body', error)
       throw new BusinessError(
         ErrorCodes.VALIDATION_FAILED,
         HttpStatus.BAD_REQUEST,
@@ -459,9 +460,9 @@ export async function POST(request: NextRequest) {
     let data
     try {
       data = createProductSchema.parse(body)
-      console.log('Validated product data:', data)
+      logger.debug('Product data validated', { productName: data.nameKo, brandId: data.brandId })
     } catch (error) {
-      console.error('Schema validation error:', error)
+      logger.error('Product validation failed', error)
       throw new BusinessError(
         ErrorCodes.VALIDATION_FAILED,
         HttpStatus.BAD_REQUEST,
@@ -541,7 +542,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: product }, { status: 201 })
   } catch (error) {
-    console.error('POST /api/products error:', error)
+    logger.apiError('POST', '/api/products', error)
     return createErrorResponse(error as Error, request.url)
   }
 }

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/layout/footer';
 import { useCartStore } from '@/lib/stores/cart';
+import { logger } from '@/lib/logger';
 
 export default function HomePage() {
   const router = useRouter();
@@ -290,7 +291,7 @@ export default function HomePage() {
           setBestBrandProducts(mockBestBrandProducts.slice(0, 4));
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        logger.error('Failed to fetch homepage data', error);
         // Fallback to mock data
         setProducts(mockProducts.slice(0, 8));
         setBestBrandProducts(mockBestBrandProducts.slice(0, 4));
@@ -349,7 +350,7 @@ export default function HomePage() {
         setProducts(data.data?.products || []);
       }
     } catch (error) {
-      console.error('Error filtering products:', error);
+      logger.error('Failed to filter products', error, { filter });
     } finally {
       setLoading(false);
     }
@@ -387,7 +388,7 @@ export default function HomePage() {
         setProducts(data.data?.products || []);
       }
     } catch (error) {
-      console.error('Error sorting products:', error);
+      logger.error('Failed to sort products', error, { sortOrder });
     } finally {
       setLoading(false);
     }
@@ -406,7 +407,7 @@ export default function HomePage() {
         setActiveFilter('전체'); // 검색시 필터 초기화
       }
     } catch (error) {
-      console.error('Error searching products:', error);
+      logger.error('Failed to search products', error, { searchTerm });
     } finally {
       setLoading(false);
     }
@@ -472,7 +473,7 @@ export default function HomePage() {
         setActiveFilter('전체'); // 네비게이션 변경시 필터 초기화
       }
     } catch (error) {
-      console.error('Error loading navigation products:', error);
+      logger.error('Failed to load navigation products', error, { nav: navigationCategory });
     } finally {
       setLoading(false);
     }
@@ -498,7 +499,7 @@ export default function HomePage() {
           alert('관심상품 추가 중 오류가 발생했습니다.');
         }
       } catch (error) {
-        console.error('Wishlist error:', error);
+        logger.error('Failed to toggle wishlist', error, { productId });
         alert('관심상품 추가 중 오류가 발생했습니다.');
       }
     } else if (action === 'cart') {
@@ -524,7 +525,7 @@ export default function HomePage() {
           alert('장바구니에 추가되었습니다.');
         }
       } catch (error) {
-        console.error('Cart error:', error);
+        logger.error('Failed to add to cart', error, { productId });
         alert('장바구니 추가 중 오류가 발생했습니다.');
       }
     }

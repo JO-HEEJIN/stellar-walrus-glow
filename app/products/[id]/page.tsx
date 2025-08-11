@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ProductDetail, RelatedProduct } from '@/types/product-detail';
 import { useCartStore } from '@/lib/stores/cart';
 import ErrorBoundary from '@/components/error-boundary';
+import { logger } from '@/lib/logger';
 
 function ProductDetailPageContent({
   params,
@@ -34,7 +35,7 @@ function ProductDetailPageContent({
   useEffect(() => {
     async function fetchProduct() {
       try {
-        console.log('🔍 Fetching product details for ID:', params.id);
+        logger.info('Fetching product details', { productId: params.id });
         
         const response = await fetch(`/api/products/${params.id}`, {
           method: 'GET',
@@ -44,23 +45,49 @@ function ProductDetailPageContent({
           credentials: 'include',
         });
 
-        console.log('📡 API Response status:', response.status);
+        logger.debug('Product API response', { status: response.status, productId: params.id });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: { message: 'Failed to fetch product' } }));
-          console.error('❌ API Error:', errorData);
+          logger.apiError('GET', `/api/products/${params.id}`, new Error(errorData.error?.message || 'API request failed'), { status: response.status, errorData });
           throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log('✅ Full API Response:', JSON.stringify(data, null, 2));
+        logger.debug('Product data received', { productId: params.id, hasData: !!data });
 
-        if (!data.data || !data.data.product) {
-          console.error('❌ Invalid data structure:', data);
-          throw new Error('Invalid product data received');
+        // 더 상세한 데이터 검증
+        if (!data || typeof data !== 'object') {
+          logger.error('Invalid response format', new Error('Response is not an object'), { data, productId: params.id });
+          throw new Error('Invalid response format');
+        }
+
+        if (!data.data || typeof data.data !== 'object') {
+          logger.error('Invalid data structure', new Error('data.data is missing or invalid'), { data, productId: params.id });
+          throw new Error('Invalid data structure');
+        }
+
+        if (!data.data.product || typeof data.data.product !== 'object') {
+          logger.error('Product data not found', new Error('Product data is missing or invalid'), { dataStructure: data.data, productId: params.id });
+          throw new Error('Product data not found');
         }
 
         const { product: productData, relatedProducts: relatedData } = data.data;
+        
+        // 데이터 타입 검증 로깅
+        logger.debug('Product data types validation', {
+          productId: params.id,
+          validation: {
+            productData_type: typeof productData,
+            productData_isArray: Array.isArray(productData),
+            images_isArray: Array.isArray(productData.images),
+            colors_isArray: Array.isArray(productData.colors),
+            sizes_isArray: Array.isArray(productData.sizes),
+            bulkPricing_isArray: Array.isArray(productData.bulkPricing),
+            features_isArray: Array.isArray(productData.features),
+            relatedProducts_isArray: Array.isArray(relatedData),
+          }
+        });
         
         // 데이터 정규화 - 배열이 아닌 값들을 안전하게 처리
         const normalizedProduct = {
@@ -80,7 +107,23 @@ function ProductDetailPageContent({
           minOrderQuantity: productData.minOrderQuantity || 1,
         };
         
-        console.log('📦 Normalized product:', normalizedProduct);
+        logger.debug('Product data normalized', { 
+          productId: params.id, 
+          normalizedFields: Object.keys(normalizedProduct),
+          hasImages: normalizedProduct.images.length > 0,
+          hasColors: normalizedProduct.colors.length > 0,
+          hasSizes: normalizedProduct.sizes.length > 0
+        });
+        
+        // 디버깅용 - 브라우저 콘솔에서 확인 가능 (개발 환경에서만)
+        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          (window as any).DEBUG_PRODUCT = {
+            raw: productData,
+            normalized: normalizedProduct,
+            related: relatedData
+          };
+          logger.debug('Debug data attached to window.DEBUG_PRODUCT');
+        }
         
         setProduct(normalizedProduct);
         setRelatedProducts(Array.isArray(relatedData) ? relatedData : []);
@@ -99,20 +142,15 @@ function ProductDetailPageContent({
         setQuantity(normalizedProduct.minOrderQuantity);
         setIsWishlisted(normalizedProduct.isWishlisted || false);
         
-        console.log('✅ Product state initialized successfully');
+        logger.info('Product state initialized successfully', { productId: params.id });
       } catch (err: any) {
-        console.error('❌ Error fetching product:', err);
-        console.error('❌ Error details:', {
-          message: err.message,
-          stack: err.stack,
-          name: err.name,
-          productId: params.id
-        });
+        const errorMessage = err.message || 'Failed to load product details';
         
-        let errorMessage = 'Failed to load product details';
-        if (err.message) {
-          errorMessage = err.message;
-        }
+        logger.error('Failed to fetch product details', err, {
+          productId: params.id,
+          errorName: err.name,
+          errorMessage
+        });
         
         setError(errorMessage);
         
