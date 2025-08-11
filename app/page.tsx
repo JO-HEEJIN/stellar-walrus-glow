@@ -569,7 +569,7 @@ export default function HomePage() {
               GOLF B2B
             </div>
             <button 
-              onClick={() => router.push('/products')}
+              onClick={() => router.push('/admin-products')}
               className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
             >
               관리

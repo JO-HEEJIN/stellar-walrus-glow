@@ -57,7 +57,7 @@ export default function NotificationBell({ userId, userRole }: NotificationBellP
     if (notification.orderId) {
       window.location.href = `/orders/${notification.orderId}`
     } else if (notification.productId) {
-      window.location.href = `/products?highlight=${notification.productId}`
+      window.location.href = `/admin-products?highlight=${notification.productId}`
     }
   }
 

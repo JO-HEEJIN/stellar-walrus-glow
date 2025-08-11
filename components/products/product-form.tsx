@@ -192,7 +192,7 @@ export default function ProductForm({ onSuccess }: ProductFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        router.push('/products')
+        router.push('/admin-products')
         router.refresh()
       }
     } catch (err) {
