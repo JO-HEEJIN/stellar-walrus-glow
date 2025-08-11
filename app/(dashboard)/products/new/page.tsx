@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { ProductFormWithImages } from '@/components/products/product-form-with-images'
 import { toast } from 'sonner'
 import { useEffect, useState } from 'react'
+import ErrorBoundary from '@/components/error-boundary'
 
 export default function NewProductPage() {
   const router = useRouter()
@@ -97,11 +98,15 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProductFormWithImages 
-        onSubmit={handleSubmit}
-        onCancel={() => router.push('/products')}
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        <ErrorBoundary>
+          <ProductFormWithImages 
+            onSubmit={handleSubmit}
+            onCancel={() => router.push('/products')}
+          />
+        </ErrorBoundary>
+      </div>
+    </ErrorBoundary>
   )
 }

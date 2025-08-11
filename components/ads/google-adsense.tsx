@@ -31,40 +31,40 @@ export default function GoogleAdsense({
   height
 }: GoogleAdsenseProps) {
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        // Check if this ad unit has already been initialized
-        const adElement = document.querySelector(`ins[data-ad-slot="${adSlot}"]`) as HTMLElement
-        if (adElement && (adElement as any).__adsbygooglePushed) {
-          return // Already initialized
-        }
+    if (typeof window === 'undefined') return
 
-        // Wait for AdSense script to load
-        const checkAndPush = () => {
+    try {
+      // Check if this ad unit has already been initialized
+      const adElement = document.querySelector(`ins[data-ad-slot="${adSlot}"]`) as HTMLElement
+      if (adElement && (adElement as any).__adsbygooglePushed) {
+        return // Already initialized
+      }
+
+      // Initialize adsbygoogle if not exists
+      if (!window.adsbygoogle) {
+        window.adsbygoogle = []
+      }
+
+      // Simple push with error handling
+      const pushAd = () => {
+        try {
           const currentAdElement = document.querySelector(`ins[data-ad-slot="${adSlot}"]`) as HTMLElement
           if (!currentAdElement || (currentAdElement as any).__adsbygooglePushed) {
-            return // Element not found or already pushed
+            return
           }
 
-          if (window.adsbygoogle && (window.adsbygoogle as any).loaded) {
-            console.log('Pushing AdSense ad:', { adClient, adSlot, adFormat })
-            window.adsbygoogle.push({})
-            ;(currentAdElement as any).__adsbygooglePushed = true
-          } else if (window.adsbygoogle) {
-            console.log('Pushing AdSense ad (script loaded):', { adClient, adSlot, adFormat })
-            window.adsbygoogle.push({})
-            ;(currentAdElement as any).__adsbygooglePushed = true
-          } else {
-            console.warn('AdSense script not loaded yet, retrying...')
-            setTimeout(checkAndPush, 200)
-          }
+          window.adsbygoogle.push({})
+          ;(currentAdElement as any).__adsbygooglePushed = true
+        } catch (pushError) {
+          console.warn('AdSense push failed:', pushError)
         }
-        
-        // Longer delay to ensure DOM and script are ready
-        setTimeout(checkAndPush, 500)
       }
+      
+      // Delay to ensure DOM is ready
+      const timer = setTimeout(pushAd, 1000)
+      return () => clearTimeout(timer)
     } catch (error) {
-      console.error('AdSense error:', error)
+      console.warn('AdSense initialization error:', error)
     }
   }, [adClient, adSlot, adFormat])
 

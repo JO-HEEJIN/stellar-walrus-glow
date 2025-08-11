@@ -7,6 +7,7 @@ import { useCartStore } from '@/lib/stores/cart'
 import { ShoppingCart, ImageOff } from 'lucide-react'
 import ProductFilters, { FilterValues } from './product-filters'
 import { ProductListAd, MobileAd } from '@/components/ads/ad-layouts'
+import ErrorBoundary from '@/components/error-boundary'
 
 interface Product {
   id: string
@@ -270,20 +271,24 @@ export default function ProductList({ userRole }: ProductListProps) {
             </div>),
             // Insert ad every 8 products
             ...((index + 1) % 8 === 0 && index < products.length - 1 ? [
-              <ProductListAd 
-                key={`ad-${index}`}
-                adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_PRODUCTS_SLOT || '4919529387'}
-              />
+              <ErrorBoundary key={`ad-boundary-${index}`} fallback={<div className="bg-gray-100 rounded-lg p-4 text-center text-gray-500 text-sm">광고를 불러올 수 없습니다</div>}>
+                <ProductListAd 
+                  key={`ad-${index}`}
+                  adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_PRODUCTS_SLOT || '4919529387'}
+                />
+              </ErrorBoundary>
             ] : [])
           ]).flat()}
         </div>
       )}
 
       {/* Mobile Ad */}
-      <MobileAd 
-        adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_MOBILE_SLOT || 'XXXXXXXXXX'} 
-        className="my-6"
-      />
+      <ErrorBoundary fallback={<div className="bg-gray-100 rounded-lg p-4 text-center text-gray-500 text-sm my-6 md:hidden">모바일 광고를 불러올 수 없습니다</div>}>
+        <MobileAd 
+          adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_MOBILE_SLOT || 'XXXXXXXXXX'} 
+          className="my-6"
+        />
+      </ErrorBoundary>
 
       {/* Pagination */}
       {totalPages > 1 && (
