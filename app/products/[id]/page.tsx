@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductDetail, RelatedProduct } from '@/types/product-detail';
@@ -14,7 +13,6 @@ function ProductDetailPageContent({
 }: {
   params: { id: string };
 }) {
-  const router = useRouter();
   const { addItem } = useCartStore();
   
   // State for API data

@@ -436,7 +436,7 @@ export async function POST(request: NextRequest) {
         )
       }
     } catch (error) {
-      logger.authFailure('JWT verification', 'Invalid or expired token', { error: error.message })
+      logger.authFailure('JWT verification', 'Invalid or expired token', { error: error instanceof Error ? error.message : String(error) })
       throw new BusinessError(
         ErrorCodes.AUTHENTICATION_INVALID,
         HttpStatus.UNAUTHORIZED
@@ -449,7 +449,7 @@ export async function POST(request: NextRequest) {
       body = await request.json()
       logger.debug('Product creation request received', { hasBody: !!body })
     } catch (error) {
-      logger.error('Failed to parse request body', error)
+      logger.error('Failed to parse request body', error instanceof Error ? error : new Error(String(error)))
       throw new BusinessError(
         ErrorCodes.VALIDATION_FAILED,
         HttpStatus.BAD_REQUEST,
@@ -462,7 +462,7 @@ export async function POST(request: NextRequest) {
       data = createProductSchema.parse(body)
       logger.debug('Product data validated', { productName: data.nameKo, brandId: data.brandId })
     } catch (error) {
-      logger.error('Product validation failed', error)
+      logger.error('Product validation failed', error instanceof Error ? error : new Error(String(error)))
       throw new BusinessError(
         ErrorCodes.VALIDATION_FAILED,
         HttpStatus.BAD_REQUEST,
@@ -542,7 +542,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: product }, { status: 201 })
   } catch (error) {
-    logger.apiError('POST', '/api/products', error)
+    logger.apiError('POST', '/api/products', error instanceof Error ? error : new Error(String(error)))
     return createErrorResponse(error as Error, request.url)
   }
 }
