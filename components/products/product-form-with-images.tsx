@@ -104,23 +104,57 @@ export function ProductFormWithImages({
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('🔍 Loading brands and categories...')
+        
         const [brandsRes, categoriesRes] = await Promise.all([
           fetch('/api/brands'),
           fetch('/api/categories'),
         ])
 
+        console.log('🔍 Brands response status:', brandsRes.status)
+        console.log('🔍 Categories response status:', categoriesRes.status)
+
         if (brandsRes.ok) {
           const brandsData = await brandsRes.json()
-          setBrands(brandsData.data || brandsData)
+          console.log('🔍 Brands data received:', brandsData)
+          
+          // Ensure we have an array
+          const brandsArray = Array.isArray(brandsData) 
+            ? brandsData 
+            : Array.isArray(brandsData.data) 
+              ? brandsData.data 
+              : []
+          
+          console.log('🔍 Setting brands array:', brandsArray)
+          setBrands(brandsArray)
+        } else {
+          console.error('❌ Brands API failed:', brandsRes.status)
+          setBrands([]) // Set empty array as fallback
         }
 
         // Categories endpoint might not exist yet, so handle gracefully
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json()
-          setCategories(categoriesData.data || categoriesData)
+          console.log('🔍 Categories data received:', categoriesData)
+          
+          // Ensure we have an array
+          const categoriesArray = Array.isArray(categoriesData) 
+            ? categoriesData 
+            : Array.isArray(categoriesData.data) 
+              ? categoriesData.data 
+              : []
+          
+          console.log('🔍 Setting categories array:', categoriesArray)
+          setCategories(categoriesArray)
+        } else {
+          console.error('❌ Categories API failed or not available:', categoriesRes.status)
+          setCategories([]) // Set empty array as fallback
         }
       } catch (error) {
-        console.error('Failed to load form data:', error)
+        console.error('❌ Failed to load form data:', error)
+        // Set empty arrays as fallback to prevent map errors
+        setBrands([])
+        setCategories([])
       }
     }
 
@@ -256,11 +290,16 @@ export function ProductFormWithImages({
                         <SelectValue placeholder="브랜드를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
-                        {brands.map((brand) => (
+                        {Array.isArray(brands) && brands.map((brand) => (
                           <SelectItem key={brand.id} value={brand.id}>
                             {brand.nameKo} {brand.nameCn && `(${brand.nameCn})`}
                           </SelectItem>
                         ))}
+                        {!Array.isArray(brands) || brands.length === 0 && (
+                          <SelectItem value="no-brands" disabled>
+                            브랜드 로딩 중...
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     {errors.brandId && (
@@ -280,11 +319,16 @@ export function ProductFormWithImages({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">없음</SelectItem>
-                        {categories.map((category) => (
+                        {Array.isArray(categories) && categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
                         ))}
+                        {!Array.isArray(categories) || categories.length === 0 && (
+                          <SelectItem value="no-categories" disabled>
+                            카테고리 로딩 중...
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
