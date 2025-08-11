@@ -87,7 +87,7 @@ export default function DashboardLayout({
                     대시보드
                   </Link>
                   <Link
-                    href="/products"
+                    href="/admin-products"
                     className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     상품 관리
@@ -194,7 +194,7 @@ export default function DashboardLayout({
               대시보드
             </Link>
             <Link
-              href="/products"
+              href="/admin-products"
               onClick={() => setIsMobileMenuOpen(false)}
               className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             >

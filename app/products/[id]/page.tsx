@@ -278,7 +278,7 @@ function ProductDetailPageContent({
                   새로고침
                 </button>
                 <Link 
-                  href="/products" 
+                  href="/admin-products" 
                   className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 inline-block"
                 >
                   상품 목록으로
@@ -302,7 +302,7 @@ function ProductDetailPageContent({
               <h2 className="text-xl font-bold text-gray-900 mb-2">상품을 찾을 수 없습니다</h2>
               <p className="text-gray-600 mb-4">요청하신 상품이 존재하지 않거나 삭제되었습니다.</p>
               <Link 
-                href="/products" 
+                href="/admin-products" 
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-block"
               >
                 상품 목록으로 돌아가기
@@ -329,7 +329,7 @@ function ProductDetailPageContent({
           <nav className="flex items-center space-x-2 text-sm text-gray-600">
             <Link href="/" className="hover:text-gray-900">홈</Link>
             <span>/</span>
-            <Link href="/products" className="hover:text-gray-900">상품</Link>
+            <Link href="/admin-products" className="hover:text-gray-900">상품</Link>
             <span>/</span>
             <span className="text-gray-900 font-medium">{product.name}</span>
           </nav>
