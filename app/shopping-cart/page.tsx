@@ -12,7 +12,7 @@ export default function ShoppingCartPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (items.length > 0) {
+    if (Array.isArray(items) && items.length > 0) {
       setSelectedItems(items.map(item => item.id));
     }
   }, [items]);
@@ -21,8 +21,8 @@ export default function ShoppingCartPage() {
     return null;
   }
 
-  // 브랜드별로 아이템 그룹화
-  const groupedByBrand = items.reduce((groups, item) => {
+  // 브랜드별로 아이템 그룹화 (items가 배열인지 확인)
+  const groupedByBrand = (Array.isArray(items) ? items : []).reduce((groups, item) => {
     const brand = item.brandName || '기타';
     if (!groups[brand]) {
       groups[brand] = [];
@@ -32,17 +32,17 @@ export default function ShoppingCartPage() {
   }, {} as Record<string, CartItem[]>);
 
   // 선택된 아이템들의 총액과 개수 계산
-  const selectedTotal = items
+  const selectedTotal = (Array.isArray(items) ? items : [])
     .filter(item => selectedItems.includes(item.id))
     .reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   const selectedCount = selectedItems.length;
-  const totalItems = items.length;
+  const totalItems = Array.isArray(items) ? items.length : 0;
   const allSelected = totalItems > 0 && selectedItems.length === totalItems;
 
   // 전체 선택/해제
   const handleSelectAll = (selected: boolean) => {
-    if (selected) {
+    if (selected && Array.isArray(items)) {
       setSelectedItems(items.map(item => item.id));
     } else {
       setSelectedItems([]);
@@ -60,7 +60,7 @@ export default function ShoppingCartPage() {
 
   // 브랜드 전체 선택/해제
   const handleBrandSelect = (brandName: string, selected: boolean) => {
-    const brandItems = groupedByBrand[brandName] || [];
+    const brandItems = Array.isArray(groupedByBrand[brandName]) ? groupedByBrand[brandName] : [];
     const brandItemIds = brandItems.map(item => item.id);
     
     if (selected) {

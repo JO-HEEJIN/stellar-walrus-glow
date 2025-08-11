@@ -19,7 +19,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState<'ko' | 'zh'>('ko');
-  const cartCount = getTotalItems();
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Prevent hydration mismatch with cart count
+  const cartCount = isHydrated ? getTotalItems() : 0;
 
   // 언어별 텍스트
   const texts = {
@@ -79,7 +82,9 @@ export default function HomePage() {
 
   const handleLanguageChange = (lang: 'ko' | 'zh') => {
     setLanguage(lang);
-    localStorage.setItem('language', lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang);
+    }
   };
 
   // Mock product data - 실제 브랜드 상품들로 업데이트
@@ -229,21 +234,28 @@ export default function HomePage() {
     { name: 'SOUTHCAPE', count: 8 },
     { name: 'St.Andrews', count: 15 },
     { name: 'G/FORE', count: 10 },
-    // API에서 가져온 브랜드들도 추가
-    ...brands.slice(0, 4).map(brand => ({
+    // API에서 가져온 브랜드들도 추가 (brands가 배열인지 확인)
+    ...(Array.isArray(brands) ? brands.slice(0, 4).map(brand => ({
       name: brand.nameKo || brand.name,
       count: brand.productCount || brand._count?.products || 0
-    }))
+    })) : [])
   ];
 
   const navItems = ['추천', '브랜드', '신상품', '베스트', '남성', '여성', '아우터', '상의', '하의', '액세서리', '세일'];
   const sortOptions = ['추천순', '신상품순', '판매량순', '낮은가격순', '높은가격순'];
 
+  // Hydration effect
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   // 언어 설정 로드
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as 'ko' | 'zh' | null;
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
+    if (typeof window !== 'undefined') {
+      const savedLanguage = localStorage.getItem('language') as 'ko' | 'zh' | null;
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+      }
     }
   }, []);
 
@@ -313,7 +325,7 @@ export default function HomePage() {
       
       if (filterName !== '전체' && filterName !== '全部') {
         // 브랜드로 필터링
-        const selectedBrand = brands.find(brand => brand.nameKo === filterName);
+        const selectedBrand = Array.isArray(brands) ? brands.find(brand => brand.nameKo === filterName) : null;
         if (selectedBrand) {
           url += `&brandId=${selectedBrand.id}`;
         }
@@ -352,7 +364,7 @@ export default function HomePage() {
       let url = '/api/products?limit=8';
       
       if (activeFilter !== '전체') {
-        const selectedBrand = brands.find(brand => brand.nameKo === activeFilter);
+        const selectedBrand = Array.isArray(brands) ? brands.find(brand => brand.nameKo === activeFilter) : null;
         if (selectedBrand) {
           url += `&brandId=${selectedBrand.id}`;
         }
@@ -479,7 +491,9 @@ export default function HomePage() {
         } else if (response.status === 401) {
           alert('로그인이 필요합니다.');
           // 로그인 페이지로 리다이렉트
-          window.location.href = '/login';
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
         } else {
           alert('관심상품 추가 중 오류가 발생했습니다.');
         }
@@ -770,7 +784,7 @@ export default function HomePage() {
       {/* 플로팅 버튼 */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
         <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onClick={() => typeof window !== 'undefined' && window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="w-12 h-12 bg-white border border-gray-300 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
         >
           ↑
