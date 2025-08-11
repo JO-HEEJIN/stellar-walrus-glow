@@ -81,7 +81,27 @@ function ProductDetailPageContent({
         console.log('✅ Product state initialized successfully');
       } catch (err: any) {
         console.error('❌ Error fetching product:', err);
-        setError(err.message || 'Failed to load product details');
+        console.error('❌ Error details:', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name,
+          productId: params.id
+        });
+        
+        // 더 구체적인 에러 메시지
+        let errorMessage = 'Failed to load product details';
+        if (err.message) {
+          errorMessage = err.message;
+        } else if (err.name) {
+          errorMessage = `${err.name}: 상품을 불러올 수 없습니다`;
+        }
+        
+        setError(errorMessage);
+        
+        // 개발 환경에서는 alert도 표시
+        if (process.env.NODE_ENV === 'development') {
+          alert(`상품 로딩 에러: ${errorMessage}`);
+        }
       } finally {
         setLoading(false);
       }
