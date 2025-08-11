@@ -253,7 +253,7 @@ export default function ProductList({ userRole }: ProductListProps) {
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(userRole) && (
                     <>
                       <button
-                        onClick={() => window.location.href = `/products/${product.id}/edit`}
+                        onClick={() => window.location.href = `/admin-products/${product.id}/edit`}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                       >
                         수정

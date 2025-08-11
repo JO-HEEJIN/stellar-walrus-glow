@@ -57,7 +57,7 @@ export default function ProductsPage() {
               {user?.role && ['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role) && (
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
                   <Link
-                    href="/products/new"
+                    href="/admin-products/new"
                     className="block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                   >
                     상품 등록

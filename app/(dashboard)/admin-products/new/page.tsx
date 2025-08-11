@@ -37,7 +37,7 @@ export default function NewProductPage() {
           } else {
             console.log('❌ User not authorized:', data.user?.role)
             toast.error('권한이 없습니다')
-            router.push('/products')
+            router.push('/admin-products')
           }
         } else {
           const errorData = await response.text().catch(() => 'Unknown error')
@@ -60,7 +60,7 @@ export default function NewProductPage() {
           return
         }
         
-        router.push('/products')
+        router.push('/admin-products')
       } finally {
         setIsLoading(false)
       }
@@ -119,7 +119,7 @@ export default function NewProductPage() {
 
       toast.success('상품이 성공적으로 등록되었습니다')
       // 성공 시 바로 리다이렉트 (onCancel은 컴포넌트에서 처리)
-      router.push('/products')
+      router.push('/admin-products')
     } catch (error: any) {
       toast.error(error.message || '상품 등록 중 오류가 발생했습니다')
       throw error // Re-throw to let the form handle loading state
@@ -132,7 +132,7 @@ export default function NewProductPage() {
         <ErrorBoundary>
           <ProductFormWithImages 
             onSubmit={handleSubmit}
-            onCancel={() => router.push('/products')}
+            onCancel={() => router.push('/admin-products')}
           />
         </ErrorBoundary>
       </div>
