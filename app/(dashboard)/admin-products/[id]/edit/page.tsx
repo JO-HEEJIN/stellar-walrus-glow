@@ -31,7 +31,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         // Only BRAND_ADMIN and MASTER_ADMIN can edit products
         if (authData.user.role !== 'BRAND_ADMIN' && authData.user.role !== 'MASTER_ADMIN') {
           toast.error('권한이 없습니다')
-          router.push('/products')
+          router.push('/admin-products')
           return
         }
 
@@ -45,7 +45,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           } else {
             toast.error('상품 정보를 불러오는데 실패했습니다')
           }
-          router.push('/products')
+          router.push('/admin-products')
           return
         }
 
@@ -54,7 +54,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       } catch (error) {
         console.error('Error loading product:', error)
         toast.error('상품 정보를 불러오는 중 오류가 발생했습니다')
-        router.push('/products')
+        router.push('/admin-products')
       } finally {
         setIsLoading(false)
       }
@@ -89,7 +89,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       }
 
       toast.success('상품이 성공적으로 수정되었습니다')
-      router.push('/products')
+      router.push('/admin-products')
     } catch (error: any) {
       toast.error(error.message || '상품 수정 중 오류가 발생했습니다')
       throw error // Re-throw to let the form handle loading state
@@ -116,7 +116,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       <ProductFormWithImages 
         initialData={initialData}
         onSubmit={handleSubmit}
-        onCancel={() => router.push('/products')}
+        onCancel={() => router.push('/admin-products')}
         isEditing={true}
       />
     </div>
