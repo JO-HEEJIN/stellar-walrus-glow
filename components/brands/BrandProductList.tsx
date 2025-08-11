@@ -26,6 +26,7 @@ interface Product {
   sku: string;
   name: string;
   nameKo: string;
+  brandName: string;
   category: string;
   price: number;
   discountPrice?: number;

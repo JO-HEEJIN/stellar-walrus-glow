@@ -16,15 +16,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 
 const productSchema = z.object({
-  brandId: z.string().min(1, 'Brand is required'),
+  brandId: z.string().min(1, '브랜드를 선택해주세요'),
   categoryId: z.string().optional(),
-  sku: z.string().min(1, 'SKU is required').max(50, 'SKU must be 50 characters or less'),
-  nameKo: z.string().min(1, 'Korean name is required').max(200, 'Name must be 200 characters or less'),
-  nameCn: z.string().max(200, 'Chinese name must be 200 characters or less').optional(),
-  descriptionKo: z.string().max(5000, 'Korean description must be 5000 characters or less').optional(),
-  descriptionCn: z.string().max(5000, 'Chinese description must be 5000 characters or less').optional(),
-  basePrice: z.number().positive('Price must be positive'),
-  inventory: z.number().int().min(0, 'Inventory cannot be negative'),
+  sku: z.string().min(1, 'SKU를 입력해주세요').max(50, 'SKU는 50자 이하여야 합니다'),
+  nameKo: z.string().min(1, '상품명(한글)을 입력해주세요').max(200, '상품명은 200자 이하여야 합니다'),
+  nameCn: z.string().max(200, '중국어 상품명은 200자 이하여야 합니다').optional(),
+  descriptionKo: z.string().max(5000, '한글 설명은 5000자 이하여야 합니다').optional(),
+  descriptionCn: z.string().max(5000, '중국어 설명은 5000자 이하여야 합니다').optional(),
+  basePrice: z.number().min(0, '가격은 0원 이상이어야 합니다'),
+  inventory: z.number().int().min(0, '재고는 0개 이상이어야 합니다'),
 })
 
 type ProductFormData = z.infer<typeof productSchema>
@@ -208,27 +208,27 @@ export function ProductFormWithImages({
     <div className="max-w-4xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>{isEditing ? 'Edit Product' : 'Create New Product'}</CardTitle>
+          <CardTitle>{isEditing ? '상품 수정' : '새 상품 등록'}</CardTitle>
           <CardDescription>
-            {isEditing ? 'Update product information and images' : 'Add a new product with images to your catalog'}
+            {isEditing ? '상품 정보와 이미지를 업데이트합니다' : '카탈로그에 새 상품을 추가합니다'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="images">Images</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="basic">기본 정보</TabsTrigger>
+                <TabsTrigger value="images">이미지</TabsTrigger>
+                <TabsTrigger value="details">상세 정보</TabsTrigger>
               </TabsList>
 
               <TabsContent value="basic" className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="brandId">Brand *</Label>
+                    <Label htmlFor="brandId">브랜드 <span className="text-red-500">*</span></Label>
                     <Select value={watchedBrandId} onValueChange={(value) => setValue('brandId', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select brand" />
+                        <SelectValue placeholder="브랜드를 선택하세요" />
                       </SelectTrigger>
                       <SelectContent>
                         {brands.map((brand) => (
@@ -244,13 +244,13 @@ export function ProductFormWithImages({
                   </div>
 
                   <div>
-                    <Label htmlFor="categoryId">Category</Label>
+                    <Label htmlFor="categoryId">카테고리</Label>
                     <Select value={watchedCategoryId || "none"} onValueChange={(value) => setValue('categoryId', value === "none" ? undefined : value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category (optional)" />
+                        <SelectValue placeholder="카테고리 선택 (선택사항)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
+                        <SelectItem value="none">없음</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
@@ -262,7 +262,7 @@ export function ProductFormWithImages({
                 </div>
 
                 <div>
-                  <Label htmlFor="sku">SKU *</Label>
+                  <Label htmlFor="sku">SKU <span className="text-red-500">*</span></Label>
                   <Input
                     id="sku"
                     {...register('sku')}
@@ -275,7 +275,7 @@ export function ProductFormWithImages({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="nameKo">Korean Name *</Label>
+                    <Label htmlFor="nameKo">상품명 (한글) <span className="text-red-500">*</span></Label>
                     <Input
                       id="nameKo"
                       {...register('nameKo')}
@@ -287,7 +287,7 @@ export function ProductFormWithImages({
                   </div>
 
                   <div>
-                    <Label htmlFor="nameCn">Chinese Name</Label>
+                    <Label htmlFor="nameCn">상품명 (중국어)</Label>
                     <Input
                       id="nameCn"
                       {...register('nameCn')}
@@ -301,12 +301,18 @@ export function ProductFormWithImages({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="basePrice">Price (KRW) *</Label>
+                    <Label htmlFor="basePrice">가격 (원) <span className="text-red-500">*</span></Label>
                     <Input
                       id="basePrice"
                       type="number"
+                      min="0"
                       {...register('basePrice', { valueAsNumber: true })}
                       placeholder="0"
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                     {errors.basePrice && (
                       <p className="text-sm text-red-500">{errors.basePrice.message}</p>
@@ -314,12 +320,18 @@ export function ProductFormWithImages({
                   </div>
 
                   <div>
-                    <Label htmlFor="inventory">Inventory *</Label>
+                    <Label htmlFor="inventory">재고 <span className="text-red-500">*</span></Label>
                     <Input
                       id="inventory"
                       type="number"
+                      min="0"
                       {...register('inventory', { valueAsNumber: true })}
                       placeholder="0"
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault()
+                        }
+                      }}
                     />
                     {errors.inventory && (
                       <p className="text-sm text-red-500">{errors.inventory.message}</p>
@@ -330,9 +342,9 @@ export function ProductFormWithImages({
 
               <TabsContent value="images" className="space-y-6">
                 <div>
-                  <Label className="text-base font-medium">Thumbnail Image *</Label>
+                  <Label className="text-base font-medium">대표 이미지 <span className="text-red-500">*</span></Label>
                   <p className="text-sm text-gray-500 mb-3">
-                    Main product image displayed in listings (1 image required)
+                    상품 목록에 표시되는 메인 이미지 (1개 필수)
                   </p>
                   
                   {thumbnailImage ? (
@@ -356,7 +368,7 @@ export function ProductFormWithImages({
                         </Button>
                       </div>
                       <Badge variant="outline" className="text-green-600">
-                        Thumbnail set
+                        대표 이미지 설정됨
                       </Badge>
                     </div>
                   ) : (
@@ -370,9 +382,9 @@ export function ProductFormWithImages({
                 </div>
 
                 <div>
-                  <Label className="text-base font-medium">Gallery Images</Label>
+                  <Label className="text-base font-medium">추가 이미지</Label>
                   <p className="text-sm text-gray-500 mb-3">
-                    Additional product images (up to 5 images)
+                    추가 상품 이미지 (최대 5개)
                   </p>
                   
                   <ImageUpload
@@ -385,7 +397,7 @@ export function ProductFormWithImages({
 
                   {productImages.length > 0 && (
                     <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2">Gallery Images ({productImages.length})</h4>
+                      <h4 className="text-sm font-medium mb-2">갤러리 이미지 ({productImages.length})</h4>
                       <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         {productImages.map((url, index) => (
                           <div key={index} className="relative group">
@@ -415,7 +427,7 @@ export function ProductFormWithImages({
 
               <TabsContent value="details" className="space-y-4">
                 <div>
-                  <Label htmlFor="descriptionKo">Korean Description</Label>
+                  <Label htmlFor="descriptionKo">상품 설명 (한글)</Label>
                   <Textarea
                     id="descriptionKo"
                     {...register('descriptionKo')}
@@ -428,7 +440,7 @@ export function ProductFormWithImages({
                 </div>
 
                 <div>
-                  <Label htmlFor="descriptionCn">Chinese Description</Label>
+                  <Label htmlFor="descriptionCn">상품 설명 (중국어)</Label>
                   <Textarea
                     id="descriptionCn"
                     {...register('descriptionCn')}
@@ -445,7 +457,7 @@ export function ProductFormWithImages({
             <div className="flex justify-end space-x-4 pt-6 border-t">
               {onCancel && (
                 <Button type="button" variant="outline" onClick={onCancel}>
-                  Cancel
+                  취소
                 </Button>
               )}
               <Button type="submit" disabled={isSubmitting}>
@@ -457,11 +469,11 @@ export function ProductFormWithImages({
                 )}
                 {isSubmitting
                   ? isEditing
-                    ? 'Updating...'
-                    : 'Creating...'
+                    ? '수정 중...'
+                    : '등록 중...'
                   : isEditing
-                  ? 'Update Product'
-                  : 'Create Product'}
+                  ? '상품 수정'
+                  : '상품 등록'}
               </Button>
             </div>
           </form>

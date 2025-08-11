@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
       price: Number(product.basePrice),
       discountPrice: product.discountPrice ? Number(product.discountPrice) : undefined,
       discountRate: product.discountRate,
-      imageUrl: product.thumbnailImage || product.images?.[0] || 'https://picsum.photos/280/340?random=' + product.id,
+      imageUrl: product.thumbnailImage || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null) || 'https://picsum.photos/280/340?random=' + product.id,
       minOrderQty: product.minOrderQty,
       isNew: product.isNew,
       isBestSeller: product.isBestSeller,

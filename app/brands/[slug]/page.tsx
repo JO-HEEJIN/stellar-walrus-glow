@@ -730,7 +730,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
 
         <div className="header-main">
           <div className="header-main-inner">
-            <div className="logo">GOLF B2B</div>
+            <a href="/" className="logo" style={{ textDecoration: 'none', color: 'inherit' }}>GOLF B2B</a>
           </div>
         </div>
 
