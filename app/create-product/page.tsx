@@ -3,9 +3,20 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
+interface Brand {
+  id: string
+  nameKo: string
+  nameCn?: string
+}
+
+interface Category {
+  id: string
+  name: string
+}
+
 export default function CreateProductPage() {
-  const [brands, setBrands] = useState([])
-  const [categories, setCategories] = useState([])
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('페이지 로드됨')
   const [formData, setFormData] = useState({
@@ -231,7 +242,7 @@ export default function CreateProductPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">브랜드 선택</option>
-                {brands.map((brand: any) => (
+                {brands.map((brand) => (
                   <option key={brand.id} value={brand.id}>
                     {brand.nameKo} {brand.nameCn && `(${brand.nameCn})`}
                   </option>
@@ -250,7 +261,7 @@ export default function CreateProductPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">카테고리 선택 (선택사항)</option>
-                {categories.map((category: any) => (
+                {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
