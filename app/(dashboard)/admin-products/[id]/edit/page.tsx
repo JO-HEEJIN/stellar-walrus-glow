@@ -55,6 +55,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
         const data = await response.json()
         console.log('📦 Product data received:', data)
+        console.log('📦 Product data.data:', data.data)
+        console.log('📦 Product data keys:', Object.keys(data.data || {}))
         setProduct(data.data)
       } catch (error) {
         console.error('Error loading product:', error)
@@ -115,6 +117,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     thumbnailImage: product.thumbnailImage || '',
     images: product.images || [],
   }
+
+  console.log('🎯 Initial form data prepared:', initialData)
 
   return (
     <div className="min-h-screen bg-gray-50">
