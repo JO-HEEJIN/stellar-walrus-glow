@@ -91,8 +91,38 @@ export async function GET(
     } catch (dbError: any) {
       console.log('⚠️ Database error, using mock data for product:', params.id)
       
-      // Mock product data for development
-      product = {
+      // Use realistic mock data based on the actual product ID from products list
+      const mockProducts = {
+        'cme3ltyne0012myiyu0st08b5': {
+          id: 'cme3ltyne0012myiyu0st08b5',
+          sku: 'TTL-BLT-BK-2025',
+          nameKo: '스트레치 벨트',
+          nameCn: 'Stretch Belt',
+          descriptionKo: '편안한 착용감의 스트레치 벨트입니다.',
+          descriptionCn: '舒适贴身的弹性腰带。',
+          basePrice: 68000,
+          inventory: 100,
+          status: 'ACTIVE',
+          thumbnailImage: '/placeholder.svg',
+          images: ['/placeholder.svg'],
+          brandId: '726bbb2c-1b40-4efe-9a48-fe95bae80b07',
+          categoryId: 'cme3ltgkz0000myiy8twuxy00',
+          brand: {
+            id: '726bbb2c-1b40-4efe-9a48-fe95bae80b07',
+            nameKo: 'K-패션',
+            nameCn: 'K时尚',
+          },
+          category: {
+            id: 'cme3ltgkz0000myiy8twuxy00',
+            name: '남성/상의/폴로',
+          },
+        }
+      }
+      
+      // Get mock data for this specific product, or use default
+      const mockData = mockProducts[params.id as keyof typeof mockProducts]
+      
+      product = mockData || {
         id: params.id,
         sku: 'MOCK-001',
         nameKo: '테스트 상품',
@@ -104,17 +134,22 @@ export async function GET(
         status: 'ACTIVE',
         thumbnailImage: '/placeholder.svg',
         images: ['/placeholder.svg'],
-        brandId: 'mock-brand-1',
-        categoryId: 'mock-category-1',
+        brandId: '726bbb2c-1b40-4efe-9a48-fe95bae80b07',
+        categoryId: 'cme3ltgkz0000myiy8twuxy00',
         brand: {
-          id: 'mock-brand-1',
-          nameKo: '테스트 브랜드',
-          nameCn: '测试品牌',
+          id: '726bbb2c-1b40-4efe-9a48-fe95bae80b07',
+          nameKo: 'K-패션',
+          nameCn: 'K时尚',
         },
         category: {
-          id: 'mock-category-1',
+          id: 'cme3ltgkz0000myiy8twuxy00',
           name: '상의',
         },
+      }
+      
+      // Add missing fields for consistency
+      product = {
+        ...product,
         colors: [],
         sizes: [],
         bulkPricing: [],
@@ -126,6 +161,10 @@ export async function GET(
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         viewCount: 0,
+        discountPrice: null,
+        discountRate: 0,
+        rating: '0',
+        soldCount: 0,
       }
     }
 

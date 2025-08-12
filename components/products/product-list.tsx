@@ -70,7 +70,12 @@ export default function ProductList({ userRole }: ProductListProps) {
       }
 
       const data = await response.json()
-      setProducts(data.data?.products || [])
+      const products = (data.data?.products || []).map((product: any) => ({
+        ...product,
+        basePrice: Number(product.basePrice) || 0,
+        inventory: Number(product.inventory) || 0,
+      }))
+      setProducts(products)
       setTotalPages(data.meta?.totalPages || 1)
       setTotalItems(data.meta?.totalItems || 0)
     } catch (err) {
