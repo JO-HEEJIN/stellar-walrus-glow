@@ -38,8 +38,12 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         setIsAuthorized(true)
 
         // Load product data
+        console.log('🔍 Loading product data for ID:', params.id)
         const response = await fetch(`/api/products/${params.id}`)
+        console.log('📡 Product API response status:', response.status)
+        
         if (!response.ok) {
+          console.error('❌ Product API failed:', response.status, response.statusText)
           if (response.status === 404) {
             toast.error('상품을 찾을 수 없습니다')
           } else {
@@ -50,6 +54,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         }
 
         const data = await response.json()
+        console.log('📦 Product data received:', data)
         setProduct(data.data)
       } catch (error) {
         console.error('Error loading product:', error)
