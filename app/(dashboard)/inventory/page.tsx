@@ -46,7 +46,7 @@ export default function InventoryPage() {
       }
 
       const data = await response.json()
-      let products = data.data || []
+      let products = data.data?.products || []
       
       // Apply client-side filtering
       if (filterStatus === 'low') {

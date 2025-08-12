@@ -20,6 +20,7 @@ interface Product {
   brandId: string
   inventory: number
   status: string
+  imageUrl?: string | null
   thumbnailImage?: string | null
   images?: string[] | null
   brand?: {
@@ -169,10 +170,10 @@ export default function ProductList({ userRole }: ProductListProps) {
               {/* Product Image */}
               <Link href={`/products/${product.id}`}>
                 <div className="aspect-square relative bg-gray-100 cursor-pointer">
-                  {product.thumbnailImage ? (
+                  {(product.imageUrl || product.thumbnailImage) ? (
                     <div className="w-full h-full flex items-center justify-center bg-gray-50">
                     <img
-                      src={product.thumbnailImage}
+                      src={product.imageUrl || product.thumbnailImage || '/placeholder.svg'}
                       alt={product.nameKo}
                       className="max-w-full max-h-full object-contain"
                     />
@@ -235,7 +236,7 @@ export default function ProductList({ userRole }: ProductListProps) {
                             name: product.nameKo,
                             brandName: product.brand?.nameKo || '',
                             price: Number(product.basePrice),
-                            imageUrl: product.thumbnailImage || '/placeholder.svg'
+                            imageUrl: product.imageUrl || product.thumbnailImage || '/placeholder.svg'
                           })
                         }
                       }}
