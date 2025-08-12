@@ -57,7 +57,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         console.log('📦 Product data received:', data)
         console.log('📦 Product data.data:', data.data)
         console.log('📦 Product data keys:', Object.keys(data.data || {}))
-        setProduct(data.data)
+        // API returns data.data.product, not data.data
+        setProduct(data.data?.product || data.data)
       } catch (error) {
         console.error('Error loading product:', error)
         toast.error('상품 정보를 불러오는 중 오류가 발생했습니다')
@@ -108,12 +109,12 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     brandId: product.brandId,
     categoryId: product.categoryId || '',
     sku: product.sku,
-    nameKo: product.nameKo,
+    nameKo: product.name || product.nameKo, // API uses 'name' instead of 'nameKo'
     nameCn: product.nameCn || '',
-    descriptionKo: product.descriptionKo || '',
+    descriptionKo: product.description || product.descriptionKo, // API uses 'description'
     descriptionCn: product.descriptionCn || '',
-    basePrice: product.basePrice,
-    inventory: product.inventory,
+    basePrice: product.price || product.basePrice, // API uses 'price'
+    inventory: product.stock || product.inventory, // API uses 'stock'
     thumbnailImage: product.thumbnailImage || '',
     images: product.images || [],
   }
