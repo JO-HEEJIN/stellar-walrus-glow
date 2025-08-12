@@ -151,12 +151,12 @@ export async function GET(
         const jwt = await import('jsonwebtoken');
         const decoded = jwt.verify(authToken, process.env.JWT_SECRET || 'your-secret-key') as any;
         
-        const user = await prisma.user.findFirst({
+        const user = await prismaRead.user.findFirst({
           where: { email: `${decoded.username}@kfashion.com` }
         });
         
         if (user) {
-          const wishlist = await prisma.wishlist.findUnique({
+          const wishlist = await prismaRead.wishlist.findUnique({
             where: {
               userId_productId: {
                 userId: user.id,
@@ -172,7 +172,7 @@ export async function GET(
     }
 
     // Get related products
-    const relatedProducts = await prisma.product.findMany({
+    const relatedProducts = await prismaRead.product.findMany({
       where: {
         AND: [
           { brandId: product.brandId },
@@ -209,13 +209,13 @@ export async function GET(
       rating: Number(product.rating),
       reviewCount: product._count.reviews,
       soldCount: product.soldCount,
-      colors: product.colors.map(color => ({
+      colors: product.colors.map((color: any) => ({
         id: color.id,
         name: color.name,
         code: color.code,
         available: color.available
       })),
-      sizes: product.sizes.map(size => ({
+      sizes: product.sizes.map((size: any) => ({
         id: size.id,
         name: size.name,
         available: size.available
@@ -223,7 +223,7 @@ export async function GET(
       images: product.images ? 
         (Array.isArray(product.images) ? 
           product.images
-            .filter((url): url is string => typeof url === 'string')
+            .filter((url: any): url is string => typeof url === 'string')
             .map((url: string, index: number) => ({
               id: String(index + 1),
               url,
@@ -236,7 +236,7 @@ export async function GET(
           alt: product.nameKo,
           order: 1
         }],
-      bulkPricing: product.bulkPricing.map(bp => ({
+      bulkPricing: product.bulkPricing.map((bp: any) => ({
         minQuantity: bp.minQuantity,
         maxQuantity: bp.maxQuantity,
         pricePerUnit: Number(bp.pricePerUnit),
@@ -361,7 +361,7 @@ export async function PATCH(
     const data = updateProductSchema.parse(body)
 
     // Check if product exists
-    const existingProduct = await prisma.product.findUnique({
+    const existingProduct = await prismaRead.product.findUnique({
       where: { id: params.id },
     })
 
@@ -375,7 +375,7 @@ export async function PATCH(
     // For BRAND_ADMIN, verify they own the product
     if (userInfo.role === 'BRAND_ADMIN') {
       // Get user's brand
-      const user = await prisma.user.findFirst({
+      const user = await prismaRead.user.findFirst({
         where: { email: `${userInfo.username}@kfashion.com` },
       })
       
@@ -389,7 +389,7 @@ export async function PATCH(
 
     // Check if SKU is being changed and is unique
     if (data.sku && data.sku !== existingProduct.sku) {
-      const skuExists = await prisma.product.findFirst({
+      const skuExists = await prismaRead.product.findFirst({
         where: {
           sku: data.sku,
           id: { not: params.id },
@@ -415,7 +415,7 @@ export async function PATCH(
       delete updateData.brandId
     }
     
-    const product = await prisma.product.update({
+    const product = await prismaWrite.product.update({
       where: { id: params.id },
       data: updateData,
       include: {
@@ -429,7 +429,7 @@ export async function PATCH(
     })
 
     // Create audit log
-    await prisma.auditLog.create({
+    await prismaWrite.auditLog.create({
       data: {
         userId: 'system', // Use system user for audit logs
         action: 'PRODUCT_UPDATE',
@@ -487,7 +487,7 @@ export async function DELETE(
     }
 
     // Check if product exists
-    const product = await prisma.product.findUnique({
+    const product = await prismaRead.product.findUnique({
       where: { id: params.id },
       include: {
         orderItems: {
@@ -506,7 +506,7 @@ export async function DELETE(
     // For BRAND_ADMIN, verify they own the product
     if (userInfo.role === 'BRAND_ADMIN') {
       // Get user's brand
-      const user = await prisma.user.findFirst({
+      const user = await prismaRead.user.findFirst({
         where: { email: `${userInfo.username}@kfashion.com` },
       })
       
@@ -547,12 +547,12 @@ export async function DELETE(
     }
 
     // Delete the product
-    await prisma.product.delete({
+    await prismaWrite.product.delete({
       where: { id: params.id },
     })
 
     // Create audit log
-    await prisma.auditLog.create({
+    await prismaWrite.auditLog.create({
       data: {
         userId: 'system', // Use system user for audit logs
         action: 'PRODUCT_DELETE',
