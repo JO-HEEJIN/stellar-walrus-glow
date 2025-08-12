@@ -7,8 +7,8 @@ export async function middleware(request: NextRequest) {
 
   // 1. Rate limiting for API routes
   if (path.startsWith('/api/')) {
-    // Skip rate limiting for NextAuth routes
-    if (!path.startsWith('/api/auth/')) {
+    // Skip rate limiting for NextAuth routes and in development mode
+    if (!path.startsWith('/api/auth/') && process.env.NODE_ENV !== 'development') {
       try {
         const identifier = getIdentifier(request)
         const { success, limit, reset, remaining } = await rateLimiters.api.limit(identifier)
@@ -20,6 +20,15 @@ export async function middleware(request: NextRequest) {
         // If Redis is not configured, continue without rate limiting
         console.warn('Rate limiting not available:', error)
       }
+    }
+    
+    // In development mode, allow all API calls without authentication
+    if (process.env.NODE_ENV === 'development') {
+      const response = NextResponse.next()
+      response.headers.set('X-Frame-Options', 'DENY')
+      response.headers.set('X-Content-Type-Options', 'nosniff')
+      response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+      return response
     }
   }
 

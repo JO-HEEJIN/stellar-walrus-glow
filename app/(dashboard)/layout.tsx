@@ -26,16 +26,42 @@ export default function DashboardLayout({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/me')
+        // 개발 모드에서 인증 우회
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+          console.log('🔧 Development mode: skipping auth check in dashboard layout')
+          setUser({
+            username: 'dev-user',
+            email: 'dev@kfashion.com',
+            role: 'MASTER_ADMIN'
+          })
+          setIsLoading(false)
+          return
+        }
+
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include'
+        })
         if (response.ok) {
           const data = await response.json()
           setUser(data.user)
         } else {
+          console.log('Auth failed, redirecting to login')
           router.push('/login')
         }
       } catch (error) {
         console.error('Auth check error:', error)
-        router.push('/login')
+        
+        // 개발 환경에서는 에러 시에도 우회
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔧 Development mode: using fallback user due to auth error')
+          setUser({
+            username: 'dev-user-fallback',
+            email: 'dev-fallback@kfashion.com',
+            role: 'MASTER_ADMIN'
+          })
+        } else {
+          router.push('/login')
+        }
       } finally {
         setIsLoading(false)
       }

@@ -69,7 +69,7 @@ export default function ProductList({ userRole }: ProductListProps) {
       }
 
       const data = await response.json()
-      setProducts(data.data || [])
+      setProducts(data.data?.products || [])
       setTotalPages(data.meta?.totalPages || 1)
       setTotalItems(data.meta?.totalItems || 0)
     } catch (err) {

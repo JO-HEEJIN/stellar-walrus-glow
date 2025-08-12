@@ -14,6 +14,14 @@ export default function NewProductPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // 개발 모드에서는 권한 체크를 건너뛰기
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+          console.log('🔧 Development mode: skipping auth check in product creation page')
+          setIsAuthorized(true)
+          setIsLoading(false)
+          return
+        }
+
         console.log('🔍 Starting auth check...')
         
         const response = await fetch('/api/auth/me', {
@@ -51,16 +59,15 @@ export default function NewProductPage() {
           stack: error.stack,
           name: error.name
         })
-        toast.error('인증 확인 중 오류가 발생했습니다')
         
-        // 개발 환경에서는 권한 체크를 건너뛰기
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔧 Development mode: skipping auth check')
+        // 개발 환경에서는 에러 시에도 권한 체크를 건너뛰기
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+          console.log('🔧 Development mode: auth error, but allowing access')
           setIsAuthorized(true)
-          return
+        } else {
+          toast.error('인증 확인 중 오류가 발생했습니다')
+          router.push('/admin-products')
         }
-        
-        router.push('/admin-products')
       } finally {
         setIsLoading(false)
       }

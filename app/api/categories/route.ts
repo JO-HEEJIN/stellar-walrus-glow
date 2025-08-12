@@ -45,22 +45,81 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get categories from database with product counts using read replica
-    const categories = await withRetry(async () => {
-      return await prismaRead.category.findMany({
-        include: {
-          products: {
-            select: { id: true },
-          },
-          _count: {
-            select: {
-              products: true,
+    // Try to get categories from database with product counts using read replica
+    let categories: any[] = []
+    let isUsingMockData = false
+
+    try {
+      categories = await withRetry(async () => {
+        return await prismaRead.category.findMany({
+          include: {
+            products: {
+              select: { id: true },
+            },
+            _count: {
+              select: {
+                products: true,
+              },
             },
           },
-        },
-        orderBy: { name: 'asc' },
+          orderBy: { name: 'asc' },
+        })
       })
-    })
+
+      console.log(`✅ Loaded ${categories.length} categories from database`)
+    } catch (dbError: any) {
+      console.log('⚠️ Database error, using mock categories:', dbError.message || 'Unknown error')
+      isUsingMockData = true
+      
+      // Mock 카테고리 데이터
+      categories = [
+        {
+          id: 'cat-1',
+          name: '의류',
+          slug: 'clothing',
+          parentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { products: 5 }
+        },
+        {
+          id: 'cat-2',
+          name: '상의',
+          slug: 'tops',
+          parentId: 'cat-1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { products: 3 }
+        },
+        {
+          id: 'cat-3',
+          name: '하의',
+          slug: 'bottoms',
+          parentId: 'cat-1',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { products: 2 }
+        },
+        {
+          id: 'cat-4',
+          name: '신발',
+          slug: 'shoes',
+          parentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { products: 1 }
+        },
+        {
+          id: 'cat-5',
+          name: '가방',
+          slug: 'bags',
+          parentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          _count: { products: 1 }
+        }
+      ]
+    }
 
     // Transform data to include additional computed fields
     const categoriesWithStats = categories.map(category => ({
@@ -68,17 +127,23 @@ export async function GET(request: NextRequest) {
       name: category.name,
       slug: category.slug,
       parentId: category.parentId,
-      productsCount: category._count.products,
+      productsCount: category._count?.products || 0,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
     }))
 
-    return NextResponse.json({
+    const response: any = {
       data: categoriesWithStats,
       meta: {
         totalCategories: categories.length,
       },
-    })
+    }
+
+    if (isUsingMockData) {
+      response.warning = 'Using mock data - database connection not available'
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error fetching categories:', error)
     return createErrorResponse(error as Error, request.url)

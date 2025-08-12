@@ -93,19 +93,24 @@ const searchSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
-    const identifier = getIdentifier(request)
-    const { success } = await rateLimiters.api.limit(identifier)
-    
-    if (!success) {
-      return new Response('Too Many Requests', {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': '10',
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': new Date().toISOString(),
-        },
-      })
+    // Skip rate limiting in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      // Rate limiting
+      const identifier = getIdentifier(request)
+      const { success } = await rateLimiters.api.limit(identifier)
+      
+      if (!success) {
+        return new Response('Too Many Requests', {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date().toISOString(),
+          },
+        })
+      }
+    } else {
+      console.log('🔧 /api/products: Development mode - skipping rate limiting')
     }
 
     // Parse query parameters
