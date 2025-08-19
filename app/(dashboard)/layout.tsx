@@ -113,6 +113,12 @@ export default function DashboardLayout({
                     대시보드
                   </Link>
                   <Link
+                    href="/my-page"
+                    className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    마이페이지
+                  </Link>
+                  <Link
                     href="/admin-products"
                     className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
@@ -218,6 +224,13 @@ export default function DashboardLayout({
               className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
             >
               대시보드
+            </Link>
+            <Link
+              href="/my-page"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            >
+              마이페이지
             </Link>
             <Link
               href="/admin-products"
