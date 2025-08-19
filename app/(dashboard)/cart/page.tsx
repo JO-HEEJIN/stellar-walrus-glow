@@ -11,7 +11,7 @@ import { CartEmpty } from '@/components/cart/CartEmpty'
 
 export default function CartPage() {
   const router = useRouter()
-  const { items, updateQuantity, removeItem, clearCart } = useCartStore()
+  const { items, updateQuantity, removeItem } = useCartStore()
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   
   // 컴포넌트 마운트시 모든 아이템을 선택 상태로 초기화

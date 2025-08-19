@@ -8,9 +8,9 @@ import { z } from 'zod'
 import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CreditCard, MapPin, Package, ArrowLeft, Plus, X, ChevronDown } from 'lucide-react'
+import { CreditCard, MapPin, Package, ArrowLeft, X, ChevronDown } from 'lucide-react'
 import { useLanguage } from '@/lib/contexts/language-context'
-import { calculateShippingCost, getCountryByCode, formatAddressDisplay } from '@/lib/utils/shipping'
+import { calculateShippingCost, formatAddressDisplay } from '@/lib/utils/shipping'
 
 interface ShippingAddress {
   id: string
@@ -40,7 +40,6 @@ const addressSchema = z.object({
   name: z.string().min(1, '배송지명을 입력해주세요').max(50, '배송지명은 50자 이하여야 합니다'),
   recipient: z.string().min(2, '받는 분은 2자 이상이어야 합니다').max(30, '받는 분은 30자 이하여야 합니다'),
   phone: z.string().min(10, '연락처를 정확히 입력해주세요').max(15, '연락처는 15자 이하여야 합니다'),
-  country: z.enum(['KR', 'CN']),
   countryCode: z.enum(['KR', 'CN']),
   province: z.string().optional(),
   city: z.string().optional(),
@@ -78,7 +77,6 @@ export default function CheckoutPage() {
       name: '',
       recipient: '',
       phone: '',
-      country: language === 'zh' ? 'CN' as const : 'KR' as const,
       countryCode: language === 'zh' ? 'CN' as const : 'KR' as const,
       province: '',
       city: '',
@@ -92,7 +90,6 @@ export default function CheckoutPage() {
 
   // 국가 변경시 폼 리셋
   useEffect(() => {
-    setAddressValue('country', selectedCountry)
     setAddressValue('countryCode', selectedCountry)
     if (selectedCountry === 'CN') {
       setAddressValue('zipCode', '')
@@ -138,7 +135,6 @@ export default function CheckoutPage() {
           recipient: '홍길동',
           phone: '010-1234-5678',
           countryCode: 'KR' as const,
-          country: 'KR' as const,
           regionCode: 'SEOUL',
           province: '',
           city: '',
@@ -309,7 +305,6 @@ export default function CheckoutPage() {
         recipient: data.recipient,
         phone: data.phone,
         countryCode: data.countryCode,
-        country: data.country,
         regionCode: data.province || data.city,
         cityCode: data.district,
         province: data.province,
@@ -548,7 +543,7 @@ export default function CheckoutPage() {
                     {shippingFee === 0 ? (
                       <span className="text-green-600">{t.freeShipping}</span>
                     ) : (
-                      <span className={selectedAddress?.country === 'CN' ? 'text-orange-600' : ''}>
+                      <span className={selectedAddress?.countryCode === 'CN' ? 'text-orange-600' : ''}>
                         {formatPrice(shippingFee)}
                       </span>
                     )}
@@ -675,7 +670,6 @@ export default function CheckoutPage() {
                       onChange={(e) => {
                         const newCountry = e.target.value as 'KR' | 'CN'
                         setSelectedCountry(newCountry)
-                        setAddressValue('country', newCountry)
                         setAddressValue('countryCode', newCountry)
                       }}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"

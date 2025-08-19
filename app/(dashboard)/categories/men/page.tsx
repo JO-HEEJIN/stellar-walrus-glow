@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Filter, Grid, List, ChevronDown, Heart, ShoppingCart } from 'lucide-react'
+import { Filter, Grid, List, Heart, ShoppingCart } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
 import { toast } from 'sonner'
@@ -215,7 +215,6 @@ export default function MenCategoryPage() {
   })
 
   const ProductCard = ({ product, isListView = false }: { product: Product; isListView?: boolean }) => {
-    const currentPrice = product.discountPrice || product.basePrice
     
     if (isListView) {
       return (

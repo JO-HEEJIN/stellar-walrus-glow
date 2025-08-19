@@ -613,10 +613,7 @@ export default function HomePage() {
             </div>
             <div 
               className="flex flex-col items-center gap-1 cursor-pointer"
-              onClick={() => {
-                console.log('🔍 메인페이지 마이페이지 버튼 클릭됨')
-                router.push('/my-page')
-              }}
+              onClick={() => router.push('/my-page')}
             >
               <span>👤</span>
               <span className="text-xs">{t.myPage}</span>

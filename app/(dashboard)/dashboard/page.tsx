@@ -65,35 +65,6 @@ export default function DashboardPage() {
 
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">대시보드</h1>
         
-        {/* 테스트용 마이페이지 버튼 */}
-        <div className="mb-8 p-4 bg-yellow-100 rounded-lg border border-yellow-300">
-          <h2 className="text-lg font-semibold text-yellow-800 mb-2">🔧 테스트 버튼들</h2>
-          <div className="space-x-4">
-            <button 
-              onClick={() => {
-                console.log('🔍 테스트 버튼 클릭됨')
-                window.location.href = '/my-page'
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              마이페이지로 이동 (window.location)
-            </button>
-            <a 
-              href="/my-page" 
-              className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={() => console.log('🔍 마이페이지 링크 클릭됨')}
-            >
-              마이페이지로 이동 (a 태그)
-            </a>
-            <a 
-              href="/my-page-simple" 
-              className="inline-block px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-            >
-              간단한 마이페이지 테스트
-            </a>
-          </div>
-        </div>
-        
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard

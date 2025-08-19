@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Plus, Trash2, Building2, User, Mail, Phone, MessageSquare, Package } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Building2, MessageSquare, Package } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -42,8 +42,7 @@ export default function NewQuotePage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-    reset
+    formState: { errors, isSubmitting }
   } = useForm<QuoteRequestFormData>({
     resolver: zodResolver(quoteRequestSchema),
     defaultValues: {
@@ -184,7 +183,7 @@ export default function NewQuotePage() {
         throw new Error('견적 요청에 실패했습니다')
       }
 
-      const result = await response.json()
+      await response.json()
       toast.success('견적 요청이 완료되었습니다!')
       router.push('/quotes')
     } catch (error) {

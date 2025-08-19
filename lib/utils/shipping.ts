@@ -206,8 +206,7 @@ export const SHIPPING_METHODS: Record<string, ShippingMethod[]> = {
 // Calculate shipping cost based on order total and destination
 export function calculateShippingCost(
   countryCode: string, 
-  orderTotal: number, 
-  shippingMethodId?: string
+  orderTotal: number
 ): {
   methods: ShippingMethod[]
   freeShippingThreshold?: number

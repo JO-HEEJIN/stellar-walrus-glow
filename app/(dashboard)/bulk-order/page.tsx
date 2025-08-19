@@ -34,7 +34,7 @@ export default function BulkOrderPage() {
   const { addItem } = useCartStore()
   
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [parsedItems, setParsedItems] = useState<BulkOrderItem[]>([])
+  const [, setParsedItems] = useState<BulkOrderItem[]>([])
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showPreview, setShowPreview] = useState(false)

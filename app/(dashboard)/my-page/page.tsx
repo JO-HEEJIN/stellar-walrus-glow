@@ -31,7 +31,6 @@ interface ReviewSummary {
 }
 
 export default function MyPage() {
-  console.log('🔍 MyPage component is rendering')
   const searchParams = useSearchParams()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
