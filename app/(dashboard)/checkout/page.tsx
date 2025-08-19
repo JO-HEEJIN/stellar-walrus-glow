@@ -8,15 +8,18 @@ import { z } from 'zod'
 import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CreditCard, MapPin, Package, ArrowLeft, Plus, X } from 'lucide-react'
+import { CreditCard, MapPin, Package, ArrowLeft, Plus, X, ChevronDown } from 'lucide-react'
 import { useLanguage } from '@/lib/contexts/language-context'
+import { calculateShippingCost, getCountryByCode, formatAddressDisplay } from '@/lib/utils/shipping'
 
 interface ShippingAddress {
   id: string
   name: string
   recipient: string
   phone: string
-  country: 'KR' | 'CN'
+  countryCode: 'KR' | 'CN'
+  regionCode?: string
+  cityCode?: string
   province?: string
   city?: string
   district?: string
@@ -38,6 +41,7 @@ const addressSchema = z.object({
   recipient: z.string().min(2, '받는 분은 2자 이상이어야 합니다').max(30, '받는 분은 30자 이하여야 합니다'),
   phone: z.string().min(10, '연락처를 정확히 입력해주세요').max(15, '연락처는 15자 이하여야 합니다'),
   country: z.enum(['KR', 'CN']),
+  countryCode: z.enum(['KR', 'CN']),
   province: z.string().optional(),
   city: z.string().optional(),
   district: z.string().optional(),
@@ -75,6 +79,7 @@ export default function CheckoutPage() {
       recipient: '',
       phone: '',
       country: language === 'zh' ? 'CN' as const : 'KR' as const,
+      countryCode: language === 'zh' ? 'CN' as const : 'KR' as const,
       province: '',
       city: '',
       district: '',
@@ -88,6 +93,7 @@ export default function CheckoutPage() {
   // 국가 변경시 폼 리셋
   useEffect(() => {
     setAddressValue('country', selectedCountry)
+    setAddressValue('countryCode', selectedCountry)
     if (selectedCountry === 'CN') {
       setAddressValue('zipCode', '')
       setAddressValue('address', '')
@@ -131,7 +137,9 @@ export default function CheckoutPage() {
           name: '집',
           recipient: '홍길동',
           phone: '010-1234-5678',
+          countryCode: 'KR' as const,
           country: 'KR' as const,
+          regionCode: 'SEOUL',
           province: '',
           city: '',
           district: '',
@@ -147,7 +155,7 @@ export default function CheckoutPage() {
   }
 
   // 국가별 결제 수단
-  const getPaymentMethods = (country: string): PaymentMethod[] => {
+  const getPaymentMethods = (countryCode: string): PaymentMethod[] => {
     const commonMethods = [
       {
         id: 'card',
@@ -157,7 +165,7 @@ export default function CheckoutPage() {
       }
     ]
     
-    if (country === 'CN') {
+    if (countryCode === 'CN') {
       return [
         ...commonMethods,
         {
@@ -186,25 +194,16 @@ export default function CheckoutPage() {
     ]
   }
   
-  const paymentMethods = getPaymentMethods(selectedAddress?.country || 'KR')
+  const paymentMethods = getPaymentMethods(selectedAddress?.countryCode || 'KR')
 
   const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   
-  // 배송비 계산 (국가별)
-  const calculateShippingFee = (address: ShippingAddress | null) => {
-    if (!address) return 0
-    
-    if (address.country === 'KR') {
-      // 한국 국내배송: 5만원 이상 무료
-      return totalAmount >= 50000 ? 0 : 3000
-    } else if (address.country === 'CN') {
-      // 중국 해외배송: EMS 20만원 이상 무료
-      return totalAmount >= 200000 ? 0 : 25000
-    }
-    return 0
-  }
+  // 배송비 계산 (Shein 스타일 API 사용)
+  const shippingInfo = selectedAddress 
+    ? calculateShippingCost(selectedAddress.countryCode, totalAmount)
+    : { methods: [], freeShippingThreshold: null, recommendedMethodId: null }
   
-  const shippingFee = calculateShippingFee(selectedAddress)
+  const shippingFee = shippingInfo.methods[0]?.price || 0
   const finalAmount = totalAmount + shippingFee
 
   const handleOrder = async () => {
@@ -309,7 +308,10 @@ export default function CheckoutPage() {
         name: data.name,
         recipient: data.recipient,
         phone: data.phone,
+        countryCode: data.countryCode,
         country: data.country,
+        regionCode: data.province || data.city,
+        cityCode: data.district,
         province: data.province,
         city: data.city,
         district: data.district,
@@ -375,10 +377,7 @@ export default function CheckoutPage() {
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">등록된 배송지가 없습니다</p>
                   <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      window.location.href = '/my-page?tab=addresses'
-                    }}
+                    onClick={() => setShowAddressModal(true)}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     배송지 추가하기
@@ -419,14 +418,19 @@ export default function CheckoutPage() {
                           <div className="text-sm text-gray-600">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                                {address.country === 'KR' ? t.korea : t.china}
+                                {address.countryCode === 'KR' ? t.korea : t.china}
                               </span>
-                              {address.country === 'CN' && address.province && (
+                              {address.countryCode === 'CN' && address.province && (
                                 <span className="text-xs text-gray-500">{address.province}</span>
                               )}
                             </div>
                             <p>
-                              ({address.zipCode}) {address.address} {address.detailAddress}
+                              {formatAddressDisplay({
+                                ...address,
+                                addressLine1: address.address,
+                                addressLine2: address.detailAddress,
+                                postalCode: address.zipCode
+                              }, language === 'zh' ? 'zh' : 'ko')}
                             </p>
                           </div>
                         </div>
@@ -435,10 +439,7 @@ export default function CheckoutPage() {
                   ))}
                   
                   <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      window.location.href = '/my-page?tab=addresses'
-                    }}
+                    onClick={() => setShowAddressModal(true)}
                     className="w-full p-3 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800"
                   >
                     + 새 배송지 추가
@@ -534,9 +535,12 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm">
                   <div>
                     <span>배송비</span>
-                    {selectedAddress && (
+                    {selectedAddress && shippingInfo.freeShippingThreshold && (
                       <div className="text-xs text-gray-500 mt-1">
-                        {selectedAddress.country === 'KR' ? `${t.domesticShipping} (5만원이상 ${t.freeShipping})` : `EMS ${t.internationalShipping} (20만원이상 ${t.freeShipping})`}
+                        {selectedAddress.countryCode === 'KR' 
+                          ? `${t.domesticShipping} (${(shippingInfo.freeShippingThreshold / 10000).toFixed(0)}만원이상 ${t.freeShipping})`
+                          : `${t.internationalShipping} (${(shippingInfo.freeShippingThreshold / 10000).toFixed(0)}만원이상 ${t.freeShipping})`
+                        }
                       </div>
                     )}
                   </div>
@@ -558,17 +562,19 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {selectedAddress && (
+              {selectedAddress && shippingInfo.methods.length > 0 && (
                 <div className="text-xs text-gray-500 mt-2">
-                  {selectedAddress.country === 'KR' ? (
-                    totalAmount < 50000 && (
-                      <p>50,000원 이상 구매시 무료배송</p>
+                  {selectedAddress.countryCode === 'KR' ? (
+                    shippingInfo.freeShippingThreshold && totalAmount < shippingInfo.freeShippingThreshold && (
+                      <p>{(shippingInfo.freeShippingThreshold / 10000).toFixed(0)}만원 이상 구매시 무료배송</p>
                     )
                   ) : (
                     <div>
-                      <p className="text-orange-600 font-medium">EMS 해외배송 (3-5일 소요)</p>
-                      {totalAmount < 200000 && (
-                        <p>200,000원 이상 구매시 무료배송</p>
+                      <p className="text-orange-600 font-medium">
+                        {shippingInfo.methods[0]?.name || 'EMS'} {language === 'ko' ? '해외배송' : '国际配送'} ({shippingInfo.methods[0]?.estimatedDays || '3-5일 소요'})
+                      </p>
+                      {shippingInfo.freeShippingThreshold && totalAmount < shippingInfo.freeShippingThreshold && (
+                        <p>{(shippingInfo.freeShippingThreshold / 10000).toFixed(0)}만원 이상 구매시 무료배송</p>
                       )}
                     </div>
                   )}
@@ -662,14 +668,23 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     국가 *
                   </label>
-                  <select
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value as 'KR' | 'CN')}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="KR">{t.korea}</option>
-                    <option value="CN">{t.china}</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      {...registerAddress('countryCode')}
+                      value={selectedCountry}
+                      onChange={(e) => {
+                        const newCountry = e.target.value as 'KR' | 'CN'
+                        setSelectedCountry(newCountry)
+                        setAddressValue('country', newCountry)
+                        setAddressValue('countryCode', newCountry)
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    >
+                      <option value="KR">{t.korea} 🇰🇷</option>
+                      <option value="CN">{t.china} 🇨🇳</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 {selectedCountry === 'CN' && (
