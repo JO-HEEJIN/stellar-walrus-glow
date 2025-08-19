@@ -285,7 +285,8 @@ export async function GET(request: NextRequest) {
       isBestSeller: product.isBestSeller,
       colors: product.colors?.map(c => c.name) || [],
       sizes: product.sizes?.map(s => s.name) || [],
-      stock: product.inventory
+      stock: product.inventory,
+      inventory: product.inventory
     }))
 
     return NextResponse.json({
