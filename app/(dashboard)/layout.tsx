@@ -112,12 +112,17 @@ export default function DashboardLayout({
                   >
                     대시보드
                   </Link>
-                  <Link
-                    href="/my-page"
-                    className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  <button
+                    onClick={() => {
+                      alert('버튼이 클릭되었습니다!')
+                      console.log('🔍 네비게이션 마이페이지 버튼 클릭됨')
+                      window.location.href = '/my-page'
+                    }}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                    style={{ zIndex: 9999, position: 'relative' }}
                   >
-                    마이페이지
-                  </Link>
+                    🔴 마이페이지 테스트
+                  </button>
                   <Link
                     href="/admin-products"
                     className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -225,13 +230,16 @@ export default function DashboardLayout({
             >
               대시보드
             </Link>
-            <Link
-              href="/my-page"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            <button
+              onClick={() => {
+                console.log('🔍 모바일 네비게이션 마이페이지 버튼 클릭됨')
+                router.push('/my-page')
+                setIsMobileMenuOpen(false)
+              }}
+              className="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             >
               마이페이지
-            </Link>
+            </button>
             <Link
               href="/admin-products"
               onClick={() => setIsMobileMenuOpen(false)}

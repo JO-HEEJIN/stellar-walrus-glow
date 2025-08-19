@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Package, MapPin, Star, Settings } from 'lucide-react'
+import { User, Package, MapPin, Star, Settings, Edit2 } from 'lucide-react'
+import ProfileEditForm from '@/components/my-page/profile-edit-form'
 
 interface UserProfile {
   id: string
@@ -26,6 +27,7 @@ interface ReviewSummary {
 }
 
 export default function MyPage() {
+  console.log('🔍 MyPage component is rendering')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     total: 0,
@@ -39,41 +41,50 @@ export default function MyPage() {
   })
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+
+  const loadUserData = async () => {
+    try {
+      // Load user profile
+      const userResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      })
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setUser({
+          ...userData.user,
+          name: userData.user.name || userData.user.username,
+        })
+      }
+
+      // Mock data for now - will be replaced with real API calls
+      setOrderSummary({
+        total: 15,
+        pending: 2,
+        completed: 12,
+        cancelled: 1,
+      })
+
+      setReviewSummary({
+        total: 8,
+        avgRating: 4.5,
+      })
+    } catch (error) {
+      console.error('Failed to load user data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        // Load user profile
-        const userResponse = await fetch('/api/auth/me', {
-          credentials: 'include',
-        })
-        
-        if (userResponse.ok) {
-          const userData = await userResponse.json()
-          setUser(userData.user)
-        }
-
-        // Mock data for now - will be replaced with real API calls
-        setOrderSummary({
-          total: 15,
-          pending: 2,
-          completed: 12,
-          cancelled: 1,
-        })
-
-        setReviewSummary({
-          total: 8,
-          avgRating: 4.5,
-        })
-      } catch (error) {
-        console.error('Failed to load user data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadUserData()
   }, [])
+
+  const handleProfileUpdate = () => {
+    setIsEditingProfile(false)
+    loadUserData() // Reload user data after update
+  }
 
   if (loading) {
     return (
@@ -261,11 +272,51 @@ export default function MyPage() {
 
           {activeTab === 'settings' && (
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">계정 설정</h3>
-              <div className="text-gray-600">
-                <p>계정 설정 기능을 구현 중입니다.</p>
-                <p className="mt-2">개인정보 수정, 비밀번호 변경 등의 기능이 제공될 예정입니다.</p>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">계정 설정</h3>
+                <button
+                  onClick={() => setIsEditingProfile(!isEditingProfile)}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  {isEditingProfile ? '편집 취소' : '프로필 수정'}
+                </button>
               </div>
+              
+              {isEditingProfile ? (
+                <ProfileEditForm
+                  initialData={{
+                    name: user?.name || user?.username || '',
+                    email: user?.email || '',
+                  }}
+                  onCancel={() => setIsEditingProfile(false)}
+                  onSuccess={handleProfileUpdate}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">이름</label>
+                    <p className="mt-1 text-sm text-gray-900">{user?.name || user?.username}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">이메일</label>
+                    <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">가입일</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {new Date(user?.createdAt || '').toLocaleDateString('ko-KR')}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">계정 유형</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {user?.role === 'MASTER_ADMIN' ? '마스터 관리자' : 
+                       user?.role === 'BRAND_ADMIN' ? '브랜드 관리자' : '구매자'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
