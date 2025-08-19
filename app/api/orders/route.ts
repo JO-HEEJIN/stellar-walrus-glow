@@ -56,7 +56,72 @@ const orderSearchSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
+    // For development mode, return mock orders
+    if (process.env.NODE_ENV === 'development') {
+      const mockOrders = [
+        {
+          id: '1',
+          orderNumber: 'ORD-1701234567',
+          status: 'DELIVERED',
+          totalAmount: 150000,
+          shippingFee: 3000,
+          createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+          items: [
+            {
+              id: '1',
+              productName: '스트레치 벨트',
+              brandName: 'K-패션',
+              quantity: 2,
+              unitPrice: 68000,
+              totalPrice: 136000
+            }
+          ],
+          shippingAddress: {
+            recipient: '홍길동',
+            phone: '010-1234-5678',
+            address: '서울특별시 강남구 테헤란로 123 456호'
+          }
+        },
+        {
+          id: '2', 
+          orderNumber: 'ORD-1701234568',
+          status: 'PENDING',
+          totalAmount: 230000,
+          shippingFee: 0,
+          createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+          items: [
+            {
+              id: '2',
+              productName: '코튼 티셔츠',
+              brandName: '프리미엄 브랜드',
+              quantity: 5,
+              unitPrice: 42000,
+              totalPrice: 210000
+            }
+          ],
+          shippingAddress: {
+            recipient: '홍길동',
+            phone: '010-1234-5678', 
+            address: '서울특별시 강남구 테헤란로 123 456호'
+          }
+        }
+      ]
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          orders: mockOrders,
+          total: mockOrders.length,
+          pagination: {
+            page: 1,
+            limit: 20,
+            totalPages: 1
+          }
+        }
+      })
+    }
+
+    // Rate limiting for production
     const identifier = getIdentifier(request)
     const { success } = await rateLimiters.api.limit(identifier)
     
@@ -66,9 +131,6 @@ export async function GET(request: NextRequest) {
         HttpStatus.TOO_MANY_REQUESTS
       )
     }
-
-    // Authentication removed for now
-    // TODO: Add proper authentication when auth system is set up
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
@@ -245,7 +307,33 @@ const createOrderSchema = z.object({
 // POST: Create new order
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
+    // Parse request body
+    const body = await request.json()
+    
+    // For development, create mock order
+    if (process.env.NODE_ENV === 'development') {
+      const mockOrder = {
+        id: `order-${Date.now()}`,
+        orderNumber: `ORD-${Date.now()}`,
+        userId: 'dev-user',
+        status: 'PENDING',
+        totalAmount: body.totalAmount || 0,
+        shippingFee: body.shippingFee || 0,
+        items: body.items || [],
+        shippingAddress: body.shippingAddress || {},
+        paymentMethod: body.paymentMethod || 'card',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: mockOrder,
+        message: '주문이 성공적으로 처리되었습니다'
+      }, { status: 201 })
+    }
+
+    // Rate limiting for production
     const identifier = getIdentifier(request)
     const { success } = await rateLimiters.orderCreate.limit(identifier)
     
@@ -279,7 +367,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json()
     const data = createOrderSchema.parse(body)
 
     // Process order in transaction using write instance with increased timeout

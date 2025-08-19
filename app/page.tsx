@@ -658,7 +658,10 @@ export default function HomePage() {
             <span className="text-gray-600">{t.paymentMethod}:</span>
             <span className="font-bold">{language === 'ko' ? '위챗페이 · 알리페이 · 계좌이체' : '微信支付 · 支付宝 · 银行转账'}</span>
           </div>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => router.push('/bulk-order')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors"
+          >
             📊 {t.bulkOrderExcel}
           </button>
         </div>
