@@ -7,6 +7,7 @@ import { ProductDetail, RelatedProduct } from '@/types/product-detail';
 import { useCartStore } from '@/lib/stores/cart';
 import ErrorBoundary from '@/components/error-boundary';
 import { logger } from '@/lib/logger';
+import { useLanguage } from '@/lib/contexts/language-context';
 
 function ProductDetailPageContent({
   params,
@@ -14,6 +15,7 @@ function ProductDetailPageContent({
   params: { id: string };
 }) {
   const { addItem } = useCartStore();
+  const { language } = useLanguage();
   
   // State for API data
   const [product, setProduct] = useState<ProductDetail | null>(null);
@@ -379,7 +381,9 @@ function ProductDetailPageContent({
           <div className="space-y-6">
             <div>
               <div className="text-sm font-semibold text-gray-600 mb-2">{product.brandName}</div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">{product.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                {language === 'zh' && product.nameCn ? product.nameCn : product.name}
+              </h1>
               
               {/* 평점 및 메타 정보 */}
               <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
@@ -580,11 +584,18 @@ function ProductDetailPageContent({
             {activeTab === 'description' && (
               <div className="prose max-w-none">
                 <div className="mb-6">
-                  {product.description ? (
-                    <div dangerouslySetInnerHTML={{ __html: product.description }} />
-                  ) : (
-                    <p>상품 상세 정보가 준비 중입니다.</p>
-                  )}
+                  {(() => {
+                    // 언어에 따른 설명 선택
+                    const description = language === 'zh' && product.descriptionCn 
+                      ? product.descriptionCn 
+                      : product.description;
+                    
+                    return description ? (
+                      <div dangerouslySetInnerHTML={{ __html: description }} />
+                    ) : (
+                      <p>{language === 'zh' ? '产品详细信息准备中...' : '상품 상세 정보가 준비 중입니다.'}</p>
+                    );
+                  })()}
                 </div>
                 
                 {features.length > 0 && (

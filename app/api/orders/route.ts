@@ -274,13 +274,16 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      data: orders,
-      meta: {
-        page: query.page,
-        limit: query.limit,
-        totalItems,
-        totalPages: Math.ceil(totalItems / query.limit),
-      },
+      success: true,
+      data: {
+        orders: orders,
+        total: totalItems,
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          totalPages: Math.ceil(totalItems / query.limit)
+        }
+      }
     })
   } catch (error) {
     return createErrorResponse(error as Error, request.url)

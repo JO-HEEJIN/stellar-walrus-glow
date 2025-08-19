@@ -3,13 +3,14 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { X, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react'
+import { X, Upload, Image as ImageIcon, AlertCircle, Edit } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ImageUploadProps {
   onUploadComplete?: (url: string, file: File) => void
   onUploadError?: (error: string) => void
   onImageRemove?: (url: string) => void
+  onImageEdit?: (url: string) => void
   maxFiles?: number
   existingImages?: string[]
   productId?: string
@@ -32,6 +33,7 @@ export function ImageUpload({
   onUploadComplete,
   onUploadError,
   onImageRemove,
+  onImageEdit,
   maxFiles = 5,
   existingImages = [],
   productId,
@@ -302,15 +304,26 @@ export function ImageUpload({
                   />
                 </div>
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded" />
-                {onImageRemove && (
-                  <button
-                    onClick={() => onImageRemove(url)}
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                    title="이미지 삭제"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
+                <div className="absolute top-1 right-1 flex gap-1">
+                  {onImageEdit && (
+                    <button
+                      onClick={() => onImageEdit(url)}
+                      className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+                      title="이미지 편집"
+                    >
+                      <Edit className="w-3 h-3" />
+                    </button>
+                  )}
+                  {onImageRemove && (
+                    <button
+                      onClick={() => onImageRemove(url)}
+                      className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="이미지 삭제"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -31,7 +31,9 @@ export interface ProductDetail {
   brandId: string;
   brandName: string;
   name: string;
+  nameCn?: string; // 중국어 상품명
   description: string;
+  descriptionCn?: string; // 중국어 상품설명
   price: number;
   discountPrice: number;
   discountRate: number;
@@ -43,6 +45,7 @@ export interface ProductDetail {
   images: ProductImage[];
   bulkPricing: BulkPricing[];
   minOrderQuantity: number;
+  inventory: number; // 실제 재고 수량
   features: string[];
   material: string;
   careInstructions: string;
@@ -50,7 +53,7 @@ export interface ProductDetail {
   tags: string[];
   isNew: boolean;
   isBestSeller: boolean;
-  stock: number;
+  stock: number; // 기존 stock 필드는 유지 (호환성을 위해)
   isWishlisted?: boolean;
 }
 

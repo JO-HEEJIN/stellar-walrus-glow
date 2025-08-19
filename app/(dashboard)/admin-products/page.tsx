@@ -56,12 +56,26 @@ export default function ProductsPage() {
               {/* 상품 등록 버튼은 BRAND_ADMIN과 MASTER_ADMIN만 볼 수 있음 */}
               {user?.role && ['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role) && (
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-                  <Link
-                    href="/admin-products/new"
-                    className="block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                  >
-                    상품 등록
-                  </Link>
+                  <div className="flex gap-3">
+                    <Link
+                      href="/admin-products/new"
+                      className="block rounded-md bg-blue-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    >
+                      상품 등록
+                    </Link>
+                    <Link
+                      href="/admin-products/import-export"
+                      className="block rounded-md bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                    >
+                      가져오기/내보내기
+                    </Link>
+                    <Link
+                      href="/admin-products/analytics"
+                      className="block rounded-md bg-purple-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-purple-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                    >
+                      분석 대시보드
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

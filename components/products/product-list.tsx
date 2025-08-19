@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/utils'
 import { useCartStore } from '@/lib/stores/cart'
-import { ShoppingCart, ImageOff } from 'lucide-react'
+import { ShoppingCart, ImageOff, Copy } from 'lucide-react'
 import ProductFilters, { FilterValues } from './product-filters'
 import { ProductListAd, MobileAd } from '@/components/ads/ad-layouts'
 import ErrorBoundary from '@/components/error-boundary'
@@ -126,6 +126,12 @@ export default function ProductList({ userRole }: ProductListProps) {
       }, 100)
     } catch (err) {
       alert(err instanceof Error ? err.message : '상품 삭제에 실패했습니다.')
+    }
+  }
+
+  const handleDuplicate = (productId: string) => {
+    if (confirm('이 상품을 복사하여 새 상품을 만드시겠습니까?')) {
+      window.location.href = `/admin-products/new?duplicate=${productId}`
     }
   }
 
@@ -260,13 +266,21 @@ export default function ProductList({ userRole }: ProductListProps) {
                     <>
                       <button
                         onClick={() => window.location.href = `/admin-products/${product.id}/edit`}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
                       >
                         수정
                       </button>
                       <button
+                        onClick={() => handleDuplicate(product.id)}
+                        className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                        title="상품 복사"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(product.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        title="상품 삭제"
                       >
                         삭제
                       </button>
