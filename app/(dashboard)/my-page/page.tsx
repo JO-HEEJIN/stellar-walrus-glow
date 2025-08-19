@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { User, Package, MapPin, Star, Settings, Edit2 } from 'lucide-react'
 import ProfileEditForm from '@/components/my-page/profile-edit-form'
+import OrderHistory from '@/components/my-page/order-history'
 
 interface UserProfile {
   id: string
@@ -234,16 +235,7 @@ export default function MyPage() {
           {activeTab === 'orders' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">주문 내역</h3>
-              <div className="text-gray-600">
-                <p>주문 내역 기능을 구현 중입니다.</p>
-                <p className="mt-2">현재 통계:</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  <li>• 총 주문수: {orderSummary.total}건</li>
-                  <li>• 진행중: {orderSummary.pending}건</li>
-                  <li>• 완료: {orderSummary.completed}건</li>
-                  <li>• 취소: {orderSummary.cancelled}건</li>
-                </ul>
-              </div>
+              <OrderHistory userId={user?.id || user?.email || 'dev-user'} />
             </div>
           )}
 
