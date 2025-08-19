@@ -6,6 +6,7 @@ import { User, Package, MapPin, Star, Settings, Edit2 } from 'lucide-react'
 import ProfileEditForm from '@/components/my-page/profile-edit-form'
 import OrderHistory from '@/components/my-page/order-history'
 import AddressManagement from '@/components/my-page/address-management'
+import ReviewManagement from '@/components/my-page/review-management'
 
 interface UserProfile {
   id: string
@@ -260,14 +261,7 @@ export default function MyPage() {
           {activeTab === 'reviews' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">나의 리뷰</h3>
-              <div className="text-gray-600">
-                <p>리뷰 관리 기능을 구현 중입니다.</p>
-                <p className="mt-2">현재 통계:</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  <li>• 작성한 리뷰: {reviewSummary.total}개</li>
-                  <li>• 평균 평점: {reviewSummary.avgRating}점</li>
-                </ul>
-              </div>
+              <ReviewManagement />
             </div>
           )}
 
