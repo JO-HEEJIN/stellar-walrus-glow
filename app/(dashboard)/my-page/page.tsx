@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { User, Package, MapPin, Star, Settings, Edit2 } from 'lucide-react'
 import ProfileEditForm from '@/components/my-page/profile-edit-form'
 import OrderHistory from '@/components/my-page/order-history'
@@ -30,6 +31,7 @@ interface ReviewSummary {
 
 export default function MyPage() {
   console.log('🔍 MyPage component is rendering')
+  const searchParams = useSearchParams()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     total: 0,
@@ -44,6 +46,14 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+
+  // URL 쿼리 파라미터에서 탭 설정
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'orders', 'addresses', 'reviews', 'settings'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   const loadUserData = async () => {
     try {

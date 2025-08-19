@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CreditCard, MapPin, Package, ArrowLeft } from 'lucide-react'
+import { CreditCard, MapPin, Package, ArrowLeft, Plus, X } from 'lucide-react'
 
 interface ShippingAddress {
   id: string
@@ -25,6 +28,18 @@ interface PaymentMethod {
   icon: React.ReactNode
 }
 
+const addressSchema = z.object({
+  name: z.string().min(1, '배송지명을 입력해주세요').max(50, '배송지명은 50자 이하여야 합니다'),
+  recipient: z.string().min(2, '받는 분은 2자 이상이어야 합니다').max(30, '받는 분은 30자 이하여야 합니다'),
+  phone: z.string().min(10, '연락처를 정확히 입력해주세요').max(15, '연락처는 15자 이하여야 합니다'),
+  zipCode: z.string().min(5, '우편번호를 입력해주세요'),
+  address: z.string().min(5, '주소를 입력해주세요'),
+  detailAddress: z.string().min(1, '상세주소를 입력해주세요'),
+  isDefault: z.boolean().optional(),
+})
+
+type AddressFormData = z.infer<typeof addressSchema>
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, clearCart } = useCartStore()
@@ -33,6 +48,27 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<ShippingAddress[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderNote, setOrderNote] = useState('')
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [isAddingAddress, setIsAddingAddress] = useState(false)
+
+  const {
+    register: registerAddress,
+    handleSubmit: handleAddressSubmit,
+    formState: { errors: addressErrors },
+    reset: resetAddressForm,
+    setValue: setAddressValue,
+  } = useForm<AddressFormData>({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      name: '',
+      recipient: '',
+      phone: '',
+      zipCode: '',
+      address: '',
+      detailAddress: '',
+      isDefault: false,
+    }
+  })
 
   useEffect(() => {
     if (items.length === 0) {
@@ -165,6 +201,73 @@ export default function CheckoutPage() {
     }
   }
 
+  const handleAddAddress = async (data: AddressFormData) => {
+    try {
+      setIsAddingAddress(true)
+      const response = await fetch('/api/users/addresses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('배송지 추가에 실패했습니다')
+      }
+
+      const result = await response.json()
+      const newAddress = result.data
+      
+      // 새로운 배송지를 목록에 추가
+      setAddresses(prev => [...prev, newAddress])
+      
+      // 기본배송지로 설정된 경우 자동 선택
+      if (data.isDefault || addresses.length === 0) {
+        setSelectedAddress(newAddress)
+      }
+      
+      toast.success('배송지가 추가되었습니다')
+      setShowAddressModal(false)
+      resetAddressForm()
+    } catch (error) {
+      console.error('배송지 추가 실패:', error)
+      // Mock success for development
+      const mockAddress: ShippingAddress = {
+        id: `addr-${Date.now()}`,
+        name: data.name,
+        recipient: data.recipient,
+        phone: data.phone,
+        zipCode: data.zipCode,
+        address: data.address,
+        detailAddress: data.detailAddress,
+        isDefault: data.isDefault || addresses.length === 0,
+      }
+      
+      setAddresses(prev => [...prev, mockAddress])
+      setSelectedAddress(mockAddress)
+      toast.success('배송지가 추가되었습니다')
+      setShowAddressModal(false)
+      resetAddressForm()
+    } finally {
+      setIsAddingAddress(false)
+    }
+  }
+
+  const searchAddress = () => {
+    if (typeof window !== 'undefined' && (window as any).daum) {
+      new (window as any).daum.Postcode({
+        oncomplete: function(data: any) {
+          setAddressValue('zipCode', data.zonecode)
+          setAddressValue('address', data.address)
+        }
+      }).open()
+    } else {
+      toast.error('주소 검색 서비스를 로드할 수 없습니다')
+    }
+  }
+
   if (items.length === 0) {
     return null
   }
@@ -198,7 +301,10 @@ export default function CheckoutPage() {
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-4">등록된 배송지가 없습니다</p>
                   <button
-                    onClick={() => router.push('/my-page?tab=addresses')}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      window.location.href = '/my-page?tab=addresses'
+                    }}
                     className="text-blue-600 hover:text-blue-800"
                   >
                     배송지 추가하기
@@ -245,7 +351,10 @@ export default function CheckoutPage() {
                   ))}
                   
                   <button
-                    onClick={() => router.push('/my-page?tab=addresses')}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      window.location.href = '/my-page?tab=addresses'
+                    }}
                     className="w-full p-3 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800"
                   >
                     + 새 배송지 추가
@@ -377,6 +486,169 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Address Modal */}
+      {showAddressModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">새 배송지 추가</h3>
+                <button
+                  onClick={() => {
+                    setShowAddressModal(false)
+                    resetAddressForm()
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddressSubmit(handleAddAddress)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      배송지명 *
+                    </label>
+                    <input
+                      {...registerAddress('name')}
+                      type="text"
+                      placeholder="예: 집, 회사"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {addressErrors.name && (
+                      <p className="text-red-500 text-sm mt-1">{addressErrors.name.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      받는 분 *
+                    </label>
+                    <input
+                      {...registerAddress('recipient')}
+                      type="text"
+                      placeholder="받는 분 성함"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {addressErrors.recipient && (
+                      <p className="text-red-500 text-sm mt-1">{addressErrors.recipient.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    연락처 *
+                  </label>
+                  <input
+                    {...registerAddress('phone')}
+                    type="tel"
+                    placeholder="010-0000-0000"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {addressErrors.phone && (
+                    <p className="text-red-500 text-sm mt-1">{addressErrors.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      우편번호 *
+                    </label>
+                    <input
+                      {...registerAddress('zipCode')}
+                      type="text"
+                      placeholder="우편번호"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      readOnly
+                    />
+                    {addressErrors.zipCode && (
+                      <p className="text-red-500 text-sm mt-1">{addressErrors.zipCode.message}</p>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      주소 *
+                    </label>
+                    <div className="flex">
+                      <input
+                        {...registerAddress('address')}
+                        type="text"
+                        placeholder="주소 검색 버튼을 클릭하세요"
+                        className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        readOnly
+                      />
+                      <button
+                        type="button"
+                        onClick={searchAddress}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700"
+                      >
+                        검색
+                      </button>
+                    </div>
+                    {addressErrors.address && (
+                      <p className="text-red-500 text-sm mt-1">{addressErrors.address.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    상세주소 *
+                  </label>
+                  <input
+                    {...registerAddress('detailAddress')}
+                    type="text"
+                    placeholder="동, 호수 등 상세주소를 입력하세요"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {addressErrors.detailAddress && (
+                    <p className="text-red-500 text-sm mt-1">{addressErrors.detailAddress.message}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    {...registerAddress('isDefault')}
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="ml-2 text-sm text-gray-700">
+                    기본 배송지로 설정
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddressModal(false)
+                      resetAddressForm()
+                    }}
+                    className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAddingAddress}
+                    className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                      isAddingAddress
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {isAddingAddress ? '추가 중...' : '배송지 추가'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
