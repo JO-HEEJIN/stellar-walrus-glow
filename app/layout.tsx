@@ -4,6 +4,7 @@ import Script from 'next/script'
 import './globals.css'
 import GoogleAdSense from './google-adsense'
 import StructuredData from '@/components/seo/structured-data'
+import { LanguageProvider } from '@/lib/contexts/language-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -77,7 +78,9 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
         
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   )

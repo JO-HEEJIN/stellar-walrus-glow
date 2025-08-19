@@ -9,12 +9,17 @@ import { useCartStore } from '@/lib/stores/cart'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 import { CreditCard, MapPin, Package, ArrowLeft, Plus, X } from 'lucide-react'
+import { useLanguage } from '@/lib/contexts/language-context'
 
 interface ShippingAddress {
   id: string
   name: string
   recipient: string
   phone: string
+  country: 'KR' | 'CN'
+  province?: string
+  city?: string
+  district?: string
   zipCode: string
   address: string
   detailAddress: string
@@ -32,7 +37,11 @@ const addressSchema = z.object({
   name: z.string().min(1, '배송지명을 입력해주세요').max(50, '배송지명은 50자 이하여야 합니다'),
   recipient: z.string().min(2, '받는 분은 2자 이상이어야 합니다').max(30, '받는 분은 30자 이하여야 합니다'),
   phone: z.string().min(10, '연락처를 정확히 입력해주세요').max(15, '연락처는 15자 이하여야 합니다'),
-  zipCode: z.string().min(5, '우편번호를 입력해주세요'),
+  country: z.enum(['KR', 'CN']),
+  province: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  zipCode: z.string().min(3, '우편번호를 입력해주세요'),
   address: z.string().min(5, '주소를 입력해주세요'),
   detailAddress: z.string().min(1, '상세주소를 입력해주세요'),
   isDefault: z.boolean().optional(),
@@ -43,6 +52,7 @@ type AddressFormData = z.infer<typeof addressSchema>
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, clearCart } = useCartStore()
+  const { language, t } = useLanguage()
   const [selectedAddress, setSelectedAddress] = useState<ShippingAddress | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<string>('card')
   const [addresses, setAddresses] = useState<ShippingAddress[]>([])
@@ -50,6 +60,7 @@ export default function CheckoutPage() {
   const [orderNote, setOrderNote] = useState('')
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [isAddingAddress, setIsAddingAddress] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState<'KR' | 'CN'>(language === 'zh' ? 'CN' : 'KR')
 
   const {
     register: registerAddress,
@@ -63,12 +74,25 @@ export default function CheckoutPage() {
       name: '',
       recipient: '',
       phone: '',
+      country: language === 'zh' ? 'CN' as const : 'KR' as const,
+      province: '',
+      city: '',
+      district: '',
       zipCode: '',
       address: '',
       detailAddress: '',
       isDefault: false,
     }
   })
+
+  // 국가 변경시 폼 리셋
+  useEffect(() => {
+    setAddressValue('country', selectedCountry)
+    if (selectedCountry === 'CN') {
+      setAddressValue('zipCode', '')
+      setAddressValue('address', '')
+    }
+  }, [selectedCountry, setAddressValue])
 
   useEffect(() => {
     if (items.length === 0) {
@@ -107,6 +131,10 @@ export default function CheckoutPage() {
           name: '집',
           recipient: '홍길동',
           phone: '010-1234-5678',
+          country: 'KR' as const,
+          province: '',
+          city: '',
+          district: '',
           zipCode: '06142',
           address: '서울특별시 강남구 테헤란로 123',
           detailAddress: '456호',
@@ -118,23 +146,65 @@ export default function CheckoutPage() {
     }
   }
 
-  const paymentMethods: PaymentMethod[] = [
-    {
-      id: 'card',
-      name: '신용카드',
-      description: '안전한 카드 결제',
-      icon: <CreditCard className="h-5 w-5" />
-    },
-    {
-      id: 'bank',
-      name: '무통장입금',
-      description: '계좌이체로 결제',
-      icon: <Package className="h-5 w-5" />
-    },
-  ]
+  // 국가별 결제 수단
+  const getPaymentMethods = (country: string): PaymentMethod[] => {
+    const commonMethods = [
+      {
+        id: 'card',
+        name: t.creditCard,
+        description: language === 'ko' ? '안전한 카드 결제' : '安全的卡片支付',
+        icon: <CreditCard className="h-5 w-5" />
+      }
+    ]
+    
+    if (country === 'CN') {
+      return [
+        ...commonMethods,
+        {
+          id: 'alipay',
+          name: t.alipay,
+          description: language === 'ko' ? '알리페이로 결제' : '支付宝支付',
+          icon: <Package className="h-5 w-5" />
+        },
+        {
+          id: 'wechat',
+          name: t.wechatPay,
+          description: language === 'ko' ? '위챗페이로 결제' : '微信支付',
+          icon: <Package className="h-5 w-5" />
+        }
+      ]
+    }
+    
+    return [
+      ...commonMethods,
+      {
+        id: 'bank',
+        name: t.bankTransfer,
+        description: language === 'ko' ? '계좌이체로 결제' : '银行转账支付',
+        icon: <Package className="h-5 w-5" />
+      }
+    ]
+  }
+  
+  const paymentMethods = getPaymentMethods(selectedAddress?.country || 'KR')
 
   const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const shippingFee = totalAmount >= 50000 ? 0 : 3000
+  
+  // 배송비 계산 (국가별)
+  const calculateShippingFee = (address: ShippingAddress | null) => {
+    if (!address) return 0
+    
+    if (address.country === 'KR') {
+      // 한국 국내배송: 5만원 이상 무료
+      return totalAmount >= 50000 ? 0 : 3000
+    } else if (address.country === 'CN') {
+      // 중국 해외배송: EMS 20만원 이상 무료
+      return totalAmount >= 200000 ? 0 : 25000
+    }
+    return 0
+  }
+  
+  const shippingFee = calculateShippingFee(selectedAddress)
   const finalAmount = totalAmount + shippingFee
 
   const handleOrder = async () => {
@@ -239,6 +309,10 @@ export default function CheckoutPage() {
         name: data.name,
         recipient: data.recipient,
         phone: data.phone,
+        country: data.country,
+        province: data.province,
+        city: data.city,
+        district: data.district,
         zipCode: data.zipCode,
         address: data.address,
         detailAddress: data.detailAddress,
@@ -342,9 +416,19 @@ export default function CheckoutPage() {
                           <p className="text-sm text-gray-600 mt-1">
                             {address.recipient} | {address.phone}
                           </p>
-                          <p className="text-sm text-gray-600">
-                            ({address.zipCode}) {address.address} {address.detailAddress}
-                          </p>
+                          <div className="text-sm text-gray-600">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                {address.country === 'KR' ? t.korea : t.china}
+                              </span>
+                              {address.country === 'CN' && address.province && (
+                                <span className="text-xs text-gray-500">{address.province}</span>
+                              )}
+                            </div>
+                            <p>
+                              ({address.zipCode}) {address.address} {address.detailAddress}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </label>
@@ -448,12 +532,21 @@ export default function CheckoutPage() {
                   <span>{formatPrice(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>배송비</span>
+                  <div>
+                    <span>배송비</span>
+                    {selectedAddress && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {selectedAddress.country === 'KR' ? `${t.domesticShipping} (5만원이상 ${t.freeShipping})` : `EMS ${t.internationalShipping} (20만원이상 ${t.freeShipping})`}
+                      </div>
+                    )}
+                  </div>
                   <span>
                     {shippingFee === 0 ? (
-                      <span className="text-green-600">무료</span>
+                      <span className="text-green-600">{t.freeShipping}</span>
                     ) : (
-                      formatPrice(shippingFee)
+                      <span className={selectedAddress?.country === 'CN' ? 'text-orange-600' : ''}>
+                        {formatPrice(shippingFee)}
+                      </span>
                     )}
                   </span>
                 </div>
@@ -465,10 +558,21 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {totalAmount < 50000 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  50,000원 이상 구매시 무료배송
-                </p>
+              {selectedAddress && (
+                <div className="text-xs text-gray-500 mt-2">
+                  {selectedAddress.country === 'KR' ? (
+                    totalAmount < 50000 && (
+                      <p>50,000원 이상 구매시 무료배송</p>
+                    )
+                  ) : (
+                    <div>
+                      <p className="text-orange-600 font-medium">EMS 해외배송 (3-5일 소요)</p>
+                      {totalAmount < 200000 && (
+                        <p>200,000원 이상 구매시 무료배송</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               <button
@@ -553,47 +657,145 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      우편번호 *
-                    </label>
-                    <input
-                      {...registerAddress('zipCode')}
-                      type="text"
-                      placeholder="우편번호"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      readOnly
-                    />
-                    {addressErrors.zipCode && (
-                      <p className="text-red-500 text-sm mt-1">{addressErrors.zipCode.message}</p>
-                    )}
+                {/* 국가 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    국가 *
+                  </label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value as 'KR' | 'CN')}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="KR">{t.korea}</option>
+                    <option value="CN">{t.china}</option>
+                  </select>
+                </div>
+
+                {selectedCountry === 'CN' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        성/직할시 *
+                      </label>
+                      <input
+                        {...registerAddress('province')}
+                        type="text"
+                        placeholder="예: 북경시, 상해시"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {addressErrors.province && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.province.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        도시 *
+                      </label>
+                      <input
+                        {...registerAddress('city')}
+                        type="text"
+                        placeholder="도시명"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {addressErrors.city && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.city.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        구/현
+                      </label>
+                      <input
+                        {...registerAddress('district')}
+                        type="text"
+                        placeholder="구/현명"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {addressErrors.district && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.district.message}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      주소 *
-                    </label>
-                    <div className="flex">
+                )}
+
+                {/* 주소 입력 */}
+                {selectedCountry === 'KR' ? (
+                  // 한국 주소 (다음 우편번호 API 사용)
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        우편번호 *
+                      </label>
+                      <input
+                        {...registerAddress('zipCode')}
+                        type="text"
+                        placeholder="우편번호"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        readOnly
+                      />
+                      {addressErrors.zipCode && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.zipCode.message}</p>
+                      )}
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        주소 *
+                      </label>
+                      <div className="flex">
+                        <input
+                          {...registerAddress('address')}
+                          type="text"
+                          placeholder="주소 검색 버튼을 클릭하세요"
+                          className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          readOnly
+                        />
+                        <button
+                          type="button"
+                          onClick={searchAddress}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700"
+                        >
+                          검색
+                        </button>
+                      </div>
+                      {addressErrors.address && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.address.message}</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // 중국 주소 (수동 입력)
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        우편번호 *
+                      </label>
+                      <input
+                        {...registerAddress('zipCode')}
+                        type="text"
+                        placeholder="예: 100000"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {addressErrors.zipCode && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.zipCode.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        주소 *
+                      </label>
                       <input
                         {...registerAddress('address')}
                         type="text"
-                        placeholder="주소 검색 버튼을 클릭하세요"
-                        className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        readOnly
+                        placeholder="상세 주소를 입력하세요"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
-                      <button
-                        type="button"
-                        onClick={searchAddress}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-r-lg hover:bg-gray-700"
-                      >
-                        검색
-                      </button>
+                      {addressErrors.address && (
+                        <p className="text-red-500 text-sm mt-1">{addressErrors.address.message}</p>
+                      )}
                     </div>
-                    {addressErrors.address && (
-                      <p className="text-red-500 text-sm mt-1">{addressErrors.address.message}</p>
-                    )}
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
