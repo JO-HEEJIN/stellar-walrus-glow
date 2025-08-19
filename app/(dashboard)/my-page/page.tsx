@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, Package, MapPin, Star, Settings, Edit2 } from 'lucide-react'
 import ProfileEditForm from '@/components/my-page/profile-edit-form'
 import OrderHistory from '@/components/my-page/order-history'
+import AddressManagement from '@/components/my-page/address-management'
 
 interface UserProfile {
   id: string
@@ -242,9 +243,7 @@ export default function MyPage() {
           {activeTab === 'addresses' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">배송지 관리</h3>
-              <div className="text-gray-600">
-                <p>배송지 관리 기능을 구현 중입니다.</p>
-              </div>
+              <AddressManagement userId={user?.id || user?.email || 'dev-user'} />
             </div>
           )}
 
