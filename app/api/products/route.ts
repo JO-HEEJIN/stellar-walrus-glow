@@ -302,8 +302,8 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    logger.error('Product fetch error:', error)
-    return createErrorResponse(error as Error, request.url)
+    logger.error('Product fetch error:', error instanceof Error ? error : new Error(String(error)))
+    return createErrorResponse(error instanceof Error ? error : new Error(String(error)), request.url)
   }
 }
 
@@ -318,7 +318,7 @@ const createProductSchema = z.object({
   categoryId: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   basePrice: z.number().positive(),
   inventory: z.number().int().min(0),
-  thumbnailImage: z.string().url().min(1), // Required
+  thumbnailImage: z.string().url().optional().or(z.literal('')).transform(val => val === '' ? undefined : val), // Optional
   images: z.array(z.string().url()).max(10).default([]),
   options: z.record(z.array(z.string())).optional(),
 })
@@ -518,6 +518,7 @@ export async function POST(request: NextRequest) {
         data: {
           ...data,
           categoryId: data.categoryId || null, // Convert empty string to null
+          thumbnailImage: data.thumbnailImage || null, // Allow null thumbnail
           status: data.inventory > 0 ? ProductStatus.ACTIVE : ProductStatus.OUT_OF_STOCK,
         },
         include: {
@@ -550,6 +551,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: product }, { status: 201 })
   } catch (error) {
     logger.apiError('POST', '/api/products', error instanceof Error ? error : new Error(String(error)))
-    return createErrorResponse(error as Error, request.url)
+    return createErrorResponse(error instanceof Error ? error : new Error(String(error)), request.url)
   }
 }
