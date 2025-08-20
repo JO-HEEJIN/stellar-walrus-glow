@@ -19,6 +19,7 @@ interface Product {
   basePrice: number
   brandId: string
   inventory: number
+  stock?: number
   status: string
   imageUrl?: string | null
   thumbnailImage?: string | null
@@ -251,15 +252,15 @@ export default function ProductList({ userRole }: ProductListProps) {
                           })
                         }
                       }}
-                      disabled={product.stock === 0}
+                      disabled={(product.stock ?? product.inventory) === 0}
                       className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-                        product.stock === 0
+                        (product.stock ?? product.inventory) === 0
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-primary text-white hover:bg-primary/90'
                       }`}
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      {product.stock === 0 ? '품절' : '장바구니 담기'}
+                      {(product.stock ?? product.inventory) === 0 ? '품절' : '장바구니 담기'}
                     </button>
                   )}
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(userRole) && (
