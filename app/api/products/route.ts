@@ -6,7 +6,6 @@ import { rateLimiters, getIdentifier } from '@/lib/rate-limit'
 import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/lib/errors'
 import { ProductStatus } from '@/types'
 import { logger } from '@/lib/logger'
-import { getMockProductsResponse } from './mock-route'
 
 // Search/filter schema
 const searchSchema = z.object({
@@ -302,16 +301,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(totalItems / query.limit),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Product fetch error:', error)
-    
-    // 데이터베이스 연결 실패 시 mock 데이터 반환
-    if (error.code === 'P1001' || error.message?.includes("Can't reach database server")) {
-      console.warn('Database connection failed, returning mock data')
-      const mockResponse = getMockProductsResponse(query.page, query.limit)
-      return NextResponse.json(mockResponse)
-    }
-    
     return createErrorResponse(error as Error, request.url)
   }
 }

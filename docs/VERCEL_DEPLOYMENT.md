@@ -1,33 +1,45 @@
 # Vercel 배포 가이드
 
-## 🚨 현재 발생한 데이터베이스 연결 오류 해결
+## 🚨 RDS 연결 오류 해결 방법
 
-### 오류 내용
+### 문제 상황
+Vercel에서 AWS RDS Aurora에 연결할 수 없는 상태입니다. 이는 AWS 보안 설정 때문입니다.
+
+### 즉시 해결 방법
+
+#### 1단계: AWS RDS 콘솔에서 설정 확인
+1. [AWS RDS 콘솔](https://console.aws.amazon.com/rds) 접속
+2. `k-fashion-aurora-cluster` 선택
+3. "연결 및 보안" 탭 확인
+4. **퍼블릭 액세스 가능** 상태 확인 (아니요로 되어 있을 가능성 높음)
+
+#### 2단계: RDS 클러스터 수정
+1. "수정" 버튼 클릭
+2. "연결" 섹션에서:
+   - **퍼블릭 액세스 가능**: 예 선택
+3. "계속" 클릭
+4. "즉시 적용" 선택
+5. "클러스터 수정" 클릭
+
+#### 3단계: 보안 그룹 설정
+1. RDS 클러스터의 VPC 보안 그룹 클릭
+2. "인바운드 규칙" 탭
+3. "규칙 편집" 클릭
+4. 다음 규칙 추가:
+   ```
+   유형: MySQL/Aurora
+   프로토콜: TCP
+   포트 범위: 3306
+   소스: 0.0.0.0/0
+   설명: Vercel Access (임시)
+   ```
+5. "규칙 저장"
+
+#### 4단계: Vercel 환경 변수 확인
+Vercel 대시보드에서 DATABASE_URL이 올바른지 확인:
 ```
-Can't reach database server at `k-fashion-aurora-cluster-instance-1-us-east-2b.cf462wy64uko.us-east-2.rds.amazonaws.com:3306`
+mysql://[사용자명]:[비밀번호]@k-fashion-aurora-cluster-instance-1-us-east-2b.cf462wy64uko.us-east-2.rds.amazonaws.com:3306/[데이터베이스명]
 ```
-
-### 해결 방법
-
-1. **AWS RDS 보안 그룹 설정**
-   - AWS Console > RDS > 데이터베이스 클러스터 선택
-   - VPC 보안 그룹 클릭
-   - 인바운드 규칙 편집
-   - 다음 규칙 추가:
-     ```
-     유형: MySQL/Aurora
-     포트: 3306
-     소스: 0.0.0.0/0 (또는 Vercel IP 범위)
-     ```
-
-2. **Vercel 정적 IP 사용 (권장)**
-   - Vercel Pro 계정이 필요합니다
-   - 고정 IP를 받아 AWS 보안 그룹에 추가
-
-3. **임시 해결책: 퍼블릭 액세스 허용**
-   - RDS 클러스터 수정
-   - "퍼블릭 액세스 가능" 옵션 활성화
-   - 보안 그룹에서 모든 IP (0.0.0.0/0) 허용
 
 ## 필수 환경 변수 설정
 
