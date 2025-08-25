@@ -37,7 +37,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Check if we're in Vercel production without proper DB access
-const isVercelProd = process.env.VERCEL && !process.env.DATABASE_URL?.includes('planetscale');
+const isVercelProd = process.env.VERCEL && !process.env.DATABASE_URL;
 
 // Connection retry logic
 export async function withRetry<T>(
