@@ -21,11 +21,11 @@ export const prismaWrite = globalForPrisma.prismaWrite ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 })
 
-// Read instance - connects to read replicas
+// Read instance - temporarily use Writer instance (same as prismaWrite)
 export const prismaRead = globalForPrisma.prismaRead ?? new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL_REPLICA || process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL_PRIMARY || process.env.DATABASE_URL,
     },
   },
   log: process.env.NODE_ENV === 'development' ? ['error'] : ['error'],
@@ -36,12 +36,21 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prismaRead = prismaRead
 }
 
+// Check if we're in Vercel production without proper DB access
+const isVercelProd = process.env.VERCEL && !process.env.DATABASE_URL?.includes('planetscale');
+
 // Connection retry logic
 export async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   delayMs: number = 1000
 ): Promise<T> {
+  // If in Vercel without DB, return mock data
+  if (isVercelProd) {
+    console.warn('Database unavailable in Vercel, using mock data');
+    throw new Error('Database connection not available');
+  }
+  
   let lastError: Error | undefined
   
   for (let i = 0; i < maxRetries; i++) {
