@@ -111,16 +111,18 @@ export class RDSDataAPIClient {
 
   private formatParameters(params: any[]) {
     return params.map((param) => {
+      const baseParam = { name: '' } // Empty name for positional parameters
+      
       if (typeof param === 'string') {
-        return { value: { stringValue: param } }
+        return { ...baseParam, value: { stringValue: param } }
       } else if (typeof param === 'number') {
-        return { value: { longValue: param } }
+        return { ...baseParam, value: { longValue: param } }
       } else if (typeof param === 'boolean') {
-        return { value: { booleanValue: param } }
+        return { ...baseParam, value: { booleanValue: param } }
       } else if (param === null || param === undefined) {
-        return { value: { isNull: true } }
+        return { ...baseParam, value: { isNull: true } }
       }
-      return { value: { stringValue: String(param) } }
+      return { ...baseParam, value: { stringValue: String(param) } }
     })
   }
 
