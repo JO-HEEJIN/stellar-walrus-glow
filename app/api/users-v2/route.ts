@@ -49,42 +49,9 @@ export async function GET(request: NextRequest) {
     // Get database adapter
     const db = getDatabase()
 
-    // Build SQL query for users with filtering
-    let sql = 'SELECT * FROM User'
-    const params: any[] = []
-    const whereConditions: string[] = []
-    
-    if (search) {
-      whereConditions.push('(name LIKE ? OR email LIKE ?)')
-      params.push(`%${search}%`, `%${search}%`)
-    }
-    
-    if (role) {
-      whereConditions.push('role = ?')
-      params.push(role)
-    }
-    
-    if (whereConditions.length > 0) {
-      sql += ' WHERE ' + whereConditions.join(' AND ')
-    }
-    
-    sql += ' ORDER BY createdAt DESC'
-    
-    if (limit) {
-      sql += ' LIMIT ?'
-      params.push(limit)
-    }
-    
-    if (offset) {
-      sql += ' OFFSET ?'
-      params.push(offset)
-    }
-
-    // Get users and total count using database adapter
-    const [users, totalCount] = await Promise.all([
-      db.client.query(sql, params).then(result => result.rows),
-      db.getUserCount({ search, role })
-    ])
+    // Use database adapter's client query method through a public interface
+    const users = await db.getUsers({ search, role, limit, offset })
+    const totalCount = await db.getUserCount({ search, role })
 
     const totalPages = Math.ceil(totalCount / limit)
     const hasMore = page < totalPages

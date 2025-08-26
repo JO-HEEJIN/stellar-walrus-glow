@@ -170,6 +170,48 @@ export class DatabaseAdapter {
     return result.rows[0] || null
   }
 
+  async getUsers(options: {
+    search?: string
+    role?: string
+    limit?: number
+    offset?: number
+  } = {}) {
+    const { search, role, limit = 10, offset = 0 } = options
+    
+    let sql = 'SELECT * FROM User'
+    const params: any[] = []
+    const whereConditions: string[] = []
+    
+    if (search) {
+      whereConditions.push('(name LIKE ? OR email LIKE ?)')
+      params.push(`%${search}%`, `%${search}%`)
+    }
+    
+    if (role) {
+      whereConditions.push('role = ?')
+      params.push(role)
+    }
+    
+    if (whereConditions.length > 0) {
+      sql += ' WHERE ' + whereConditions.join(' AND ')
+    }
+    
+    sql += ' ORDER BY createdAt DESC'
+    
+    if (limit) {
+      sql += ' LIMIT ?'
+      params.push(limit)
+    }
+    
+    if (offset) {
+      sql += ' OFFSET ?'
+      params.push(offset)
+    }
+    
+    const result = await this.client.query(sql, params)
+    return result.rows
+  }
+
   async getUserCount(options: {
     search?: string
     role?: string
