@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     // Analytics query performance
     const analyticsStart = Date.now()
-    const analyticsData = await db.getAnalyticsOverview()
+    await db.getAnalyticsOverview()
     const analyticsTime = Date.now() - analyticsStart
 
     logger.info('Performance metrics collected', {

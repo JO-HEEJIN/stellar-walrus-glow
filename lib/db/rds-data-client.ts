@@ -23,8 +23,7 @@ export class RDSDataAPIClient {
     this.config = config
     this.client = new RDSDataClient({ 
       region: config.region,
-      maxAttempts: 3, // Retry failed requests
-      requestTimeout: 30000 // 30 second timeout
+      maxAttempts: 3 // Retry failed requests
     })
     this.queryCache = new Map()
   }
@@ -152,7 +151,7 @@ export class RDSDataAPIClient {
   // Prisma-compatible methods
   async findFirst(table: string, where: Record<string, any> = {}) {
     const conditions = Object.entries(where)
-      .map(([key, value]) => `${key} = ?`)
+      .map(([key]) => `${key} = ?`)
       .join(' AND ')
     
     const sql = `SELECT * FROM ${table}${conditions ? ` WHERE ${conditions}` : ''} LIMIT 1`
@@ -170,7 +169,7 @@ export class RDSDataAPIClient {
     const { where = {}, limit, offset } = options
     
     const conditions = Object.entries(where)
-      .map(([key, value]) => `${key} = ?`)
+      .map(([key]) => `${key} = ?`)
       .join(' AND ')
     
     let sql = `SELECT * FROM ${table}`
