@@ -29,7 +29,7 @@ export class DatabaseAdapter {
       sortOrder = 'desc' 
     } = options
     
-    let sql = 'SELECT * FROM `Product`'
+    let sql = 'SELECT * FROM \`Product\`'
     const params: any[] = []
     const whereConditions: string[] = []
     
@@ -82,7 +82,7 @@ export class DatabaseAdapter {
   }
 
   async getProductById(id: string) {
-    const sql = 'SELECT * FROM `Product` WHERE id = ?'
+    const sql = 'SELECT * FROM \`Product\` WHERE id = ?'
     const result = await this.client.query(sql, [id])
     return result.rows[0] || null
   }
@@ -95,7 +95,7 @@ export class DatabaseAdapter {
   } = {}) {
     const { search, brandId, categoryId, status } = options
     
-    let sql = 'SELECT COUNT(*) as count FROM `Product`'
+    let sql = 'SELECT COUNT(*) as count FROM \`Product\`'
     const params: any[] = []
     const whereConditions: string[] = []
     
@@ -165,7 +165,7 @@ export class DatabaseAdapter {
 
   // User operations
   async getUserByEmail(email: string) {
-    const sql = 'SELECT * FROM `User` WHERE email = ?'
+    const sql = 'SELECT * FROM \`User\` WHERE email = ?'
     const result = await this.client.query(sql, [email])
     return result.rows[0] || null
   }
@@ -178,7 +178,7 @@ export class DatabaseAdapter {
   } = {}) {
     const { search, role, limit = 10, offset = 0 } = options
     
-    let sql = 'SELECT * FROM `User`'
+    let sql = 'SELECT * FROM \`User\`'
     const params: any[] = []
     const whereConditions: string[] = []
     
@@ -218,7 +218,7 @@ export class DatabaseAdapter {
   } = {}) {
     const { search, role } = options
     
-    let sql = 'SELECT COUNT(*) as count FROM `User`'
+    let sql = 'SELECT COUNT(*) as count FROM \`User\`'
     const params: any[] = []
     const whereConditions: string[] = []
     
@@ -241,7 +241,7 @@ export class DatabaseAdapter {
   }
 
   async getUserById(id: string) {
-    const sql = 'SELECT * FROM `User` WHERE id = ?'
+    const sql = 'SELECT * FROM \`User\` WHERE id = ?'
     const result = await this.client.query(sql, [id])
     return result.rows[0] || null
   }
@@ -273,10 +273,10 @@ export class DatabaseAdapter {
   // Analytics operations
   async getAnalyticsOverview() {
     const queries = [
-      { sql: 'SELECT COUNT(*) as totalUsers FROM `User`' },
-      { sql: 'SELECT COUNT(*) as totalProducts FROM `Product`' },
-      { sql: 'SELECT COUNT(*) as totalOrders FROM `Order`' },
-      { sql: 'SELECT COALESCE(SUM(totalAmount), 0) as totalRevenue FROM `Order`' }
+      { sql: 'SELECT COUNT(*) as totalUsers FROM \`User\`' },
+      { sql: 'SELECT COUNT(*) as totalProducts FROM \`Product\`' },
+      { sql: 'SELECT COUNT(*) as totalOrders FROM \`Order\`' },
+      { sql: 'SELECT COALESCE(SUM(totalAmount), 0) as totalRevenue FROM \`Order\`' }
     ]
     
     // Use batch query for better performance
@@ -293,8 +293,8 @@ export class DatabaseAdapter {
   async getRecentOrders(limit = 10) {
     const sql = `
       SELECT o.*, u.email as userEmail, u.name as userName
-      FROM `Order` o
-      LEFT JOIN User u ON o.userId = u.id
+      FROM \`Order\` o
+      LEFT JOIN \`User\` u ON o.userId = u.id
       ORDER BY o.createdAt DESC
       LIMIT ?
     `
@@ -306,8 +306,8 @@ export class DatabaseAdapter {
   async getOrderById(id: string) {
     const sql = `
       SELECT o.*, u.email as userEmail, u.name as userName
-      FROM `Order` o
-      LEFT JOIN User u ON o.userId = u.id
+      FROM \`Order\` o
+      LEFT JOIN \`User\` u ON o.userId = u.id
       WHERE o.id = ?
     `
     const result = await this.client.query(sql, [id])
@@ -321,7 +321,7 @@ export class DatabaseAdapter {
     const { limit = 10, offset = 0 } = options
     
     const sql = `
-      SELECT * FROM `Order`
+      SELECT * FROM \`Order\`
       WHERE userId = ?
       ORDER BY createdAt DESC
       LIMIT ? OFFSET ?
@@ -345,7 +345,7 @@ export class DatabaseAdapter {
     
     // Insert order
     const orderSql = `
-      INSERT INTO `Order` (id, userId, totalAmount, status, shippingAddress, createdAt, updatedAt)
+      INSERT INTO \`Order\` (id, userId, totalAmount, status, shippingAddress, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, NOW(), NOW())
     `
     
@@ -360,7 +360,7 @@ export class DatabaseAdapter {
     // Insert order items
     if (data.items && data.items.length > 0) {
       const itemsSql = `
-        INSERT INTO `OrderItem` (id, orderId, productId, quantity, price, createdAt, updatedAt)
+        INSERT INTO \`OrderItem\` (id, orderId, productId, quantity, price, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?, NOW(), NOW())
       `
       
