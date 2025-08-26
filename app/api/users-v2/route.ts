@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    logger.error('User fetch error:', error)
+    logger.error('User fetch error:', error instanceof Error ? error : new Error(String(error)))
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    logger.error('User creation error:', error)
+    logger.error('User creation error:', error instanceof Error ? error : new Error(String(error)))
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(

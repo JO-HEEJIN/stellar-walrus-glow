@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    logger.error('Analytics fetch error:', error)
+    logger.error('Analytics fetch error:', error instanceof Error ? error : new Error(String(error)))
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
