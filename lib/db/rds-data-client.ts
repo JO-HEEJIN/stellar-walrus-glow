@@ -29,9 +29,16 @@ export class RDSDataAPIClient {
   }
 
   async query(sql: string, params: any[] = []): Promise<QueryResult> {
+    // Replace ? placeholders with :param1, :param2, etc.
+    let paramIndex = 0
+    const processedSql = sql.replace(/\?/g, () => {
+      paramIndex++
+      return `:param${paramIndex}`
+    })
+    
     // Check if this is a read-only query that can be cached
-    const isReadQuery = sql.trim().toUpperCase().startsWith('SELECT')
-    const cacheKey = isReadQuery ? `${sql}|${JSON.stringify(params)}` : null
+    const isReadQuery = processedSql.trim().toUpperCase().startsWith('SELECT')
+    const cacheKey = isReadQuery ? `${processedSql}|${JSON.stringify(params)}` : null
     
     // Check cache for read queries
     if (cacheKey && this.queryCache.has(cacheKey)) {
@@ -44,15 +51,21 @@ export class RDSDataAPIClient {
     }
 
     try {
-      const command = new ExecuteStatementCommand({
+      const commandConfig: any = {
         resourceArn: this.config.clusterArn,
         secretArn: this.config.secretArn,
         database: this.config.database,
-        sql,
-        parameters: this.formatParameters(params),
+        sql: processedSql,
         includeResultMetadata: true,
         formatRecordsAs: 'JSON'
-      })
+      }
+      
+      // Only add parameters if there are any
+      if (params && params.length > 0) {
+        commandConfig.parameters = this.formatParameters(params)
+      }
+      
+      const command = new ExecuteStatementCommand(commandConfig)
 
       const response = await this.client.send(command)
       
@@ -78,6 +91,8 @@ export class RDSDataAPIClient {
       return result
     } catch (error) {
       console.error('RDS Data API Error:', error)
+      console.error('SQL:', processedSql)
+      console.error('Params:', params)
       throw new Error(`Database query failed: ${error}`)
     }
   }
@@ -110,19 +125,20 @@ export class RDSDataAPIClient {
   }
 
   private formatParameters(params: any[]) {
-    return params.map((param) => {
-      const baseParam = { name: '' } // Empty name for positional parameters
+    return params.map((param, index) => {
+      // Use named parameters with index-based names
+      const name = `param${index + 1}`
       
       if (typeof param === 'string') {
-        return { ...baseParam, value: { stringValue: param } }
+        return { name, value: { stringValue: param } }
       } else if (typeof param === 'number') {
-        return { ...baseParam, value: { longValue: param } }
+        return { name, value: { longValue: param } }
       } else if (typeof param === 'boolean') {
-        return { ...baseParam, value: { booleanValue: param } }
+        return { name, value: { booleanValue: param } }
       } else if (param === null || param === undefined) {
-        return { ...baseParam, value: { isNull: true } }
+        return { name, value: { isNull: true } }
       }
-      return { ...baseParam, value: { stringValue: String(param) } }
+      return { name, value: { stringValue: String(param) } }
     })
   }
 
