@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError('Too many requests', ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED),
-        HttpStatus.TOO_MANY_REQUESTS
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
       )
     }
 
@@ -150,14 +149,12 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError('Invalid query parameters', ErrorCodes.VALIDATION_ERROR, error.errors),
-        HttpStatus.BAD_REQUEST
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
       )
     }
 
     return createErrorResponse(
-      new BusinessError('Failed to fetch analytics', ErrorCodes.DATABASE_ERROR),
-      HttpStatus.INTERNAL_SERVER_ERROR
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
     )
   }
 }

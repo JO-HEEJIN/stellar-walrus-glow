@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError('Too many requests', ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED),
-        HttpStatus.TOO_MANY_REQUESTS
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
       )
     }
 
@@ -119,14 +118,12 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError('Invalid query parameters', ErrorCodes.VALIDATION_ERROR, error.errors),
-        HttpStatus.BAD_REQUEST
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
       )
     }
 
     return createErrorResponse(
-      new BusinessError('Failed to fetch users', ErrorCodes.DATABASE_ERROR),
-      HttpStatus.INTERNAL_SERVER_ERROR
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
     )
   }
 }
@@ -144,8 +141,7 @@ export async function POST(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError('Too many user creation requests', ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED),
-        HttpStatus.TOO_MANY_REQUESTS
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
       )
     }
 
@@ -160,8 +156,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await db.getUserByEmail(userData.email)
     if (existingUser) {
       return createErrorResponse(
-        new BusinessError('User with this email already exists', ErrorCodes.DUPLICATE_ENTRY),
-        HttpStatus.CONFLICT
+        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT)
       )
     }
 
@@ -189,22 +184,19 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError('Invalid user data', ErrorCodes.VALIDATION_ERROR, error.errors),
-        HttpStatus.BAD_REQUEST
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
       )
     }
 
     // Handle duplicate email or other database errors
     if (error instanceof Error && error.message.includes('Duplicate entry')) {
       return createErrorResponse(
-        new BusinessError('User with this email already exists', ErrorCodes.DUPLICATE_ENTRY),
-        HttpStatus.CONFLICT
+        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT)
       )
     }
 
     return createErrorResponse(
-      new BusinessError('Failed to create user', ErrorCodes.DATABASE_ERROR),
-      HttpStatus.INTERNAL_SERVER_ERROR
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
     )
   }
 }

@@ -18,8 +18,7 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError('Too many requests', ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED),
-        HttpStatus.TOO_MANY_REQUESTS
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
       )
     }
 
@@ -92,8 +91,7 @@ export async function GET(request: NextRequest) {
     logger.error('Performance monitoring error:', error)
     
     return createErrorResponse(
-      new BusinessError('Failed to get performance metrics', ErrorCodes.DATABASE_ERROR),
-      HttpStatus.INTERNAL_SERVER_ERROR
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
     )
   }
 }
