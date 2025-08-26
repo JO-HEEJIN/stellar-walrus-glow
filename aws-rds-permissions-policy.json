@@ -1,0 +1,47 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "RDSDataAccess",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBClusters",
+        "rds-data:ExecuteStatement",
+        "rds-data:BatchExecuteStatement",
+        "rds-data:BeginTransaction",
+        "rds-data:CommitTransaction",
+        "rds-data:RollbackTransaction"
+      ],
+      "Resource": [
+        "arn:aws:rds:us-east-2:711082721767:cluster:k-fashion-aurora-cluster",
+        "arn:aws:rds:us-east-2:711082721767:cluster:k-fashion-aurora-cluster/*"
+      ]
+    },
+    {
+      "Sid": "SecretsManagerAccess",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": "arn:aws:secretsmanager:us-east-2:711082721767:secret:rds!cluster-*",
+      "Condition": {
+        "StringEquals": {
+          "secretsmanager:ResourceTag/aws:rds:DatabaseEngine": "aurora-mysql"
+        }
+      }
+    },
+    {
+      "Sid": "RDSConnect",
+      "Effect": "Allow",
+      "Action": [
+        "rds-db:connect"
+      ],
+      "Resource": [
+        "arn:aws:rds-db:us-east-2:711082721767:dbuser:db-*/vercel-app",
+        "arn:aws:rds-db:us-east-2:711082721767:dbuser:*/vercel-app"
+      ]
+    }
+  ]
+}

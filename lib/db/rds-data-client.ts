@@ -16,13 +16,34 @@ export interface QueryResult {
 export class RDSDataAPIClient {
   private client: RDSDataClient
   private config: RDSDataClientConfig
+  private queryCache: Map<string, { result: QueryResult; timestamp: number }>
+  private cacheTimeout: number = 30000 // 30 seconds
 
   constructor(config: RDSDataClientConfig) {
     this.config = config
-    this.client = new RDSDataClient({ region: config.region })
+    this.client = new RDSDataClient({ 
+      region: config.region,
+      maxAttempts: 3, // Retry failed requests
+      requestTimeout: 30000 // 30 second timeout
+    })
+    this.queryCache = new Map()
   }
 
   async query(sql: string, params: any[] = []): Promise<QueryResult> {
+    // Check if this is a read-only query that can be cached
+    const isReadQuery = sql.trim().toUpperCase().startsWith('SELECT')
+    const cacheKey = isReadQuery ? `${sql}|${JSON.stringify(params)}` : null
+    
+    // Check cache for read queries
+    if (cacheKey && this.queryCache.has(cacheKey)) {
+      const cached = this.queryCache.get(cacheKey)!
+      if (Date.now() - cached.timestamp < this.cacheTimeout) {
+        return cached.result
+      }
+      // Remove expired cache entry
+      this.queryCache.delete(cacheKey)
+    }
+
     try {
       const command = new ExecuteStatementCommand({
         resourceArn: this.config.clusterArn,
@@ -36,14 +57,56 @@ export class RDSDataAPIClient {
 
       const response = await this.client.send(command)
       
-      return {
+      const result = {
         rows: this.formatResults(response),
         affectedRows: response.numberOfRecordsUpdated,
         insertId: response.generatedFields?.[0]?.longValue
       }
+
+      // Cache read queries
+      if (cacheKey && result.rows.length > 0) {
+        this.queryCache.set(cacheKey, {
+          result,
+          timestamp: Date.now()
+        })
+        
+        // Clean up old cache entries to prevent memory leak
+        if (this.queryCache.size > 100) {
+          this.cleanupCache()
+        }
+      }
+      
+      return result
     } catch (error) {
       console.error('RDS Data API Error:', error)
       throw new Error(`Database query failed: ${error}`)
+    }
+  }
+
+  private cleanupCache() {
+    const now = Date.now()
+    for (const [key, value] of this.queryCache.entries()) {
+      if (now - value.timestamp > this.cacheTimeout) {
+        this.queryCache.delete(key)
+      }
+    }
+  }
+
+  async batchQuery(queries: Array<{sql: string; params?: any[]}>): Promise<QueryResult[]> {
+    // Execute queries in parallel for better performance
+    const promises = queries.map(({ sql, params = [] }) => this.query(sql, params))
+    return Promise.all(promises)
+  }
+
+  clearCache() {
+    this.queryCache.clear()
+  }
+
+  getCacheStats() {
+    return {
+      size: this.queryCache.size,
+      entries: Array.from(this.queryCache.keys()),
+      timeout: this.cacheTimeout
     }
   }
 
