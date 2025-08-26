@@ -15,7 +15,7 @@ export async function GET() {
         resourceArn: process.env.RDS_CLUSTER_ARN || 'arn:aws:rds:us-east-2:711082721767:cluster:k-fashion-aurora-cluster',
         secretArn: process.env.RDS_SECRET_ARN || 'arn:aws:secretsmanager:us-east-2:711082721767:secret:rds-proxy-k-fashion-secrets-ZQBz8g',
         database: process.env.RDS_DATABASE_NAME || 'kfashion',
-        sql: 'SELECT 1 as test, NOW() as current_time',
+        sql: 'SELECT 1 as test',
         includeResultMetadata: true
       })
 
