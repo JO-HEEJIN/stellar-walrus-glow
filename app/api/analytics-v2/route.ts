@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS),
+        request.url
       )
     }
 
@@ -149,12 +150,14 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors),
+        request.url
       )
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      request.url
     )
   }
 }

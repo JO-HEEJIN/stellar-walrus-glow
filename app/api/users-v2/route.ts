@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS),
+        request.url
       )
     }
 
@@ -118,12 +119,14 @@ export async function GET(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors),
+        request.url
       )
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      request.url
     )
   }
 }
@@ -141,7 +144,8 @@ export async function POST(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS)
+        new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS),
+        request.url
       )
     }
 
@@ -156,7 +160,8 @@ export async function POST(request: NextRequest) {
     const existingUser = await db.getUserByEmail(userData.email)
     if (existingUser) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT)
+        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT),
+        request.url
       )
     }
 
@@ -184,19 +189,22 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors)
+        new BusinessError(ErrorCodes.VALIDATION_ERROR, HttpStatus.BAD_REQUEST, error.errors),
+        request.url
       )
     }
 
     // Handle duplicate email or other database errors
     if (error instanceof Error && error.message.includes('Duplicate entry')) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT)
+        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT),
+        request.url
       )
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
+      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      request.url
     )
   }
 }
