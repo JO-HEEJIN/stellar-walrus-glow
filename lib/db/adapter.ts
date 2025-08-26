@@ -354,6 +354,16 @@ export class DatabaseAdapter {
       }
     }
   }
+
+  // Get cache statistics
+  getCacheStats() {
+    return this.client.getCacheStats()
+  }
+
+  // Clear cache
+  clearCache() {
+    this.client.clearCache()
+  }
 }
 
 // Singleton instance

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const connectionTime = Date.now() - connectionStart
 
     // Get cache statistics
-    const cacheStats = db.client.getCacheStats()
+    const cacheStats = db.getCacheStats()
 
     // Test query performance
     const queryStart = Date.now()
