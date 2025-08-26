@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      new BusinessError(ErrorCodes.SYSTEM_DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
       request.url
     )
   }
@@ -183,13 +183,13 @@ export async function POST(request: NextRequest) {
     // Handle duplicate SKU or other database errors
     if (error instanceof Error && error.message.includes('Duplicate entry')) {
       return createErrorResponse(
-        new BusinessError(ErrorCodes.DUPLICATE_ENTRY, HttpStatus.CONFLICT),
+        new BusinessError(ErrorCodes.PRODUCT_SKU_EXISTS, HttpStatus.CONFLICT),
         request.url
       )
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      new BusinessError(ErrorCodes.SYSTEM_DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
       request.url
     )
   }

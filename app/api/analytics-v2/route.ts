@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
     }
 
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      new BusinessError(ErrorCodes.SYSTEM_DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
       request.url
     )
   }

@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     logger.error('Performance monitoring error:', error instanceof Error ? error : new Error(String(error)))
     
     return createErrorResponse(
-      new BusinessError(ErrorCodes.DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+      new BusinessError(ErrorCodes.SYSTEM_DATABASE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
       request.url
     )
   }
