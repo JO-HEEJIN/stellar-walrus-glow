@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       await rateLimiters.api.limit(identifier)
     } catch (error) {
       return createErrorResponse(
-        new BusinessError('Too many requests', ErrorCodes.RATE_LIMITED),
+        new BusinessError('Too many requests', ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED),
         HttpStatus.TOO_MANY_REQUESTS
       )
     }
