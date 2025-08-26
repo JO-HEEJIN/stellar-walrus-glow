@@ -32,9 +32,18 @@ export async function GET() {
     } catch (sdkError) {
       return NextResponse.json({
         status: 'error',
-        message: 'AWS SDK not available',
+        message: 'RDS Data API Error',
         error: sdkError instanceof Error ? sdkError.message : String(sdkError),
-        note: 'Run: npm install @aws-sdk/client-rds-data'
+        errorDetails: {
+          name: sdkError instanceof Error ? sdkError.name : 'Unknown',
+          stack: sdkError instanceof Error ? sdkError.stack : undefined
+        },
+        environment: {
+          hasClusterArn: !!process.env.RDS_CLUSTER_ARN,
+          hasSecretArn: !!process.env.RDS_SECRET_ARN,
+          hasRegion: !!process.env.AWS_REGION,
+          hasRoleArn: !!process.env.AWS_ROLE_ARN
+        }
       }, { status: 500 })
     }
 
