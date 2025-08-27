@@ -118,10 +118,10 @@ export async function GET(request: NextRequest) {
       ('BRAND_001', 'K-Fashion Seoul', 'k-fashion-seoul', TRUE),
       ('BRAND_002', 'Modern Korean', 'modern-korean', TRUE)`, [])
       
-    await db.rawQuery(`INSERT IGNORE INTO Category (id, name, nameEn) VALUES 
-      ('CAT_001', '상의', 'Top'),
-      ('CAT_002', '하의', 'Bottom'),
-      ('CAT_003', '아우터', 'Outer')`, [])
+    await db.rawQuery(`INSERT IGNORE INTO Category (id, name) VALUES 
+      ('CAT_001', '상의'),
+      ('CAT_002', '하의'),
+      ('CAT_003', '아우터')`, [])
     
     // Check final state
     const tables = await db.rawQuery('SHOW TABLES', [])
