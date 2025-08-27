@@ -283,8 +283,8 @@ export class DatabaseAdapter {
     const queries = [
       { sql: 'SELECT COUNT(*) as totalUsers FROM User' },
       { sql: 'SELECT COUNT(*) as totalProducts FROM Product' },
-      { sql: 'SELECT COUNT(*) as totalOrders FROM `Order`' },
-      { sql: 'SELECT COALESCE(SUM(totalAmount), 0) as totalRevenue FROM `Order`' }
+      { sql: 'SELECT COUNT(*) as totalOrders FROM \`Order\`' },
+      { sql: 'SELECT COALESCE(SUM(totalAmount), 0) as totalRevenue FROM \`Order\`' }
     ]
     
     // Use batch query for better performance
@@ -301,7 +301,7 @@ export class DatabaseAdapter {
   async getRecentOrders(limit = 10) {
     const sql = `
       SELECT o.*, u.email as userEmail, u.name as userName
-      FROM `Order` o
+      FROM \`Order\` o
       LEFT JOIN User u ON o.userId = u.id
       ORDER BY o.createdAt DESC
       LIMIT ?
@@ -314,7 +314,7 @@ export class DatabaseAdapter {
   async getOrderById(id: string) {
     const sql = `
       SELECT o.*, u.email as userEmail, u.name as userName
-      FROM `Order` o
+      FROM \`Order\` o
       LEFT JOIN User u ON o.userId = u.id
       WHERE o.id = ?
     `
@@ -329,7 +329,7 @@ export class DatabaseAdapter {
     const { limit = 10, offset = 0 } = options
     
     const sql = `
-      SELECT * FROM `Order`
+      SELECT * FROM \`Order\`
       WHERE userId = ?
       ORDER BY createdAt DESC
       LIMIT ? OFFSET ?
@@ -353,7 +353,7 @@ export class DatabaseAdapter {
     
     // Insert order
     const orderSql = `
-      INSERT INTO `Order` (id, userId, totalAmount, status, shippingAddress, createdAt, updatedAt)
+      INSERT INTO \`Order\` (id, userId, totalAmount, status, shippingAddress, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, NOW(), NOW())
     `
     
@@ -368,7 +368,7 @@ export class DatabaseAdapter {
     // Insert order items
     if (data.items && data.items.length > 0) {
       const itemsSql = `
-        INSERT INTO `OrderItem` (id, orderId, productId, quantity, price, createdAt, updatedAt)
+        INSERT INTO \`OrderItem\` (id, orderId, productId, quantity, price, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?, NOW(), NOW())
       `
       
