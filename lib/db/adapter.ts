@@ -340,7 +340,7 @@ export class DatabaseAdapter {
 
   async createOrder(data: {
     userId: string
-    total: number
+    totalAmount: number
     status?: string
     shippingAddress?: any
     items: Array<{
@@ -348,21 +348,26 @@ export class DatabaseAdapter {
       quantity: number
       price: number
     }>
+    memo?: string
   }) {
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     // Insert order
     const orderSql = `
-      INSERT INTO \`Order\` (id, userId, totalAmount, status, shippingAddress, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+      INSERT INTO \`Order\` (id, orderNumber, userId, totalAmount, status, shippingAddress, memo, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `
+    
+    const orderNumber = `ORD-${Date.now().toString().slice(-8)}`
     
     await this.client.query(orderSql, [
       orderId,
+      orderNumber,
       data.userId,
-      data.total,
+      data.totalAmount,
       data.status || 'PENDING',
-      JSON.stringify(data.shippingAddress || {})
+      JSON.stringify(data.shippingAddress || {}),
+      data.memo || null
     ])
     
     // Insert order items
@@ -384,7 +389,7 @@ export class DatabaseAdapter {
       }
     }
     
-    return { id: orderId, ...data }
+    return { id: orderId, orderNumber, ...data }
   }
 
   // Test database connection
