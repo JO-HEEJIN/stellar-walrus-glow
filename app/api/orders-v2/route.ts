@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     
     // Rate limiting
     try {
-      await rateLimiters.orderCreation.limit(identifier)
+      await rateLimiters.orderCreate.limit(identifier)
     } catch (error) {
       return createErrorResponse(
         new BusinessError(ErrorCodes.SYSTEM_RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS),
