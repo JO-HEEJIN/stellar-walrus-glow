@@ -71,9 +71,13 @@ export async function GET(request: NextRequest) {
     let debugInfo = null
     try {
       const testQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Product', [])
+      const tableStructure = await db.rawQuery('SHOW COLUMNS FROM Product', [])
+      const allTables = await db.rawQuery('SHOW TABLES', [])
       debugInfo = {
         totalProductsInDB: testQuery.rows[0]?.count || 0,
-        rawResult: testQuery
+        rawResult: testQuery,
+        tableStructure: tableStructure.rows,
+        allTables: allTables.rows
       }
     } catch (debugError) {
       debugInfo = {
