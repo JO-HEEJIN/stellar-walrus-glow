@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Add debug query to check database connection
     let debugInfo = null
     try {
-      const testQuery = await db.rawQuery('SELECT COUNT(*) as count FROM \\`Product\\`', [])
+      const testQuery = await db.rawQuery('SELECT COUNT(*) as count FROM Product', [])
       debugInfo = {
         totalProductsInDB: testQuery.rows[0]?.count || 0,
         rawResult: testQuery
