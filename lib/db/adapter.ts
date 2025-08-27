@@ -34,7 +34,7 @@ export class DatabaseAdapter {
     const whereConditions: string[] = []
     
     if (search) {
-      whereConditions.push('(name LIKE ? OR description LIKE ?)')
+      whereConditions.push('(nameKo LIKE ? OR descriptionKo LIKE ?)')
       params.push(`%${search}%`, `%${search}%`)
     }
     
@@ -50,7 +50,7 @@ export class DatabaseAdapter {
     
     if (status) {
       if (status === 'OUT_OF_STOCK') {
-        whereConditions.push('stock = 0')
+        whereConditions.push('inventory = 0')
       } else {
         whereConditions.push('status = ?')
         params.push(status)
@@ -62,8 +62,11 @@ export class DatabaseAdapter {
     }
     
     // Add sorting
-    const allowedSortFields = ['createdAt', 'price', 'name']
-    const sortField = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt'
+    const allowedSortFields = ['createdAt', 'basePrice', 'nameKo']
+    let sortField = 'createdAt'
+    if (sortBy === 'price') sortField = 'basePrice'
+    else if (sortBy === 'name') sortField = 'nameKo'
+    else if (allowedSortFields.includes(sortBy)) sortField = sortBy
     const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     sql += ` ORDER BY ${sortField} ${order}`
     
@@ -100,7 +103,7 @@ export class DatabaseAdapter {
     const whereConditions: string[] = []
     
     if (search) {
-      whereConditions.push('(name LIKE ? OR description LIKE ?)')
+      whereConditions.push('(nameKo LIKE ? OR descriptionKo LIKE ?)')
       params.push(`%${search}%`, `%${search}%`)
     }
     
@@ -116,7 +119,7 @@ export class DatabaseAdapter {
     
     if (status) {
       if (status === 'OUT_OF_STOCK') {
-        whereConditions.push('stock = 0')
+        whereConditions.push('inventory = 0')
       } else {
         whereConditions.push('status = ?')
         params.push(status)
@@ -142,8 +145,8 @@ export class DatabaseAdapter {
     stock?: number
   }) {
     const sql = `
-      INSERT INTO Product (id, name, description, price, sku, brandId, categoryId, imageUrl, stock, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      INSERT INTO \`Product\` (id, nameKo, descriptionKo, basePrice, sku, brandId, categoryId, thumbnailImage, inventory, status, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', NOW(), NOW())
     `
     
     const id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
