@@ -67,6 +67,20 @@ export async function GET(request: NextRequest) {
     // Get database adapter
     const db = getDatabase()
 
+    // Add debug query to check database connection
+    let debugInfo = null
+    try {
+      const testQuery = await db.rawQuery('SELECT COUNT(*) as count FROM \\`Product\\`', [])
+      debugInfo = {
+        totalProductsInDB: testQuery.rows[0]?.count || 0,
+        rawResult: testQuery
+      }
+    } catch (debugError) {
+      debugInfo = {
+        error: debugError instanceof Error ? debugError.message : String(debugError)
+      }
+    }
+
     // Get products and total count
     const [products, totalCount] = await Promise.all([
       db.getProducts({
@@ -107,7 +121,8 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString(),
         apiVersion: 'v2',
         dataSource: 'RDS Data API'
-      }
+      },
+      debug: debugInfo
     })
 
   } catch (error) {
