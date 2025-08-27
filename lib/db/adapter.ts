@@ -7,6 +7,11 @@ export class DatabaseAdapter {
     this.client = createRDSDataClient()
   }
 
+  // Public method to execute raw queries for debugging
+  async rawQuery(sql: string, params: any[] = []) {
+    return this.client.query(sql, params)
+  }
+
   // Product operations
   async getProducts(options: {
     limit?: number
