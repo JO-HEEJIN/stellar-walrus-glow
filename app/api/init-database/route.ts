@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       )`,
       
       // Order table (Order is reserved word, use backticks)
-      `CREATE TABLE IF NOT EXISTS \\`Order\\` (
+      `CREATE TABLE IF NOT EXISTS \`Order\` (
         id VARCHAR(255) PRIMARY KEY,
         orderNumber VARCHAR(255) UNIQUE,
         userId VARCHAR(255),
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         price DECIMAL(10, 2) NOT NULL,
         options JSON,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (orderId) REFERENCES \\`Order\\`(id),
+        FOREIGN KEY (orderId) REFERENCES \`Order\`(id),
         FOREIGN KEY (productId) REFERENCES Product(id)
       )`
     ]
