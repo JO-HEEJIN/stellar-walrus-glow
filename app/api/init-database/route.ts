@@ -3,7 +3,7 @@ import { getDatabase } from '@/lib/db/adapter'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const db = getDatabase()
     
@@ -143,4 +143,9 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 })
   }
+}
+
+export async function POST(request: NextRequest) {
+  // Same as GET
+  return GET(request)
 }
