@@ -699,14 +699,16 @@ export default function HomePage() {
                 
                 {/* 드롭다운 메뉴 */}
                 {hoveredNav === item && (item === '브랜드' || item === '남성' || item === '여성') && (
+                  <>
+                    {console.log('Rendering dropdown for:', item, 'hoveredNav:', hoveredNav)}
                   <div 
-                    className="absolute top-full left-0 mt-1 bg-red-100 border-2 border-red-500 rounded-lg shadow-xl z-[9999] min-w-[200px] animate-fadeIn"
+                    className="fixed top-20 left-20 bg-red-100 border-2 border-red-500 rounded-lg shadow-xl z-[9999] min-w-[200px] animate-fadeIn"
                     onMouseEnter={handleDropdownMouseEnter}
                     onMouseLeave={handleDropdownMouseLeave}
                     style={{ 
-                      position: 'absolute', 
-                      top: '100%', 
-                      left: '0', 
+                      position: 'fixed', 
+                      top: '80px', 
+                      left: '80px', 
                       zIndex: 9999,
                       backgroundColor: '#fecaca',
                       border: '2px solid #ef4444'
@@ -740,6 +742,7 @@ export default function HomePage() {
                       </div>
                     ))}
                   </div>
+                  </>
                 )}
               </div>
             ))}
