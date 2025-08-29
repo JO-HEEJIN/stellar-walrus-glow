@@ -457,14 +457,12 @@ export default function HomePage() {
 
   // 드롭다운 호버 핸들러
   const handleNavMouseEnter = (item: string) => {
-    console.log('Mouse enter:', item);
     if (dropdownTimeout) {
       clearTimeout(dropdownTimeout);
       setDropdownTimeout(null);
     }
     if (item === '브랜드' || item === '남성' || item === '여성') {
       setHoveredNav(item);
-      console.log('Set hoveredNav to:', item);
     }
   };
 
@@ -699,20 +697,10 @@ export default function HomePage() {
                 
                 {/* 드롭다운 메뉴 */}
                 {hoveredNav === item && (item === '브랜드' || item === '남성' || item === '여성') && (
-                  <>
-                    {console.log('Rendering dropdown for:', item, 'hoveredNav:', hoveredNav)}
                   <div 
-                    className="fixed top-20 left-20 bg-red-100 border-2 border-red-500 rounded-lg shadow-xl z-[9999] min-w-[200px] animate-fadeIn"
+                    className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] min-w-[200px] animate-fadeIn"
                     onMouseEnter={handleDropdownMouseEnter}
                     onMouseLeave={handleDropdownMouseLeave}
-                    style={{ 
-                      position: 'fixed', 
-                      top: '80px', 
-                      left: '80px', 
-                      zIndex: 9999,
-                      backgroundColor: '#fecaca',
-                      border: '2px solid #ef4444'
-                    }}
                   >
                     {item === '브랜드' && brandCategories.all.map((brand) => (
                       <div
@@ -742,7 +730,6 @@ export default function HomePage() {
                       </div>
                     ))}
                   </div>
-                  </>
                 )}
               </div>
             ))}
