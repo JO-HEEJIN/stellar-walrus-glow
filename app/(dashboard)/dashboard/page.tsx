@@ -50,7 +50,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { overview, ordersByStatus, dailyRevenue, topProducts } = analyticsData || {}
+  const { overview = {}, ordersByStatus = [], dailyRevenue = [], topProducts = [] } = analyticsData || {}
 
   return (
     <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="오늘 매출"
-            value={`₩${overview?.todayRevenue?.toLocaleString() || 0}`}
+            value={`₩${(overview.todayRevenue || 0).toLocaleString()}`}
             change={overview?.revenueChange ? {
               value: parseFloat(overview.revenueChange),
               isPositive: parseFloat(overview.revenueChange) > 0
@@ -99,7 +99,7 @@ export default function DashboardPage() {
             }
           />
           
-          {overview?.totalUsers !== undefined && overview.totalUsers > 0 && (
+          {overview.totalUsers > 0 && (
             <StatsCard
               title="전체 사용자"
               value={overview.totalUsers}
