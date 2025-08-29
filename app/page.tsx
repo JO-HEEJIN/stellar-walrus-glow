@@ -21,6 +21,8 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [language, setLanguage] = useState<'ko' | 'zh'>('ko');
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Prevent hydration mismatch with cart count
   const cartCount = isHydrated ? getTotalItems() : 0;
@@ -80,6 +82,35 @@ export default function HomePage() {
   };
 
   const t = texts[language];
+
+  // 브랜드별 성별 구분 데이터
+  const brandCategories = {
+    male: [
+      { name: 'MALBON GOLF', slug: 'malbon-golf' },
+      { name: 'SOUTHCAPE', slug: 'southcape' },
+      { name: 'St.Andrews', slug: 'st-andrews' },
+      { name: 'G/FORE', slug: 'g-fore' },
+      { name: 'Modern Korean', slug: 'modern-korean' },
+      { name: 'Hanbok Modern', slug: 'hanbok-modern' },
+      { name: 'Urban Korean', slug: 'urban-korean' }
+    ],
+    female: [
+      { name: 'K-Fashion Seoul', slug: 'k-fashion-seoul' },
+      { name: 'Modern Korean', slug: 'modern-korean' },
+      { name: 'Hanbok Modern', slug: 'hanbok-modern' },
+      { name: 'Urban Korean', slug: 'urban-korean' }
+    ],
+    all: [
+      { name: 'MALBON GOLF', slug: 'malbon-golf' },
+      { name: 'SOUTHCAPE', slug: 'southcape' },
+      { name: 'St.Andrews', slug: 'st-andrews' },
+      { name: 'G/FORE', slug: 'g-fore' },
+      { name: 'K-Fashion Seoul', slug: 'k-fashion-seoul' },
+      { name: 'Modern Korean', slug: 'modern-korean' },
+      { name: 'Hanbok Modern', slug: 'hanbok-modern' },
+      { name: 'Urban Korean', slug: 'urban-korean' }
+    ]
+  };
 
   const handleLanguageChange = (lang: 'ko' | 'zh') => {
     setLanguage(lang);
@@ -420,6 +451,45 @@ export default function HomePage() {
     }
   };
 
+  // 드롭다운 호버 핸들러
+  const handleNavMouseEnter = (item: string) => {
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout);
+      setDropdownTimeout(null);
+    }
+    if (item === '브랜드' || item === '남성' || item === '여성') {
+      setHoveredNav(item);
+    }
+  };
+
+  const handleNavMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setHoveredNav(null);
+    }, 200);
+    setDropdownTimeout(timeout);
+  };
+
+  const handleDropdownMouseEnter = () => {
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout);
+      setDropdownTimeout(null);
+    }
+  };
+
+  const handleDropdownMouseLeave = () => {
+    setHoveredNav(null);
+  };
+
+  // 브랜드 선택 핸들러
+  const handleBrandSelect = (brandSlug: string, gender?: string) => {
+    if (gender) {
+      router.push(`/brands/${brandSlug}?gender=${gender}`);
+    } else {
+      router.push(`/brands/${brandSlug}`);
+    }
+    setHoveredNav(null);
+  };
+
   // 네비게이션 변경시 상품 가져오기
   const handleNavChange = async (navItem: string) => {
     setActiveNav(navItem);
@@ -620,20 +690,63 @@ export default function HomePage() {
       </div>
 
       {/* 네비게이션 */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 relative">
         <div className="max-w-[1280px] mx-auto px-5 flex items-center h-12">
           <div className="flex gap-8">
             {navItems.map((item) => (
               <div
                 key={item}
-                onClick={() => handleNavChange(item)}
-                className={`text-sm font-medium cursor-pointer py-1 border-b-2 transition-all ${
-                  activeNav === item
-                    ? 'border-black font-bold'
-                    : 'border-transparent hover:border-black'
-                } ${item === '브랜드' ? 'text-blue-600 font-bold' : ''} ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                className="relative"
+                onMouseEnter={() => handleNavMouseEnter(item)}
+                onMouseLeave={handleNavMouseLeave}
               >
-                {item}
+                <div
+                  onClick={() => handleNavChange(item)}
+                  className={`text-sm font-medium cursor-pointer py-1 border-b-2 transition-all ${
+                    activeNav === item
+                      ? 'border-black font-bold'
+                      : 'border-transparent hover:border-black'
+                  } ${item === '브랜드' ? 'text-blue-600 font-bold' : ''} ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {item}
+                </div>
+                
+                {/* 드롭다운 메뉴 */}
+                {hoveredNav === item && (item === '브랜드' || item === '남성' || item === '여성') && (
+                  <div 
+                    className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] animate-fadeIn"
+                    onMouseEnter={handleDropdownMouseEnter}
+                    onMouseLeave={handleDropdownMouseLeave}
+                  >
+                    {item === '브랜드' && brandCategories.all.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
+                    {item === '남성' && brandCategories.male.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug, 'male')}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
+                    {item === '여성' && brandCategories.female.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug, 'female')}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
