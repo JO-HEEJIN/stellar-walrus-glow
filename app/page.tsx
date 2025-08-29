@@ -12,7 +12,7 @@ export default function HomePage() {
   const router = useRouter();
   const { addItem, getTotalItems } = useCartStore();
   const [activeFilter, setActiveFilter] = useState('전체');
-  const [activeNav, setActiveNav] = useState('추천');
+  const [activeNav, setActiveNav] = useState('여성');
   const [activeSort, setActiveSort] = useState('추천순');
   const [products, setProducts] = useState<any[]>([]);
   const [bestBrandProducts, setBestBrandProducts] = useState<any[]>([]);
@@ -242,7 +242,7 @@ export default function HomePage() {
     })) : [])
   ];
 
-  const navItems = ['추천', '브랜드', '신상품', '베스트', '남성', '여성', '아우터', '상의', '하의', '액세서리', '세일'];
+  const navItems = ['브랜드', '여성', '남성', '신상품', '베스트', '아우터', '상의', '하의', '액세서리', '세일'];
   const sortOptions = ['추천순', '신상품순', '판매량순', '낮은가격순', '높은가격순'];
 
   // Hydration effect
@@ -273,11 +273,11 @@ export default function HomePage() {
           setBrands(brandsData.data || []);
         }
 
-        // 추천 상품 가져오기 (sort=recommended)
-        const recommendedResponse = await fetch('/api/products?limit=8&sort=recommended');
-        if (recommendedResponse.ok) {
-          const recommendedData = await recommendedResponse.json();
-          setProducts(recommendedData.data?.products || mockProducts.slice(0, 8));
+        // 여성 카테고리 상품 가져오기 (기본값)
+        const womenResponse = await fetch('/api/products?limit=8&category=women');
+        if (womenResponse.ok) {
+          const womenData = await womenResponse.json();
+          setProducts(womenData.data?.products || mockProducts.slice(0, 8));
         } else {
           setProducts(mockProducts.slice(0, 8));
         }
@@ -430,20 +430,21 @@ export default function HomePage() {
       
       // 네비게이션에 따른 필터링
       switch (navItem) {
-        case '추천':
-          url += '&sort=recommended';
+        case '브랜드':
+          // 브랜드 페이지로 이동
+          router.push('/brands');
+          return;
+        case '여성':
+          url += '&category=women';
+          break;
+        case '남성':
+          url += '&category=men';
           break;
         case '신상품':
           url += '&sort=newest';
           break;
         case '베스트':
           url += '&sort=sales';
-          break;
-        case '남성':
-          url += '&category=men';
-          break;
-        case '여성':
-          url += '&category=women';
           break;
         case '아우터':
           url += '&category=outer';
@@ -460,10 +461,6 @@ export default function HomePage() {
         case '세일':
           url += '&category=sale';
           break;
-        case '브랜드':
-          // 브랜드 페이지로 이동
-          router.push('/brands');
-          return;
       }
       
       const response = await fetch(url);
@@ -634,7 +631,7 @@ export default function HomePage() {
                   activeNav === item
                     ? 'border-black font-bold'
                     : 'border-transparent hover:border-black'
-                } ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+                } ${item === '브랜드' ? 'text-blue-600 font-bold' : ''} ${loading ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 {item}
               </div>
@@ -643,29 +640,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* B2B 정보 바 */}
-      <div className="bg-blue-50 border-b border-blue-200 py-3">
-        <div className="max-w-[1280px] mx-auto px-5 flex justify-between items-center">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">{t.minOrder}:</span>
-            <span className="font-bold">₩300,000</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">{t.expectedShipping}:</span>
-            <span className="font-bold">3-5일 (EMS)</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">{t.paymentMethod}:</span>
-            <span className="font-bold">{language === 'ko' ? '위챗페이 · 알리페이 · 계좌이체' : '微信支付 · 支付宝 · 银行转账'}</span>
-          </div>
-          <button 
-            onClick={() => router.push('/bulk-order')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors"
-          >
-            📊 {t.bulkOrderExcel}
-          </button>
-        </div>
-      </div>
 
       {/* 필터 바 */}
       <div className="bg-gray-50 border-b border-gray-200 py-4">
