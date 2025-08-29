@@ -290,7 +290,6 @@ export default function HomePage() {
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
-      console.log('Mobile check:', mobile, 'window.innerWidth:', window.innerWidth);
       setIsMobile(mobile);
       // 모바일이 아닌 경우 열린 드롭다운 닫기
       if (!mobile && openDropdown) {
@@ -516,7 +515,6 @@ export default function HomePage() {
 
   // 모바일 클릭 핸들러
   const handleNavClick = (item: string) => {
-    console.log('Nav clicked:', item, 'isMobile:', isMobile, 'openDropdown:', openDropdown);
     if (isMobile && (item === '브랜드' || item === '남성' || item === '여성')) {
       if (openDropdown === item) {
         setOpenDropdown(null);
