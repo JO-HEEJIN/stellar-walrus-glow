@@ -1354,11 +1354,15 @@ export function ProductFormWithImages({
                     {errors.discountPrice && (
                       <p className="text-sm text-red-500">{errors.discountPrice.message}</p>
                     )}
-                    {watch('discountPrice') > 0 && watch('basePrice') > 0 && watch('discountPrice') < watch('basePrice') && (
-                      <p className="text-sm text-green-600 mt-1">
-                        할인율: {Math.round(((watch('basePrice') - watch('discountPrice')) / watch('basePrice')) * 100)}%
-                      </p>
-                    )}
+                    {(() => {
+                      const discountPrice = watch('discountPrice')
+                      const basePrice = watch('basePrice')
+                      return discountPrice && basePrice && discountPrice > 0 && basePrice > 0 && discountPrice < basePrice && (
+                        <p className="text-sm text-green-600 mt-1">
+                          할인율: {Math.round(((basePrice - discountPrice) / basePrice) * 100)}%
+                        </p>
+                      )
+                    })()}
                   </div>
                 </div>
 
