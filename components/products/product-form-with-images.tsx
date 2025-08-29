@@ -82,22 +82,19 @@ const productSchema = z.object({
   if (data.inventory === 0 && data.status === 'ACTIVE') {
     return false
   }
+  return true
+}, {
+  message: '재고가 0개일 때는 상품 상태를 "품절"로 설정해야 합니다',
+  path: ['status']
+}).refine(data => {
   // Validation: discountPrice should be less than basePrice if provided
   if (data.discountPrice && data.discountPrice > 0 && data.discountPrice >= data.basePrice) {
     return false
   }
   return true
 }, {
-  message: data => {
-    if (data.inventory === 0 && data.status === 'ACTIVE') {
-      return '재고가 0개일 때는 상품 상태를 "품절"로 설정해야 합니다'
-    }
-    if (data.discountPrice && data.discountPrice > 0 && data.discountPrice >= data.basePrice) {
-      return '할인 가격은 기본 가격보다 낮아야 합니다'
-    }
-    return ''
-  },
-  path: ['status']
+  message: '할인 가격은 기본 가격보다 낮아야 합니다',
+  path: ['discountPrice']
 })
 
 type ProductFormData = z.infer<typeof productSchema>
