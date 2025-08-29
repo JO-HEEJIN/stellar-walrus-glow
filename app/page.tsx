@@ -273,7 +273,7 @@ export default function HomePage() {
     })) : [])
   ];
 
-  const navItems = ['브랜드', '여성', '남성', '신상품', '베스트', '아우터', '상의', '하의', '액세서리', '세일'];
+  const navItems = ['브랜드', '여성', '남성'];
   const sortOptions = ['추천순', '신상품순', '판매량순', '낮은가격순', '높은가격순'];
 
   // Hydration effect
@@ -509,27 +509,6 @@ export default function HomePage() {
           break;
         case '남성':
           url += '&category=men';
-          break;
-        case '신상품':
-          url += '&sort=newest';
-          break;
-        case '베스트':
-          url += '&sort=sales';
-          break;
-        case '아우터':
-          url += '&category=outer';
-          break;
-        case '상의':
-          url += '&category=top';
-          break;
-        case '하의':
-          url += '&category=bottom';
-          break;
-        case '액세서리':
-          url += '&category=accessories';
-          break;
-        case '세일':
-          url += '&category=sale';
           break;
       }
       
