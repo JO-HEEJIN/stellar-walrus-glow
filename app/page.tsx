@@ -97,7 +97,10 @@ export default function HomePage() {
       { name: 'Urban Korean', slug: 'urban-korean' }
     ],
     female: [
-      { name: 'K-Fashion Seoul', slug: 'k-fashion-seoul' },
+      { name: 'MALBON GOLF', slug: 'malbon-golf' },
+      { name: 'SOUTHCAPE', slug: 'southcape' },
+      { name: 'St.Andrews', slug: 'st-andrews' },
+      { name: 'G/FORE', slug: 'g-fore' },
       { name: 'Modern Korean', slug: 'modern-korean' },
       { name: 'Hanbok Modern', slug: 'hanbok-modern' },
       { name: 'Urban Korean', slug: 'urban-korean' }
