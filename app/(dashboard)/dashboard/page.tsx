@@ -1,12 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BannerAd, SidebarAd } from '@/components/ads/ad-layouts'
 import { StatsCard } from '@/components/dashboard/stats-card'
 import { RevenueChart } from '@/components/dashboard/revenue-chart'
 import { OrderStatusChart } from '@/components/dashboard/order-status-chart'
 import { TopProductsTable } from '@/components/dashboard/top-products-table'
-import { BestsellerProducts } from '@/components/products/bestseller-products'
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -57,11 +55,6 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
-        {/* Dashboard Banner Ad */}
-        <BannerAd 
-          adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_BANNER_SLOT || 'XXXXXXXXXX'} 
-          className="mb-8"
-        />
 
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">대시보드</h1>
         
@@ -120,24 +113,14 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="flex gap-8">
+        <div>
           {/* Main Content */}
-          <div className="flex-1 space-y-8">
+          <div className="space-y-8">
             {/* Revenue Chart */}
             {dailyRevenue && dailyRevenue.length > 0 && (
               <RevenueChart data={dailyRevenue} title="최근 7일 매출 추이" />
             )}
 
-            {/* Bestseller Products Section */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">베스트셀러 상품 🔥</h3>
-                <a href="/products/bestsellers" className="text-sm text-blue-600 hover:text-blue-800">
-                  전체보기 →
-                </a>
-              </div>
-              <BestsellerProducts period="30days" limit={5} compact />
-            </div>
 
             {/* Order Status and Top Products */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -193,12 +176,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Sidebar with Ad */}
-          <div className="w-80 hidden lg:block">
-            <SidebarAd 
-              adSlot={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_SIDEBAR_SLOT || 'XXXXXXXXXX'} 
-            />
-          </div>
         </div>
       </div>
     </div>

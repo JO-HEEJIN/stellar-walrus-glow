@@ -289,14 +289,20 @@ export default function HomePage() {
   // 모바일 감지
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // 모바일이 아닌 경우 열린 드롭다운 닫기
+      if (!mobile && openDropdown) {
+        setOpenDropdown(null);
+      }
     };
     
+    // 초기 체크 및 리사이즈 이벤트 등록
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [openDropdown]);
 
   // 언어 설정 로드
   useEffect(() => {
@@ -470,6 +476,7 @@ export default function HomePage() {
 
   // 드롭다운 호버 핸들러 (데스크톱)
   const handleNavMouseEnter = (item: string) => {
+    // 모바일이 아닌 경우에만 호버 작동
     if (!isMobile) {
       if (dropdownTimeout) {
         clearTimeout(dropdownTimeout);
@@ -477,11 +484,14 @@ export default function HomePage() {
       }
       if (item === '브랜드' || item === '남성' || item === '여성') {
         setHoveredNav(item);
+        // 모바일 드롭다운 닫기
+        setOpenDropdown(null);
       }
     }
   };
 
   const handleNavMouseLeave = () => {
+    // 모바일이 아닌 경우에만 호버 작동
     if (!isMobile) {
       const timeout = setTimeout(() => {
         setHoveredNav(null);
