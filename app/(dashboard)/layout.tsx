@@ -140,12 +140,6 @@ export default function DashboardLayout({
                   {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role) && (
                     <>
                       <Link
-                        href="/inventory"
-                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                      >
-                        재고 관리
-                      </Link>
-                      <Link
                         href="/analytics"
                         className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                       >
@@ -256,13 +250,6 @@ export default function DashboardLayout({
             )}
             {['BRAND_ADMIN', 'MASTER_ADMIN'].includes(user.role) && (
               <>
-                <Link
-                  href="/inventory"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  재고 관리
-                </Link>
                 <Link
                   href="/analytics"
                   onClick={() => setIsMobileMenuOpen(false)}

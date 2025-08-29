@@ -676,7 +676,7 @@ export default function HomePage() {
       {/* 네비게이션 */}
       <div className="bg-white border-b border-gray-200 relative">
         <div className="max-w-[1280px] mx-auto px-5">
-          <div className="flex gap-4 md:gap-8 overflow-x-auto py-3 md:py-0">
+          <div className="flex gap-4 md:gap-8 py-3 md:py-0">
             {navItems.map((item) => (
               <div
                 key={item}

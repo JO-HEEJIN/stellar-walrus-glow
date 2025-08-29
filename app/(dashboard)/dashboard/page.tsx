@@ -139,7 +139,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-medium text-gray-900">상품 관리</p>
-                      <p className="text-xs text-gray-500">새 상품 등록 및 재고 관리</p>
+                      <p className="text-xs text-gray-500">새 상품 등록 및 관리</p>
                     </div>
                   </a>
                   
