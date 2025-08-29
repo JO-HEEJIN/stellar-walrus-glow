@@ -17,7 +17,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { ColorSizeManager } from '@/components/products/color-size-manager'
-import { BulkPricingManager } from '@/components/products/bulk-pricing-manager'
 import { ImageEditor } from '@/components/upload/image-editor'
 
 const productSchema = z.object({
@@ -47,6 +46,12 @@ const productSchema = z.object({
     .min(100, '가격은 최소 100원 이상이어야 합니다')
     .max(10000000, '가격은 1천만원 이하여야 합니다')
     .int('가격은 정수로 입력해주세요'),
+  discountPrice: z.number()
+    .min(0, '할인 가격은 0원 이상이어야 합니다')
+    .max(10000000, '할인 가격은 1천만원 이하여야 합니다')
+    .int('할인 가격은 정수로 입력해주세요')
+    .optional()
+    .or(z.literal(0)),
   inventory: z.number()
     .int('재고는 정수로 입력해주세요')
     .min(0, '재고는 0개 이상이어야 합니다')
@@ -77,9 +82,21 @@ const productSchema = z.object({
   if (data.inventory === 0 && data.status === 'ACTIVE') {
     return false
   }
+  // Validation: discountPrice should be less than basePrice if provided
+  if (data.discountPrice && data.discountPrice > 0 && data.discountPrice >= data.basePrice) {
+    return false
+  }
   return true
 }, {
-  message: '재고가 0개일 때는 상품 상태를 "품절"로 설정해야 합니다',
+  message: data => {
+    if (data.inventory === 0 && data.status === 'ACTIVE') {
+      return '재고가 0개일 때는 상품 상태를 "품절"로 설정해야 합니다'
+    }
+    if (data.discountPrice && data.discountPrice > 0 && data.discountPrice >= data.basePrice) {
+      return '할인 가격은 기본 가격보다 낮아야 합니다'
+    }
+    return ''
+  },
   path: ['status']
 })
 
@@ -122,7 +139,6 @@ export function ProductFormWithImages({
   const [newFeature, setNewFeature] = useState('')
   const [productTags, setProductTags] = useState<string[]>(initialData?.tags || [])
   const [newTag, setNewTag] = useState('')
-  const [bulkPricing, setBulkPricing] = useState<any[]>(initialData?.bulkPricing || [])
   const [skuValidation, setSkuValidation] = useState<{ isChecking: boolean; isValid: boolean | null; message: string }>({
     isChecking: false,
     isValid: null,
@@ -217,7 +233,6 @@ export function ProductFormWithImages({
       if (initialData.sizes) setProductSizes(initialData.sizes)
       if (initialData.features) setProductFeatures(initialData.features)
       if (initialData.tags) setProductTags(initialData.tags)
-      if (initialData.bulkPricing) setBulkPricing(initialData.bulkPricing)
     }
   }, [initialData, setValue])
 
@@ -438,23 +453,7 @@ export function ProductFormWithImages({
     const watchedPrice = watch('basePrice')
     if (typeof watchedPrice !== 'number' || watchedPrice <= 0) return
 
-    // 대량구매 가격과 비교 검증
-    if (bulkPricing.length > 0) {
-      const expensiveBulkPrices = bulkPricing.filter(bp => bp.pricePerUnit >= watchedPrice)
-      if (expensiveBulkPrices.length > 0) {
-        setFieldValidationErrors(prev => ({
-          ...prev,
-          basePrice: '기본 가격은 대량구매 가격보다 높아야 합니다'
-        }))
-      } else {
-        setFieldValidationErrors(prev => {
-          const newErrors = { ...prev }
-          delete newErrors.basePrice
-          return newErrors
-        })
-      }
-    }
-  }, [watch('basePrice'), bulkPricing])
+  }, [watch('basePrice')])
 
   // 재고 상태 실시간 검증
   useEffect(() => {
@@ -493,7 +492,6 @@ export function ProductFormWithImages({
         sizes: productSizes,
         features: productFeatures,
         tags: productTags,
-        bulkPricing: bulkPricing,
         isDraft: true
       }
 
@@ -566,7 +564,6 @@ export function ProductFormWithImages({
           if (draftData.sizes) setProductSizes(draftData.sizes)
           if (draftData.features) setProductFeatures(draftData.features)
           if (draftData.tags) setProductTags(draftData.tags)
-          if (draftData.bulkPricing) setBulkPricing(draftData.bulkPricing)
           
           setAutoSaveStatus({ isAutoSaving: false, lastSaved: savedTime })
         }
@@ -662,8 +659,7 @@ export function ProductFormWithImages({
             sizes: productSizes,
             features: productFeatures,
             tags: productTags,
-            bulkPricing: bulkPricing,
-            timestamp: Date.now()
+                timestamp: Date.now()
           }))
           toast.success('수동 저장 완료')
           break
@@ -675,7 +671,7 @@ export function ProductFormWithImages({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isSubmitting, onCancel, handleSubmit, watch, productColors, productSizes, productFeatures, productTags, bulkPricing, showTemplateDialog, showKeyboardHelp])
+  }, [isSubmitting, onCancel, handleSubmit, watch, productColors, productSizes, productFeatures, productTags, showTemplateDialog, showKeyboardHelp])
 
   // Template management functions
   const saveTemplate = () => {
@@ -695,7 +691,6 @@ export function ProductFormWithImages({
         sizes: productSizes,
         features: productFeatures,
         tags: productTags,
-        bulkPricing: bulkPricing,
         // Don't save images in templates (they're specific to each product)
         thumbnailImage: '',
         images: []
@@ -733,7 +728,6 @@ export function ProductFormWithImages({
       if (data.sizes) setProductSizes(data.sizes)
       if (data.features) setProductFeatures(data.features)
       if (data.tags) setProductTags(data.tags)
-      if (data.bulkPricing) setBulkPricing(data.bulkPricing)
 
       // Clear images since they shouldn't be templated
       setThumbnailImage('')
@@ -854,22 +848,6 @@ export function ProductFormWithImages({
       }
     }
     
-    // Bulk pricing validation
-    if (bulkPricing.length > 0) {
-      const invalidPricing = bulkPricing.filter(bp => 
-        bp.pricePerUnit <= 0 || bp.minQuantity <= 0 || 
-        (bp.maxQuantity && bp.maxQuantity <= bp.minQuantity)
-      )
-      if (invalidPricing.length > 0) {
-        errors.push('대량구매 가격 설정이 올바르지 않습니다')
-      }
-      
-      // Check if bulk prices are lower than base price
-      const expensivePricing = bulkPricing.filter(bp => bp.pricePerUnit >= data.basePrice)
-      if (expensivePricing.length > 0) {
-        errors.push('대량구매 가격은 기본 가격보다 낮아야 합니다')
-      }
-    }
     
     // Features validation
     if (productFeatures.length > 0) {
@@ -982,7 +960,6 @@ export function ProductFormWithImages({
         sizes: productSizes,
         features: productFeatures,
         tags: productTags,
-        bulkPricing: bulkPricing,
       }
 
       console.log('📦 Product data prepared:', productData)
@@ -1217,10 +1194,9 @@ export function ProductFormWithImages({
         <CardContent>
           <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 gap-1">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1">
                 <TabsTrigger value="basic" className="text-xs sm:text-sm">기본 정보</TabsTrigger>
                 <TabsTrigger value="variants" className="text-xs sm:text-sm">색상/사이즈</TabsTrigger>
-                <TabsTrigger value="pricing" className="text-xs sm:text-sm">가격 설정</TabsTrigger>
                 <TabsTrigger value="images" className="text-xs sm:text-sm">이미지</TabsTrigger>
                 <TabsTrigger value="details" className="text-xs sm:text-sm">상세 정보</TabsTrigger>
                 <TabsTrigger value="seo" className="text-xs sm:text-sm">SEO</TabsTrigger>
@@ -1342,25 +1318,51 @@ export function ProductFormWithImages({
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="basePrice">가격 (원) <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="basePrice"
-                    type="number"
-                    min="0"
-                    {...register('basePrice', { valueAsNumber: true })}
-                    placeholder="0"
-                    onKeyDown={(e) => {
-                      if (e.key === '-' || e.key === 'e' || e.key === 'E') {
-                        e.preventDefault()
-                      }
-                    }}
-                  />
-                  {(errors.basePrice || fieldValidationErrors.basePrice) && (
-                    <p className="text-sm text-red-500">
-                      {errors.basePrice?.message || fieldValidationErrors.basePrice}
-                    </p>
-                  )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="basePrice">판매 가격 (원) <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="basePrice"
+                      type="number"
+                      min="0"
+                      {...register('basePrice', { valueAsNumber: true })}
+                      placeholder="0"
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault()
+                        }
+                      }}
+                    />
+                    {(errors.basePrice || fieldValidationErrors.basePrice) && (
+                      <p className="text-sm text-red-500">
+                        {errors.basePrice?.message || fieldValidationErrors.basePrice}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="discountPrice">할인 가격 (원)</Label>
+                    <Input
+                      id="discountPrice"
+                      type="number"
+                      min="0"
+                      {...register('discountPrice', { valueAsNumber: true })}
+                      placeholder="0"
+                      onKeyDown={(e) => {
+                        if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault()
+                        }
+                      }}
+                    />
+                    {errors.discountPrice && (
+                      <p className="text-sm text-red-500">{errors.discountPrice.message}</p>
+                    )}
+                    {watch('discountPrice') > 0 && watch('basePrice') > 0 && watch('discountPrice') < watch('basePrice') && (
+                      <p className="text-sm text-green-600 mt-1">
+                        할인율: {Math.round(((watch('basePrice') - watch('discountPrice')) / watch('basePrice')) * 100)}%
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -1572,13 +1574,6 @@ export function ProductFormWithImages({
                 />
               </TabsContent>
 
-              <TabsContent value="pricing" className="space-y-6">
-                <BulkPricingManager
-                  basePrice={watch('basePrice') || 0}
-                  bulkPricing={bulkPricing}
-                  onBulkPricingChange={setBulkPricing}
-                />
-              </TabsContent>
 
               <TabsContent value="images" className="space-y-6">
                 <div>
@@ -2125,20 +2120,16 @@ export function ProductFormWithImages({
                     <Badge variant="outline" className="text-xs">2</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span>가격 설정</span>
+                    <span>이미지</span>
                     <Badge variant="outline" className="text-xs">3</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span>이미지</span>
+                    <span>상세 정보</span>
                     <Badge variant="outline" className="text-xs">4</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span>상세 정보</span>
-                    <Badge variant="outline" className="text-xs">5</Badge>
-                  </div>
-                  <div className="flex justify-between">
                     <span>SEO</span>
-                    <Badge variant="outline" className="text-xs">6</Badge>
+                    <Badge variant="outline" className="text-xs">5</Badge>
                   </div>
                 </div>
               </div>
@@ -2214,7 +2205,7 @@ export function ProductFormWithImages({
                   <ul className="text-xs text-blue-700 space-y-1">
                     <li>• 브랜드, 카테고리, 상품명</li>
                     <li>• 가격, 재고, 상태 정보</li>
-                    <li>• 색상, 사이즈, 대량구매 설정</li>
+                    <li>• 색상, 사이즈 설정</li>
                     <li>• 소재, 관리방법, 특징, 태그</li>
                     <li>• SEO 정보 (제목, 설명, 키워드)</li>
                     <li>• 배송 정보 (무게, 크기)</li>
