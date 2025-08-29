@@ -23,8 +23,6 @@ export default function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   // Prevent hydration mismatch with cart count
   const cartCount = isHydrated ? getTotalItems() : 0;
@@ -286,23 +284,6 @@ export default function HomePage() {
     setIsHydrated(true);
   }, []);
 
-  // 모바일 감지
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // 모바일이 아닌 경우 열린 드롭다운 닫기
-      if (!mobile && openDropdown) {
-        setOpenDropdown(null);
-      }
-    };
-    
-    // 초기 체크 및 리사이즈 이벤트 등록
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [openDropdown]);
 
   // 언어 설정 로드
   useEffect(() => {
@@ -474,72 +455,37 @@ export default function HomePage() {
     }
   };
 
-  // 드롭다운 호버 핸들러 (데스크톱)
+  // 드롭다운 호버 핸들러
   const handleNavMouseEnter = (item: string) => {
-    // 모바일이 아닌 경우에만 호버 작동
-    if (!isMobile) {
-      if (dropdownTimeout) {
-        clearTimeout(dropdownTimeout);
-        setDropdownTimeout(null);
-      }
-      if (item === '브랜드' || item === '남성' || item === '여성') {
-        setHoveredNav(item);
-        // 모바일 드롭다운 닫기
-        setOpenDropdown(null);
-      }
+    console.log('Mouse enter:', item);
+    if (dropdownTimeout) {
+      clearTimeout(dropdownTimeout);
+      setDropdownTimeout(null);
+    }
+    if (item === '브랜드' || item === '남성' || item === '여성') {
+      setHoveredNav(item);
+      console.log('Set hoveredNav to:', item);
     }
   };
 
   const handleNavMouseLeave = () => {
-    // 모바일이 아닌 경우에만 호버 작동
-    if (!isMobile) {
-      const timeout = setTimeout(() => {
-        setHoveredNav(null);
-      }, 200);
-      setDropdownTimeout(timeout);
-    }
+    const timeout = setTimeout(() => {
+      setHoveredNav(null);
+    }, 200);
+    setDropdownTimeout(timeout);
   };
 
   const handleDropdownMouseEnter = () => {
-    if (!isMobile && dropdownTimeout) {
+    if (dropdownTimeout) {
       clearTimeout(dropdownTimeout);
       setDropdownTimeout(null);
     }
   };
 
   const handleDropdownMouseLeave = () => {
-    if (!isMobile) {
-      setHoveredNav(null);
-    }
+    setHoveredNav(null);
   };
 
-  // 모바일 클릭 핸들러
-  const handleNavClick = (item: string) => {
-    if (isMobile && (item === '브랜드' || item === '남성' || item === '여성')) {
-      if (openDropdown === item) {
-        setOpenDropdown(null);
-      } else {
-        setOpenDropdown(item);
-      }
-    } else if (!isMobile || (item !== '브랜드' && item !== '남성' && item !== '여성')) {
-      handleNavChange(item);
-    }
-  };
-
-  // 모바일에서 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.nav-item') && !target.closest('.dropdown-menu')) {
-        setOpenDropdown(null);
-      }
-    };
-
-    if (isMobile) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [isMobile]);
 
   // 브랜드 선택 핸들러
   const handleBrandSelect = (brandSlug: string, gender?: string) => {
@@ -741,82 +687,58 @@ export default function HomePage() {
                 onMouseLeave={handleNavMouseLeave}
               >
                 <div
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleNavClick(item);
-                  }}
-                  className={`text-sm md:text-base font-medium cursor-pointer py-2 md:py-3 px-2 border-b-2 transition-all flex items-center gap-1 ${
+                  onClick={() => handleNavChange(item)}
+                  className={`text-sm font-medium cursor-pointer py-1 border-b-2 transition-all ${
                     activeNav === item
                       ? 'border-black font-bold'
                       : 'border-transparent hover:border-black'
                   } ${item === '브랜드' ? 'text-blue-600 font-bold' : ''} ${loading ? 'opacity-50 pointer-events-none' : ''}`}
                 >
                   {item}
-                  {/* 모바일에서 드롭다운 아이콘 */}
-                  {isMobile && (item === '브랜드' || item === '남성' || item === '여성') && (
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${openDropdown === item ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
                 </div>
                 
                 {/* 드롭다운 메뉴 */}
-                {((isMobile && openDropdown === item) || (!isMobile && hoveredNav === item)) && 
-                 (item === '브랜드' || item === '남성' || item === '여성') && (
+                {hoveredNav === item && (item === '브랜드' || item === '남성' || item === '여성') && (
                   <div 
-                    className={`absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[999] dropdown-menu ${
-                      isMobile ? 'w-[calc(100vw-40px)] max-w-[300px]' : 'min-w-[200px] animate-fadeIn'
-                    }`}
+                    className="absolute top-full left-0 mt-1 bg-red-100 border-2 border-red-500 rounded-lg shadow-xl z-[9999] min-w-[200px] animate-fadeIn"
                     onMouseEnter={handleDropdownMouseEnter}
                     onMouseLeave={handleDropdownMouseLeave}
+                    style={{ 
+                      position: 'absolute', 
+                      top: '100%', 
+                      left: '0', 
+                      zIndex: 9999,
+                      backgroundColor: '#fecaca',
+                      border: '2px solid #ef4444'
+                    }}
                   >
-                    <div className="max-h-[60vh] overflow-y-auto">
-                      {item === '브랜드' && brandCategories.all.map((brand) => (
-                        <div
-                          key={brand.slug}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBrandSelect(brand.slug);
-                            setOpenDropdown(null);
-                          }}
-                          className="px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
-                        >
-                          {brand.name}
-                        </div>
-                      ))}
-                      {item === '남성' && brandCategories.male.map((brand) => (
-                        <div
-                          key={brand.slug}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBrandSelect(brand.slug, 'male');
-                            setOpenDropdown(null);
-                          }}
-                          className="px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
-                        >
-                          {brand.name}
-                        </div>
-                      ))}
-                      {item === '여성' && brandCategories.female.map((brand) => (
-                        <div
-                          key={brand.slug}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBrandSelect(brand.slug, 'female');
-                            setOpenDropdown(null);
-                          }}
-                          className="px-4 py-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
-                        >
-                          {brand.name}
-                        </div>
-                      ))}
-                    </div>
+                    {item === '브랜드' && brandCategories.all.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
+                    {item === '남성' && brandCategories.male.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug, 'male')}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
+                    {item === '여성' && brandCategories.female.map((brand) => (
+                      <div
+                        key={brand.slug}
+                        onClick={() => handleBrandSelect(brand.slug, 'female')}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                      >
+                        {brand.name}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
