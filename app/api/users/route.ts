@@ -5,6 +5,12 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 /api/users GET - Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      SKIP_AUTH: process.env.NEXT_PUBLIC_SKIP_AUTH,
+      HAS_DB: !!process.env.DATABASE_URL
+    })
+
     // Skip auth check when NEXT_PUBLIC_SKIP_AUTH is enabled
     if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
       console.log('🔧 Auth bypass enabled: skipping auth check in users API')
@@ -53,24 +59,29 @@ export async function GET(request: NextRequest) {
     if (role && role !== 'all') where.role = role
     if (status && status !== 'all') where.status = status
 
-    // Count total users
-    const totalUsers = await prisma.user.count({ where })
+    try {
+      console.log('📊 Attempting to fetch users from database...')
+      
+      // Count total users
+      const totalUsers = await prisma.user.count({ where })
+      console.log('✅ Total users count:', totalUsers)
 
-    // Fetch users
-    const users = await prisma.user.findMany({
-      where,
-      include: {
-        brand: {
-          select: { id: true, nameKo: true, nameCn: true },
+      // Fetch users
+      const users = await prisma.user.findMany({
+        where,
+        include: {
+          brand: {
+            select: { id: true, nameKo: true, nameCn: true },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
-    })
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      })
+      console.log('✅ Fetched users:', users.length)
 
-    return NextResponse.json({
-      data: users,
+      return NextResponse.json({
+        data: users,
       meta: {
         page,
         limit,
@@ -78,7 +89,12 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(totalUsers / limit),
       },
     })
+    } catch (dbError) {
+      console.error('❌ Database error in /api/users:', dbError)
+      throw dbError
+    }
   } catch (error) {
+    console.error('❌ Final error in /api/users:', error)
     return createErrorResponse(error as Error, request.url)
   }
 }
