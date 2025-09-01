@@ -143,7 +143,23 @@ export default function AnalyticsPage() {
     )
   }
 
-  const { overview, ordersByStatus, dailyRevenue, topProducts } = overviewData
+  const { 
+    overview = {
+      todayRevenue: 0,
+      todayOrders: 0,
+      yesterdayRevenue: 0,
+      yesterdayOrders: 0,
+      revenueChange: '0',
+      orderChange: '0',
+      totalUsers: 0,
+      newUsersToday: 0,
+      totalProducts: 0,
+      lowStockProducts: 0
+    }, 
+    ordersByStatus = [], 
+    dailyRevenue = [], 
+    topProducts = [] 
+  } = overviewData || {}
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
