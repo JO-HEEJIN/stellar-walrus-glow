@@ -36,7 +36,7 @@ export default function UserList({ userRole }: UserListProps) {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/users-v2', {
         credentials: 'include',
       })
 
