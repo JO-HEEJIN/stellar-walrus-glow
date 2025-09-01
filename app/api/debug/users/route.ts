@@ -8,6 +8,7 @@ export async function GET() {
       NODE_ENV: process.env.NODE_ENV,
       SKIP_AUTH: process.env.NEXT_PUBLIC_SKIP_AUTH,
       HAS_DB_URL: !!process.env.DATABASE_URL,
+      DB_URL_LENGTH: process.env.DATABASE_URL?.length || 0,
     },
     database: {
       connected: false,
