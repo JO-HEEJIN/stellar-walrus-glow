@@ -19,8 +19,10 @@ export async function GET() {
   return NextResponse.json({
     timestamp: new Date().toISOString(),
     env: {
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_SKIP_AUTH: process.env.NEXT_PUBLIC_SKIP_AUTH,
+      NODE_ENV: process.env.NODE_ENV || 'not set',
+      NEXT_PUBLIC_SKIP_AUTH: process.env.NEXT_PUBLIC_SKIP_AUTH || 'not set',
+      JWT_SECRET: process.env.JWT_SECRET ? 'set' : 'not set',
+      DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
     },
     urls: {
       DATABASE_URL: extractHost(databaseUrl),
