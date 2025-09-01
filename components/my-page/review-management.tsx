@@ -59,7 +59,7 @@ export default function ReviewManagement() {
 
       if (response.ok) {
         const data = await response.json()
-        setReviews(data.data || [])
+        setReviews(data.data?.reviews || [])
       }
     } catch (error) {
       console.error('리뷰 로드 실패:', error)
