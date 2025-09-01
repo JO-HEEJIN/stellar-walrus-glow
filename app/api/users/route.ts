@@ -5,9 +5,9 @@ import { createErrorResponse, BusinessError, ErrorCodes, HttpStatus } from '@/li
 
 export async function GET(request: NextRequest) {
   try {
-    // Skip auth check in development mode
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('🔧 Development mode: skipping auth check in users API')
+    // Skip auth check when NEXT_PUBLIC_SKIP_AUTH is enabled
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('🔧 Auth bypass enabled: skipping auth check in users API')
     } else {
       // Check authentication
       const token = request.cookies.get('auth-token')?.value
@@ -95,9 +95,9 @@ const createUserSchema = z.object({
 // POST: Create/invite new user
 export async function POST(request: NextRequest) {
   try {
-    // Skip auth check in development mode
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('🔧 Development mode: skipping auth check in users API POST')
+    // Skip auth check when NEXT_PUBLIC_SKIP_AUTH is enabled
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('🔧 Auth bypass enabled: skipping auth check in users API POST')
     } else {
       // Check authentication
       const token = request.cookies.get('auth-token')?.value

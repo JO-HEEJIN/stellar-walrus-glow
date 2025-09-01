@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken'
 
 export async function GET(request: NextRequest) {
   try {
-    // 개발 모드에서는 Mock 사용자 반환
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('🔧 /api/auth/me: Development mode - returning mock user')
+    // Auth bypass 모드에서는 Mock 사용자 반환
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('🔧 /api/auth/me: Auth bypass enabled - returning mock user')
       return NextResponse.json({
         user: {
           username: 'dev-user',

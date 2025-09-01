@@ -9,9 +9,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Skip auth check in development mode
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('🔧 Development mode: skipping auth check in users/[id] API')
+    // Skip auth check when NEXT_PUBLIC_SKIP_AUTH is enabled
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('🔧 Auth bypass enabled: skipping auth check in users/[id] API')
     } else {
       // Check authentication
       const token = request.cookies.get('auth-token')?.value
@@ -83,9 +83,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Skip auth check in development mode
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-      console.log('🔧 Development mode: skipping auth check in users/[id] PATCH API')
+    // Skip auth check when NEXT_PUBLIC_SKIP_AUTH is enabled
+    if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+      console.log('🔧 Auth bypass enabled: skipping auth check in users/[id] PATCH API')
     } else {
       // Check authentication
       const token = request.cookies.get('auth-token')?.value

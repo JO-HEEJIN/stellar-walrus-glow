@@ -25,9 +25,9 @@ export default function DashboardLayout({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // 개발 모드에서 인증 우회
-        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
-          console.log('🔧 Development mode: skipping auth check in dashboard layout')
+        // Auth bypass 모드에서 인증 우회
+        if (process.env.NEXT_PUBLIC_SKIP_AUTH === 'true') {
+          console.log('🔧 Auth bypass enabled: skipping auth check in dashboard layout')
           setUser({
             username: 'dev-user',
             email: 'dev@kfashion.com',
