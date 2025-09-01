@@ -13,7 +13,10 @@ export default function UsersPage() {
         const response = await fetch('/api/auth/me')
         if (response.ok) {
           const data = await response.json()
+          console.log('📊 Users page auth data:', data)
           setUserRole(data.user.role)
+        } else {
+          console.error('Auth response failed:', response.status)
         }
       } catch (error) {
         console.error('Auth check error:', error)
@@ -30,12 +33,14 @@ export default function UsersPage() {
   }
 
   // Only MASTER_ADMIN can access user management
+  console.log('🔐 Current user role for users page:', userRole)
   if (userRole !== 'MASTER_ADMIN') {
+    console.log('❌ Access denied - user role is not MASTER_ADMIN')
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-md bg-yellow-50 p-4">
           <p className="text-sm text-yellow-800">
-            사용자 관리 페이지는 최고 관리자만 접근할 수 있습니다.
+            사용자 관리 페이지는 최고 관리자만 접근할 수 있습니다. (현재 역할: {userRole})
           </p>
         </div>
       </div>

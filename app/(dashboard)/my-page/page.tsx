@@ -64,10 +64,13 @@ export default function MyPage() {
       
       if (userResponse.ok) {
         const userData = await userResponse.json()
+        console.log('👤 My-page user data:', userData)
         setUser({
           ...userData.user,
           name: userData.user.name || userData.user.username,
         })
+      } else {
+        console.error('My-page auth failed:', userResponse.status)
       }
 
       // Mock data for now - will be replaced with real API calls
