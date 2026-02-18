@@ -3,12 +3,20 @@ import mysql from 'mysql2/promise';
 async function createDatabase() {
   console.log('🏗️ Creating kfashion database...\n');
 
+  const host = process.env.DB_HOST;
+  const user = process.env.DB_USER;
+  const password = process.env.DB_PASSWORD;
+
+  if (!host || !user || !password) {
+    console.error('❌ Missing required environment variables: DB_HOST, DB_USER, DB_PASSWORD');
+    process.exit(1);
+  }
+
   const connection = await mysql.createConnection({
-    host: 'k-fashion-aurora-cluster-instance-1.cf462wy64uko.us-east-2.rds.amazonaws.com',
+    host,
     port: 3306,
-    user: 'kfashion_admin',
-    password: 'Qlalfqjsgh1!',
-    // No database specified - connecting to MySQL server directly
+    user,
+    password,
   });
 
   try {
@@ -20,14 +28,14 @@ async function createDatabase() {
     // Create database if it doesn't exist
     console.log('\n📦 Creating kfashion database...');
     await connection.execute('CREATE DATABASE IF NOT EXISTS kfashion CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-    
+
     console.log('✅ Database kfashion created successfully!\n');
 
     // Verify creation
     console.log('🔍 Verifying database creation...');
     const [newDatabases] = await connection.execute('SHOW DATABASES');
     const dbExists = (newDatabases as any[]).some(db => db.Database === 'kfashion');
-    
+
     if (dbExists) {
       console.log('✅ kfashion database confirmed to exist');
     } else {
