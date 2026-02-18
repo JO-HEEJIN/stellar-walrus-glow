@@ -14,9 +14,9 @@ NC='\033[0m'
 echo -e "${BLUE}🔄 Recreating Cognito Users${NC}"
 echo "=================================="
 
-# Configuration from your .env
-USER_POOL_ID="us-east-2_0wMigvevV"
-REGION="us-east-2"
+# Configuration - set these via environment variables
+USER_POOL_ID="${COGNITO_USER_POOL_ID:?Set COGNITO_USER_POOL_ID env var}"
+REGION="${AWS_REGION:-us-east-2}"
 
 echo -e "${YELLOW}📋 Configuration:${NC}"
 echo "User Pool ID: $USER_POOL_ID"
@@ -29,16 +29,16 @@ create_or_update_user() {
     local password=$2
     local name=$3
     local role=$4
-    
+
     echo -e "\n${YELLOW}👤 Processing user: $email${NC}"
-    
+
     # First, try to delete the user if it exists (in case it's in a bad state)
     echo "Cleaning up any existing user..."
     aws cognito-idp admin-delete-user \
         --user-pool-id $USER_POOL_ID \
         --username $email \
         --region $REGION &> /dev/null || true
-    
+
     # Create the user
     echo "Creating user..."
     aws cognito-idp admin-create-user \
@@ -50,7 +50,7 @@ create_or_update_user() {
             Name=name,Value="$name" \
         --message-action SUPPRESS \
         --region $REGION
-    
+
     if [[ $? -eq 0 ]]; then
         echo "Setting permanent password..."
         # Set permanent password
@@ -60,11 +60,10 @@ create_or_update_user() {
             --password "$password" \
             --permanent \
             --region $REGION
-        
+
         if [[ $? -eq 0 ]]; then
             echo -e "${GREEN}✅ User created successfully!${NC}"
             echo -e "${BLUE}   Email: $email${NC}"
-            echo -e "${BLUE}   Password: $password${NC}"
             echo -e "${BLUE}   Role: $role${NC}"
         else
             echo -e "${RED}❌ Failed to set password${NC}"
@@ -74,12 +73,16 @@ create_or_update_user() {
     fi
 }
 
-# Create all three users
+# Create all three users - passwords should be passed as arguments or env vars
+MASTER_PW="${MASTER_PASSWORD:?Set MASTER_PASSWORD env var}"
+BRAND_PW="${BRAND_PASSWORD:?Set BRAND_PASSWORD env var}"
+BUYER_PW="${BUYER_PASSWORD:?Set BUYER_PASSWORD env var}"
+
 echo -e "\n${BLUE}🚀 Creating all users...${NC}"
 
-create_or_update_user "master@k-fashions.com" "Master123!" "Master Admin" "MASTER_ADMIN"
-create_or_update_user "brand@k-fashions.com" "Brand123!" "Brand Admin" "BRAND_ADMIN"
-create_or_update_user "buyer@k-fashions.com" "Buyer123!" "Test Buyer" "BUYER"
+create_or_update_user "master@k-fashions.com" "$MASTER_PW" "Master Admin" "MASTER_ADMIN"
+create_or_update_user "brand@k-fashions.com" "$BRAND_PW" "Brand Admin" "BRAND_ADMIN"
+create_or_update_user "buyer@k-fashions.com" "$BUYER_PW" "Test Buyer" "BUYER"
 
 # Verify users were created
 echo -e "\n${YELLOW}📊 Verifying users...${NC}"
@@ -92,21 +95,6 @@ aws cognito-idp list-users \
     --output table
 
 echo -e "\n${GREEN}✅ User recreation complete!${NC}"
-echo ""
-echo -e "${BLUE}📋 Login Credentials:${NC}"
-echo "=================================="
-echo -e "${YELLOW}Master Admin:${NC}"
-echo "  Email: master@k-fashions.com"
-echo "  Password: Master123!"
-echo ""
-echo -e "${YELLOW}Brand Admin:${NC}"
-echo "  Email: brand@k-fashions.com"
-echo "  Password: Brand123!"
-echo ""
-echo -e "${YELLOW}Buyer:${NC}"
-echo "  Email: buyer@k-fashions.com"
-echo "  Password: Buyer123!"
-echo "=================================="
 echo ""
 echo -e "${YELLOW}⚠️  Important Notes:${NC}"
 echo "1. Users are now created with verified emails"

@@ -1,4 +1,4 @@
-# 🚀 Complete AWS Migration Guide for Beginners
+# Complete AWS Migration Guide for Beginners
 
 ## What We're Doing
 We're moving your K-Fashion app from an old AWS account to a new one. Think of it like moving from an old house to a new house - we need to pack everything up and set it up in the new place.
@@ -15,12 +15,12 @@ We're moving your K-Fashion app from an old AWS account to a new one. Think of i
 ## Step 2: Fill in Your Information
 You'll see a form. Fill it out like this:
 
-1. **Root user email address**: `master@k-fashions.com`
+1. **Root user email address**: Your admin email
 2. **AWS account name**: `K-Fashion Platform`
 3. Click **"Verify email address"**
 
 ## Step 3: Check Your Email
-1. Open your email (master@k-fashions.com)
+1. Open your email
 2. Look for email from AWS
 3. Copy the verification code
 4. Paste it back in AWS website
@@ -28,7 +28,6 @@ You'll see a form. Fill it out like this:
 
 ## Step 4: Set Your Password
 1. Create a strong password (write it down somewhere safe!)
-   - Example: `KFashion2024!@#AWS`
    - Must have uppercase, lowercase, numbers, and symbols
 2. Confirm password (type it again)
 3. Click **"Continue"**
@@ -64,7 +63,7 @@ AWS needs a credit card (they'll charge $1 to verify, then refund it):
 1. Select **"Basic support - Free"**
 2. Click **"Complete sign up"**
 
-🎉 **Congratulations! You now have an AWS account!**
+Congratulations! You now have an AWS account!
 
 ---
 
@@ -73,9 +72,7 @@ AWS needs a credit card (they'll charge $1 to verify, then refund it):
 ## Step 1: First Login
 1. You'll see "Go to the AWS Management Console"
 2. Click it
-3. Sign in with:
-   - Root user email: `master@k-fashions.com`
-   - Password: (the one you created)
+3. Sign in with your root user email and password
 
 ## Step 2: Enable MFA (Extra Security)
 This is like adding a second lock to your door:
@@ -103,10 +100,10 @@ Never use root account for daily work!
 3. Click **"Users"** (left menu)
 4. Click **"Create user"** button
 5. User name: `kfashion-admin`
-6. Check ✓ **"Provide user access to the AWS Management Console"**
+6. Check **"Provide user access to the AWS Management Console"**
 7. Select **"I want to create an IAM user"**
 8. Choose **"Custom password"**
-9. Enter password: `KFashionAdmin2024!`
+9. Enter a strong password
 10. Uncheck **"User must create new password"**
 11. Click **"Next"**
 12. Select **"Attach policies directly"**
@@ -133,24 +130,24 @@ Never use root account for daily work!
 1. Click big blue button **"Create user pool"**
 
 ### Screen 1: Sign-in Experience
-1. Under "Cognito user pool sign-in options", check only: ✓ **Email**
-2. Under "User name requirements", check: ✓ **Allow users to sign in with a preferred user name**
+1. Under "Cognito user pool sign-in options", check only: **Email**
+2. Under "User name requirements", check: **Allow users to sign in with a preferred user name**
 3. Make sure **"Make user name case sensitive"** is set to **No**
 4. Click **"Next"**
 
 ### Screen 2: Security Requirements
 1. Password policy - leave all defaults
 2. Multi-factor authentication: Choose **"No MFA"**
-3. User account recovery: Check only ✓ **"Enable self-service account recovery"**
+3. User account recovery: Check only **"Enable self-service account recovery"**
 4. Delivery method: Select **"Email only"**
 5. Click **"Next"**
 
 ### Screen 3: Sign-up Experience
 1. Self-registration: **"Enable self-registration"** should be ON
 2. Attribute verification: Select **"Send verification code"**
-3. Attributes to verify: Check ✓ **"Email"**
+3. Attributes to verify: Check **"Email"**
 4. Keep "Allow Cognito to automatically send messages" as **Yes**
-5. Required attributes: Check only ✓ **"email"** and ✓ **"name"**
+5. Required attributes: Check only **"email"** and **"name"**
 6. Click **"Next"**
 
 ### Screen 4: Message Delivery
@@ -182,11 +179,11 @@ After creation, you'll see your user pool. We need 3 things:
 7. Click **"Show client secret"**
 8. **Client secret**: Copy this (another long string)
 
-**Save these in a text file like this:**
+**Save these in a secure location (NOT in your code repository):**
 ```
-COGNITO_USER_POOL_ID=ap-northeast-1_XXXXXXXXX
-COGNITO_CLIENT_ID=your-client-id-here
-COGNITO_CLIENT_SECRET=your-client-secret-here
+COGNITO_USER_POOL_ID=<your-pool-id>
+COGNITO_CLIENT_ID=<your-client-id>
+COGNITO_CLIENT_SECRET=<your-client-secret>
 ```
 
 ## Step 5: Configure App Client
@@ -204,11 +201,11 @@ Still on the same page:
    https://your-domain.vercel.app
    ```
 4. Under "OAuth 2.0 grant types" check:
-   - ✓ Authorization code grant
+   - Authorization code grant
 5. Under "OpenID Connect scopes" check:
-   - ✓ OpenID
-   - ✓ Email  
-   - ✓ Profile
+   - OpenID
+   - Email
+   - Profile
 6. Click **"Save changes"**
 
 ---
@@ -232,23 +229,23 @@ Copy and paste this into `.env.local`, replacing with your values:
 ```bash
 # These stay the same
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-nextauth-secret-here
+NEXTAUTH_SECRET=<generate-a-random-secret>
 
 # These are NEW - replace with your values from Step 4 of Cognito
-COGNITO_CLIENT_ID=paste-your-client-id-here
-COGNITO_CLIENT_SECRET=paste-your-client-secret-here
-COGNITO_ISSUER=https://cognito-idp.ap-northeast-1.amazonaws.com/paste-your-user-pool-id-here
+COGNITO_CLIENT_ID=<your-client-id>
+COGNITO_CLIENT_SECRET=<your-client-secret>
+COGNITO_ISSUER=https://cognito-idp.<region>.amazonaws.com/<your-user-pool-id>
 
-# These we'll set up later
-AWS_REGION=ap-northeast-1
-AWS_ACCESS_KEY_ID=we-will-create-this-later
-AWS_SECRET_ACCESS_KEY=we-will-create-this-later
-S3_BUCKET=k-fashion-platform-images
-DATABASE_URL=we-will-create-this-later
+# AWS Configuration
+AWS_REGION=<your-region>
+AWS_ACCESS_KEY_ID=<your-access-key>
+AWS_SECRET_ACCESS_KEY=<your-secret-key>
+S3_BUCKET=<your-s3-bucket>
+DATABASE_URL=<your-database-url>
 
-# These stay the same if you have them
-UPSTASH_REDIS_REST_URL=your-existing-url-if-you-have-one
-UPSTASH_REDIS_REST_TOKEN=your-existing-token-if-you-have-one
+# Redis (if using)
+UPSTASH_REDIS_REST_URL=<your-upstash-url>
+UPSTASH_REDIS_REST_TOKEN=<your-upstash-token>
 ```
 
 ## Step 4: Test Your Changes
@@ -327,24 +324,24 @@ Create a file called `AWS-CREDENTIALS.txt` on your computer (NOT in the project)
 ```
 AWS Account
 -----------
-Root Email: master@k-fashions.com
-Root Password: [your password]
-Account ID: [shown in AWS console top right]
+Root Email: <your-email>
+Root Password: <your-password>
+Account ID: <shown in AWS console top right>
 
 Admin User
 ----------
 Username: kfashion-admin
-Password: KFashionAdmin2024!
+Password: <your-admin-password>
 Console URL: https://console.aws.amazon.com/
 
 Cognito
 -------
-Region: ap-northeast-1 (Tokyo)
-User Pool ID: [your pool id]
-Client ID: [your client id]
-Client Secret: [your client secret]
+Region: <your-region>
+User Pool ID: <your-pool-id>
+Client ID: <your-client-id>
+Client Secret: <your-client-secret>
 
-Created Date: [today's date]
+Created Date: <today's date>
 ```
 
 Keep this file safe and secure!
